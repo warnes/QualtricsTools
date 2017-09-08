@@ -868,6 +868,7 @@ lean_responses <- function(question_blocks, survey_responses, include_text_entry
                   # Make sure that the columns which we're trying to merge based on are of the
                   # same structure, otherwise dplyr will complain.
                   response_lookup[[1]] <- as.character(response_lookup[[1]])
+                  response_lookup[[2]] <- as.character(response_lookup[[2]])
                   df[['Raw Response']] <- as.character(df[['Raw Response']])
                   # Left join, so that we keep anything from df and we insert columns from
                   # response_lookup on the right.
