@@ -894,7 +894,7 @@ lean_responses <- function(question_blocks, survey_responses, include_text_entry
     "Raw Response",
     "Coded Response")
   # Remove all NULL values in the "Coded Response" column.
-  df[['Coded Response']] <- lapply(df[['Coded Response']], function(x) ifelse( is.null(x), "", x))
+  df[['Coded Response']] <- unlist(lapply(df[['Coded Response']], function(x) ifelse( is.null(x), "", x)))
   return(df)
 }
 
