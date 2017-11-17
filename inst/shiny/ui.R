@@ -14,8 +14,8 @@ sidebar <- dashboardSidebar(
                        accept=c('text/csv', 'text/comma-separated-values', '.csv')
              ),
              div(class="sidebar-text",
-                 HTML("Was the CSV exported using the <a href='https://github.com/ctesta01/QualtricsTools/wiki/Appendix-of-Qualtrics-Terms#legacy-and-insights-data', target='_blank'>Insights format</a>?")),
-             checkboxInput("insights_or_not", "Insights?", value = TRUE, width = NULL)
+                 HTML("QualtricsTools requires data be exported with the <a href='https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Appendix-of-Qualtrics-Terms#legacy-and-insights-data', target='_blank'>Legacy Exporter</a>.")),
+             checkboxInput("insights_or_not", "Unchecked Legacy View Results (3 header rows & QIDs)?", value = TRUE, width = NULL)
              ),
     menuItem("Processed Results", tabName="report", icon=icon("leanpub")),
     menuItem("Include/Exclude Responses", tabName="include_exclude", icon=icon("toggle-on")),
