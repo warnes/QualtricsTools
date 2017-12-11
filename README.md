@@ -11,7 +11,7 @@ and much more.
 This package was developed for Tufts University's [Office of Institutional Research and Evaluation](http://provost.tufts.edu/institutionalresearch/). 
 Anyone is welcome to use it.
 
-![A slideshow of the QualtricsTools web app](https://github.com/ctesta01/QualtricsTools/blob/master/pics/animation.gif?raw=true)
+![A slideshow of the QualtricsTools web app](https://github.com/emmamorgan-tufts/QualtricsTools/blob/master/pics/animation.gif?raw=true)
 
 ## Installing and Running the Shiny App
 Before installing, you must install [R or Rstudio](https://www.rstudio.com/), 
@@ -20,7 +20,7 @@ Before installing, you must install [R or Rstudio](https://www.rstudio.com/),
 and [Pandoc](http://pandoc.org/). For Rtools with Windows, 
 [please make sure Rtools is added to the `Path` environment variable](http://stackoverflow.com/a/29480538/3161979). You need to `install.packages('devtools')` or have already installed the devtools package in R. After installing each of the prerequisites, to install QualtricsTools run the following in R:
 
-    devtools::install_github("ctesta01/QualtricsTools")
+    devtools::install_github("emmamorgan-tufts/QualtricsTools")
     
 The QualtricsTools package includes a suite of functions to help you analyze Qualtrics data in R. Most of the package can be used on the command line in R. However, the simplest way to create basic reports of your Qualtrics data is to use the QualtricsTools Shiny app. The app includes an interactive user-friendly interface that lets you select your survey and data file, and generate reports (frequencies for closed-ended questions and compiled text responses for open-ended questions) for the entire respondent group and/or subgroups. 
 
@@ -30,7 +30,7 @@ To run the Shiny app, load the package and then call the app() function.
     app()
 
 The QualtricsTools Shiny app should now be running! Enjoy. To update your version of QualtricsTools
-to the most recent version, run `devtools::install_github("ctesta01/QualtricsTools")` again.
+to the most recent version, run `devtools::install_github("emmamorgan-tufts/QualtricsTools")` again.
 
 ## Most Useful Functions
 
@@ -38,7 +38,7 @@ Here are some of the most high level functions in the application. Be sure to `l
 trying to run any of these. Each function takes a series of parameters (e.g. survey .qsf file, response .csv file, output directory). Running these
 commands without parameters as shown in the code below results in interactive prompts for the survey data and other settings
 in order to cut down on the need to repeatedly type or copy long file paths. 
-For more details about each of these functions and their arguments, check out their documentation: [`get_setup`](https://github.com/ctesta01/QualtricsTools/wiki/Explanations-of-Important-Functions#get_setup), [`make_results_tables`](https://github.com/ctesta01/QualtricsTools/wiki/Generating-Results-Tables), and [`make_text_appendices`](https://github.com/ctesta01/QualtricsTools/wiki/Generating-Text-Appendices).
+For more details about each of these functions and their arguments, check out their documentation: [`get_setup`](https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Explanations-of-Important-Functions#get_setup), [`make_results_tables`](https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Generating-Results-Tables), and [`make_text_appendices`](https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Generating-Text-Appendices).
 
     # Load and Process Survey Data into R
     get_setup()
@@ -61,27 +61,27 @@ you can run `help(function)` or `?function` on any function in QualtricsTools to
 documentation. 
 
 - How do I use the app?
-  - [The Shiny Web App](https://github.com/ctesta01/QualtricsTools/wiki/The-Shiny-Web-Application#explaining-the-shiny-app-components)
-  - [Running the App](https://github.com/ctesta01/QualtricsTools/wiki/Installing-and-Running-the-Shiny-App)
-  - [Usage Guidelines](https://github.com/ctesta01/QualtricsTools/wiki/Usage-Guidelines)
+  - [The Shiny Web App](https://github.com/emmamorgan-tufts/QualtricsTools/wiki/The-Shiny-Web-Application#explaining-the-shiny-app-components)
+  - [Running the App](https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Installing-and-Running-the-Shiny-App)
+  - [Usage Guidelines](https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Usage-Guidelines)
 - How do I use the R package?
-  - [Generating Results Tables](https://github.com/ctesta01/QualtricsTools/wiki/Generating-Results-Tables)
-  - [Generating Question Dictionaries](https://github.com/ctesta01/QualtricsTools/wiki/Generating-Question-Dictionaries)
-  - [Generating the Unprocessed Questions Dictionary](https://github.com/ctesta01/QualtricsTools/wiki/Uncodeable-Questions)
-  - [Generating Text Appendices](https://github.com/ctesta01/QualtricsTools/wiki/Generating-Text-Appendices)
-  - [Generating Survey Logic](https://github.com/ctesta01/QualtricsTools/wiki/Generating-Display-Logic)
-  - [Generating Split Reports by Responses](https://github.com/ctesta01/QualtricsTools/wiki/Split-Reports)
-  - [Reshaping for Tableau](https://github.com/ctesta01/QualtricsTools/wiki/Reshaping-Responses-for-Tableau)
-  - [Inserting Coded Comments into Text Appendices](https://github.com/ctesta01/QualtricsTools/wiki/Comment-Coding)
-  - [Including/Excluding  Questions from Reports](https://github.com/ctesta01/QualtricsTools/wiki/Including-Excluding-a-Specific-Question)
-  - [Processing a Specific Question](https://github.com/ctesta01/QualtricsTools/wiki/Processing-a-Specific-Question)
-  - [Using Pandoc to Export to Different Filetypes](https://github.com/ctesta01/QualtricsTools/wiki/Exporting-to-Different-Filetypes)
+  - [Generating Results Tables](https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Generating-Results-Tables)
+  - [Generating Question Dictionaries](https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Generating-Question-Dictionaries)
+  - [Generating the Unprocessed Questions Dictionary](https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Uncodeable-Questions)
+  - [Generating Text Appendices](https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Generating-Text-Appendices)
+  - [Generating Survey Logic](https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Generating-Display-Logic)
+  - [Generating Split Reports by Responses](https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Split-Reports)
+  - [Reshaping for Tableau](https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Reshaping-Responses-for-Tableau)
+  - [Inserting Coded Comments into Text Appendices](https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Comment-Coding)
+  - [Including/Excluding  Questions from Reports](https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Including-Excluding-a-Specific-Question)
+  - [Processing a Specific Question](https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Processing-a-Specific-Question)
+  - [Using Pandoc to Export to Different Filetypes](https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Exporting-to-Different-Filetypes)
 - How does it work? (Reference)
-  - [Understanding the Qualtrics Survey File (QSF)](https://gist.github.com/ctesta01/d4255959dace01431fb90618d1e8c241)
-  - [The Package Source Code Layout](https://github.com/ctesta01/QualtricsTools/wiki/Source-Code-Layout)
-  - [The Shiny App's Code](https://github.com/ctesta01/QualtricsTools/wiki/The-Shiny-Web-Application#understanding-the-code)
+  - [Understanding the Qualtrics Survey File (QSF)](https://gist.github.com/emmamorgan-tufts/d4255959dace01431fb90618d1e8c241)
+  - [The Package Source Code Layout](https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Source-Code-Layout)
+  - [The Shiny App's Code](https://github.com/emmamorgan-tufts/QualtricsTools/wiki/The-Shiny-Web-Application#understanding-the-code)
 
 ## Frequently Asked Questions 
-Check out our [FAQ](https://github.com/ctesta01/QualtricsTools/wiki/Frequently-Asked-Questions) for more help.
+Check out our [FAQ](https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Frequently-Asked-Questions) for more help.
 
 
