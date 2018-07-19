@@ -633,7 +633,7 @@ matrix_single_answer_results <-
         valid_responses <- valid_responses[, valid_answers]
       } else {
         valid_responses <-
-          valid_responses[, unlist(question$Payload$AnswerOrder)]
+          valid_responses[, unlist(as.character(question$Payload$AnswerOrder))]
       }
     }
 
