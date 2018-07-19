@@ -245,7 +245,8 @@ mc_single_answer_results <-
 
     #If Choice Order is specified, then we might need to reorder the rows
     if ("ChoiceOrder" %in% names(question[['Payload']])) {
-      results_table[as.numeric(unlist(question$Payload$ChoiceOrder)),]
+      results_table <-
+        results_table[as.numeric(unlist(question$Payload$ChoiceOrder)),]
     }
 
 
