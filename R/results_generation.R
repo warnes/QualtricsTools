@@ -207,7 +207,7 @@ mc_single_answer_results <-
     if ("RecodeValues" %in% names(question[['Payload']]) &&
         "ChoiceOrder" %in% names(question[['Payload']])) {
       factors <-
-        factors[question$Payload$ChoiceOrder]
+        factors[unlist(question$Payload$ChoiceOrder)]
     }
 
     # get the data export tag and questionID
