@@ -203,6 +203,12 @@ mc_single_answer_results <-
       factors <- names(question[['Payload']][['Choices']])
     }
 
+    #If Choice Order is specified, then we might need to reorder the rows
+    if ("ChoiceOrder" %in% names(question[['Payload']])) {
+      factors <-
+        factors[question$Payload$ChoiceOrder]
+    }
+
     # get the data export tag and questionID
     exporttag <- question[['Payload']][['DataExportTag']]
     questionID <- question[['Payload']][['QuestionID']]
@@ -242,13 +248,6 @@ mc_single_answer_results <-
     results_table <-
       data.frame(N, Percent, choices, row.names = NULL)
     colnames(results_table)[3] <- ""
-
-    #If Choice Order is specified, then we might need to reorder the rows
-    if ("ChoiceOrder" %in% names(question[['Payload']])) {
-      results_table <-
-        results_table[as.numeric(unlist(question$Payload$ChoiceOrder)),]
-    }
-
 
     # append the results table to the question
     question[['Table']] <- results_table
