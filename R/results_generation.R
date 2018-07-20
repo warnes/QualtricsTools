@@ -204,7 +204,8 @@ mc_single_answer_results <-
     }
 
     #If Choice Order is specified, then we might need to reorder the rows
-    if ("ChoiceOrder" %in% names(question[['Payload']])) {
+    if ("RecodeValues" %in% names(question[['Payload']]) &&
+        "ChoiceOrder" %in% names(question[['Payload']])) {
       factors <-
         factors[question$Payload$ChoiceOrder]
     }
