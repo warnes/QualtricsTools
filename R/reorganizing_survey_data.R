@@ -1454,6 +1454,30 @@ create_response_column_dictionary <-
   }
 
 
+#'Create a response column dictionary with only the qsf
+#'
+#'The user provides the survey qsf, and this creates a response column dictionary
+#'The data .csv is not required
+#'This can be used to identify quesiton types in the original survey, regardless
+#'of whether you changed questions for a shell survey.
+create_question_dictionary_from_qsf <- function(qsf_path) {
+  survey <- ask_for_qsf(qsf_path)
+  blocks <- blocks_from_survey(survey)
+  questions <- questions_from_survey(survey)
+  questions <- remove_trash_questions(questions, blocks)
+  blocks <- remove_trash_blocks(blocks)
+  questions_and_blocks <- split_side_by_sides(questions, blocks)
+  questions <- questions_and_blocks[[1]]
+  blocks <- questions_and_blocks[[2]]
+  questions <- clean_question_text(questions)
+  questions <- human_readable_qtype(questions)
+  blocks <- questions_into_blocks(questions, blocks)
+
+  flow <- flow_from_survey(survey)
+  qdict <- create_question_dictionary(blocks,flow)
+  return(qdict)
+}
+
 #' Create Panel Data for Reshaped Data
 #'
 #' The user provides this function a character vector of names of response columns (
