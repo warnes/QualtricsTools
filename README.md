@@ -8,7 +8,7 @@ the universal document converter [Pandoc](http://pandoc.org/),
 [Roxygen2](https://cran.r-project.org/web/packages/roxygen2/vignettes/roxygen2.html) documentation, 
 and much more. 
 
-This package was developed for Tufts University's [Office of Institutional Research and Evaluation](http://provost.tufts.edu/institutionalresearch/). 
+This package was developed for Tufts University's [Office of Institutional Research](http://provost.tufts.edu/institutionalresearch/). 
 Anyone is welcome to use it.
 
 ![A slideshow of the QualtricsTools web app](https://github.com/emmamorgan-tufts/QualtricsTools/blob/master/pics/animation.gif?raw=true)
