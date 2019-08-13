@@ -14,8 +14,7 @@ requireNamespace("tidyverse")
 #' @return A list of dataframes for each sheet of coded comments.
 directory_get_coded_comment_sheets_NVivo <- function(directory) {
   # ask for directory if not provided
-  if (missing(directory))
-    directory <- choose.dir(caption = "Select coded comment directory")
+  if (missing(directory)) {directory <- choose.dir(caption = "Select coded comment directory")}
 
   # we only want to look at Excel or CSV files in the given directory
   files_list <- list.files(path = directory, full.names = TRUE)
@@ -45,7 +44,7 @@ directory_get_coded_comment_sheets_NVivo <- function(directory) {
     # If it warns, save the error and filename to warnings_list and warning_files_list.
     tryCatch(
       coded_appendix_tables[[length(coded_appendix_tables) + 1]] <-
-        get_coded_comment_sheet_NVivo(files_list[[i]]),
+        get_coded_comment_sheet_NVivo(codedfile <- files_list[[i]]),
       warning = function(w) {
         warning_files_list[[i]] <- files_list[[i]]
         warnings_list[[i]] <- w
@@ -120,6 +119,11 @@ get_coded_comment_sheet_NVivo <- function(codedfile) {
     } else {coded_orig <- readxl::read_excel(codedfile, sheet = sheetindex,
                                              col_types = "text", .name_repair = "minimal")}
   }
+  #NVivo crosstab includes the last "Total" column; check for this and remove if it exists
+  if (names(coded_orig)[[ncol(coded_orig)]]=="Total") {
+    coded_orig <- select(-Total)
+  }
+
   #For NVivo exports, the second column of the exported sheet contains the question name
   qname <- names(coded_orig)[[2]]
   #NVivo exports include an unlabeled first column, so we will need to fix this
@@ -157,19 +161,13 @@ format_coded_comments_NVivo <- function(coded_comment_sheet) {
   # Identify the variable name; this should be the name of the second column for regular reports,
     #and the third column for split reports; check for SPLIT in the second column
   if (stringr::str_detect(names(coded_comment_sheet)[[2]],"-split$")) {
-    varname <- names(coded_comment_sheet)[[3]]
+    varname_index <- names(coded_comment_sheet)[[3]]
   } else if (!stringr::str_detect(names(coded_comment_sheet)[[2]],"-split$")) {
     varname <-  names(coded_comment_sheet)[[2]]
   }
+  varname <- names(coded_comment_sheet[[varname_index]])
   #Get the total number of comments
   total_comments <- nrow(coded_comment_sheet)
-
-  # get coded comments, and the number of comments for each
-  codeList <-
-    names(coded_comment_sheet)[3:ncol(coded_comment_sheet)]
-  numComments <-
-    lapply (codeList, function(x)
-      length(which(coded_comment_sheet[x] == 1)))
   #Construct the table
   coded_table <- coded_comment_sheet %>%
     #Gather values to make them long and lean so we can easily tabulate
@@ -210,7 +208,7 @@ format_coded_comment_sheets_NVivo <- function(coded_comment_sheets) {
   cc_length <- length(coded_comment_sheets)
   for (i in 1:cc_length) {
     coded_comments[[i]] <-
-      format_coded_comments_NVivo(coded_comment_sheets[[i]])
+      format_coded_comments_NVivo(coded_comment_sheet = coded_comment_sheets[[i]])
   }
   return(coded_comments)
 }
