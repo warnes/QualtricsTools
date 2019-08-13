@@ -127,7 +127,7 @@ get_coded_comment_sheet_NVivo <- function(codedfile) {
     #Rename the first column as "ResponseID"
     dplyr::rename("ResponseID"=1) %>%
     #filter data to keep only values with ResponseID starting with R_ (filter out blanks)
-    dplyr::filter(str_detect(ResponseID, "^R_")) %>%
+    dplyr::filter(stringr::str_detect(ResponseID, "^R_")) %>%
     #Convert all columns other than responseID to integer
     mutate_at(vars(-ResponseID), funs(as.integer(.))) %>%
     #Now filter to keep only rows for respondents who answered the question
@@ -168,19 +168,19 @@ format_coded_comments_NVivo <- function(coded_comment_sheet) {
   #Construct the table
   coded_table <- coded_comment_sheet %>%
     #Gather values to make them long and lean so we can easily tabulate
-    gather(key = "Category", value="codeFlag", -ResponseID, -!!varname) %>%
+    tidyr::gather(key = "Category", value="codeFlag", -ResponseID, -!!varname) %>%
     #Filter the long and lean data to keep only values with "1" showing a mapping to the category
-    filter(codeFlag==1) %>%
+    dplyr::filter(codeFlag==1) %>%
     #Use dplyr function "count" to tabulate the data
-    count(Category) %>%
+    dplyr::count(Category) %>%
     #Rename columns to match our desired format
-    rename("Response"=Category,"N" = n) %>%
+    dplyr::rename("Response"=Category,"N" = n) %>%
     #Filter zeros
-    filter(N>0) %>%
+    dplyr::filter(N>0) %>%
     #sort descending numeric with ascending alphabetical
-    arrange(desc(N),Response) %>%
+    dplyr::arrange(desc(N),Response) %>%
     #add "Total with total number of comments to the bottom of the table
-    bind_rows(tibble("Response"="Total", "N" = total_comments))
+    dplyr::bind_rows(tibble("Response"="Total", "N" = total_comments))
 
   # we return a pair, the varname and the coded table.
   return(list('varname'=varname, 'coded_table'=coded_table))
