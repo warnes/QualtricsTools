@@ -44,7 +44,7 @@ directory_get_coded_comment_sheets_NVivo <- function(directory) {
     # If it warns, save the error and filename to warnings_list and warning_files_list.
     tryCatch(
       coded_appendix_tables[[length(coded_appendix_tables) + 1]] <-
-        get_coded_comment_sheet_NVivo(codedfile <- files_list[[i]]),
+        get_coded_comment_sheet_NVivo(codedfile = files_list[[i]]),
       warning = function(w) {
         warning_files_list[[i]] <- files_list[[i]]
         warnings_list[[i]] <- w
@@ -121,7 +121,7 @@ get_coded_comment_sheet_NVivo <- function(codedfile) {
   }
   #NVivo crosstab includes the last "Total" column; check for this and remove if it exists
   if (names(coded_orig)[[ncol(coded_orig)]]=="Total") {
-    coded_orig <- select(-Total)
+    coded_orig <- select(coded_orig, -Total)
   }
 
   #For NVivo exports, the second column of the exported sheet contains the question name
