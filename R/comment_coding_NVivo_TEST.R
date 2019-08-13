@@ -198,12 +198,12 @@ format_coded_comments_NVivo <- function(coded_comment_sheet) {
 #' @return A list of pairs (varname, coded_table) where varname corresponds
 #' to the response column name of the comments coded and coded_table
 #' summarizes the frequencies of the provided coded comments.
-format_coded_comment_sheets <- function(coded_comment_sheets) {
+format_coded_comment_sheets_NVivo <- function(coded_comment_sheets) {
   coded_comments <- list()
   cc_length <- length(coded_comment_sheets)
   for (i in 1:cc_length) {
     coded_comments[[i]] <-
-      format_coded_comments(coded_comment_sheets[[i]])
+      format_coded_comments_NVivo(coded_comment_sheets[[i]])
   }
   return(coded_comments)
 }
@@ -448,4 +448,71 @@ insert_split_survey_comments <-
     }
     return(split_blocks)
   }
+
+
+#' Create Text Appendices including Coded Comments
+#'
+#' This was taken from helper_functions.R during development of coded comments NVivo update
+#' Using `get_setup`, `directory_get_coded_comment_sheets`, `format_coded_comment_sheets`,
+#' `insert_coded_comments`, and `html_2_pandoc`, this function renders
+#' text appendices with coded comments included from CSV or XLSX files
+#' from the specified `sheets_dir` parameter.
+#'
+#' @inheritParams make_results_tables
+#' @param sheets_dir is the string path location of the directory which contains Excel documents
+#' with a "Coded" sheet formatted as specified on the wiki:
+#' https://github.com/ctesta01/QualtricsTools/wiki/Comment-Coding
+#' @param n_threshold is the number of verbatim comments which must appear before an appendix of
+#' coded comments will be included.
+make_coded_comments_NVivo <-
+  function(qsf_path,
+           csv_path,
+           headerrows,
+           sheets_dir,
+           output_dir,
+           filename = 'Text Appendices with Coded Comments.docx',
+           n_threshold = 15
+  ) {
+    # Either use the passed parameters or interactively get setup with the survey data.
+    get_setup_in_environment(
+      qsf_path = qsf_path,
+      csv_path = csv_path,
+      headerrows = headerrows,
+      environment = environment()
+    )
+
+    coded_sheets <- directory_get_coded_comment_sheets_NVivo(sheets_dir)
+
+    if (is.null(coded_sheets)) {
+      stop("Please fix errors before attempting again")
+    }
+
+    comment_tables <-
+      format_coded_comment_sheets_NVivo(coded_comment_sheets = coded_sheets)
+    blocks <-
+      insert_coded_comments(
+        blocks = blocks,
+        original_first_rows = original_first_rows,
+        coded_comments = comment_tables
+      )
+
+    # Used with html_2_pandoc below to keeps the flow of the survey consistent with the output
+    flow = flow_from_survey(survey)
+
+    html_2_pandoc(
+      html = c(
+        blocks_header_to_html(blocks),
+        text_appendices_table(
+          blocks = blocks,
+          original_first_row = original_first_rows,
+          flow = flow,
+          n_threshold = n_threshold
+        )
+      ),
+      file_name = filename,
+      output_dir = output_dir
+    )
+  }
+
+
 
