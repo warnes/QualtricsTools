@@ -10,7 +10,7 @@
 #' sheets, which are formatted as described in the Wiki.
 #' https://github.com/ctesta01/QualtricsTools/wiki/Comment-Coding
 #' @return A list of dataframes for each sheet of coded comments.
-directory_get_coded_comment_sheets <- function(directory) {
+directory_get_coded_comment_sheets_NVivo <- function(directory) {
   # ask for directory if not provided
   if (missing(directory))
     directory <- choose.dir(caption = "Select coded comment directory")
@@ -43,7 +43,7 @@ directory_get_coded_comment_sheets <- function(directory) {
     # If it warns, save the error and filename to warnings_list and warning_files_list.
     tryCatch(
       coded_appendix_tables[[length(coded_appendix_tables) + 1]] <-
-        get_coded_comment_sheet(files_list[[i]]),
+        get_coded_comment_sheet_NVivo(files_list[[i]]),
       warning = function(w) {
         warning_files_list[[i]] <- files_list[[i]]
         warnings_list[[i]] <- w
@@ -99,8 +99,9 @@ directory_get_coded_comment_sheets <- function(directory) {
 #' in the codedfile.
 get_coded_comment_sheet_NVivo <- function(codedfile) {
   # Ask for the Coded File if there isn't one provided
-  if (missing(codedfile))
+  if (missing(codedfile)) {
     codedfile <- file.choose()
+  }
 
   # Check if there is more than one sheet. If there are multiple
   #   sheets, pick out the sheet called "Coded"
@@ -130,10 +131,7 @@ get_coded_comment_sheet_NVivo <- function(codedfile) {
     #Now filter to keep only rows for respondents who answered the question
       #These are identified with 1 value in the qname column
       #Use the filter to keep anyone with >0, in case we later want multiple comments to tally
-    dplyr::filter(!!as.name(qname)>0 )
-    #Filter data to keep only those with real response ID (starts with R_ from Qualtrics)
-    #and qname value = "1"
-    dplyr::filter(str_detect(ResponseID, "^R_") & !!qname == "1")
+    dplyr::filter(!!as.name(qname)>0)
 
   # Return the Coded Comments Data Frame (unprocessed)
   return(coded_use)
