@@ -154,8 +154,13 @@ get_coded_comment_sheet_NVivo <- function(codedfile) {
 #' to the corresponding original response column name and coded_table
 #' summarizes the frequencies of the provided coded comments.
 format_coded_comments_NVivo <- function(coded_comment_sheet) {
-  # Identify the variable name; this should be the name of the second column
-  varname <- names(coded_comment_sheet)[[2]]
+  # Identify the variable name; this should be the name of the second column for regular reports,
+    #and the third column for split reports; check for SPLIT in the second column
+  if (stringr::str_detect(names(coded_comment_sheet)[[2]],"-split$")) {
+    varname <- names(coded_comment_sheet)[[3]]
+  } else if (!stringr::str_detect(names(coded_comment_sheet)[[2]],"-split$")) {
+    varname <-  names(coded_comment_sheet)[[2]]
+  }
   #Get the total number of comments
   total_comments <- nrow(coded_comment_sheet)
 
@@ -168,7 +173,7 @@ format_coded_comments_NVivo <- function(coded_comment_sheet) {
   #Construct the table
   coded_table <- coded_comment_sheet %>%
     #Gather values to make them long and lean so we can easily tabulate
-    tidyr::gather(key = "Category", value="codeFlag", -ResponseID, -!!varname) %>%
+    tidyr::gather(key = "Category", value="codeFlag", -ResponseID, -!!varname, -ends_with("-split")) %>%
     #Filter the long and lean data to keep only values with "1" showing a mapping to the category
     dplyr::filter(codeFlag==1) %>%
     #Use dplyr function "count" to tabulate the data
@@ -263,7 +268,7 @@ merge_split_column_into_comment_sheet <-
 #' should be split.
 #' @return A list of lists, for each split group, and for the pairs of question IDs with
 #' coded comment tables in each split group.
-format_and_split_comment_sheets <-
+format_and_split_comment_sheets_NVivo <-
   function(coded_comment_sheets,
            responses,
            split_column) {
@@ -299,7 +304,7 @@ format_and_split_comment_sheets <-
     for (i in 1:length(split_coded_comment_sheets)) {
       if (!is.null(split_coded_comment_sheets[[i]]))
         split_coded_comment_sheets[[i]] <-
-          format_coded_comment_sheets(split_coded_comment_sheets[[i]])
+          format_coded_comment_sheets_NVivo(split_coded_comment_sheets[[i]])
     }
 
     return(split_coded_comment_sheets)
@@ -443,9 +448,9 @@ insert_split_survey_comments <-
           which(sapply(split_blocks, function(x)
             x[['split_group']] == names(split_coded_comment_sheets)[[i]]))
         split_blocks[[matching_block]] <-
-          insert_coded_comments(split_blocks[[matching_block]],
-                                original_first_rows,
-                                split_coded_comment_sheets[[i]])
+          insert_coded_comments(blocks = split_blocks[[matching_block]],
+                                original_first_rows = original_first_rows,
+                                coded_comments = split_coded_comment_sheets[[i]])
       }
     }
     return(split_blocks)
@@ -514,6 +519,111 @@ make_coded_comments_NVivo <-
       file_name = filename,
       output_dir = output_dir
     )
+  }
+
+
+
+#' Split a Survey's Split Coded Comment Appendices
+#'
+#' This question automates the entire process of splitting a
+#' survey's text appendices by specific response columns. The QSF
+#' and CSV file are passed as string arguments,
+#' the sheets_dir specifies where the coded comments excel or csv
+#' data is stored, and the output_dir specifies where the split
+#' coded comment appendices should be saved. The n_threshold
+#' specifies how many coded comments there must be before the coded
+#' comment appendices are included, and headerrows is an argument
+#' necessary to process the survey results correctly.
+#' @inheritParams make_coded_comments
+#' @inheritParams make_split_results_tables
+make_split_coded_comments_NVivo <-
+  function(qsf_path,
+           csv_path,
+           sheets_dir,
+           output_dir,
+           split_by,
+           n_threshold = 15,
+           headerrows) {
+    # This turns the split_by list into a name for the column
+    # which will contain the concatenation of the entries of responses
+    # which are being split over. That is if split_by = c('column1', 'column2', 'column3'),
+    # then this constructs split_string = 'column1-column2-column3'
+    split_string <- c(split_by, "split")
+    split_string <- toString(paste(split_string, "-"))
+    split_string <- gsub(' ', '', split_string)
+    split_string <- gsub(',', '', split_string)
+    split_string <- substr(split_string, 1, nchar(split_string) - 1)
+
+    # Either use the passed parameters or interactively get setup with the survey data.
+    get_setup_in_environment(
+      qsf_path = qsf_path,
+      csv_path = csv_path,
+      headerrows = headerrows,
+      environment = environment()
+    )
+
+    # Merges the selected columns into one name
+    # In this case School, DegType, and Porgram merged into school-degtype-program
+    responses <-
+      create_merged_response_column(split_by, split_string, blocks, responses)
+
+    coded_sheets <- directory_get_coded_comment_sheets_NVivo(sheets_dir)
+
+    if (is.null(coded_sheets)) {
+      stop("Please fix errors before attempting again")
+    }
+
+    split_comment_tables <-
+      format_and_split_comment_sheets_NVivo(coded_comment_sheets = coded_sheets,
+                                            responses = responses,
+                                            split_column = split_string)
+
+    split_blocks <-
+      split_respondents(
+        response_column = split_string,
+        responses = responses,
+        survey = survey,
+        blocks = blocks,
+        questions = questions,
+        headerrows = headerrows,
+        already_loaded = FALSE,
+        original_first_rows
+      )
+
+    split_blocks <-
+      insert_split_survey_comments(split_blocks = split_blocks,
+                                   split_coded_comment_sheets = split_comment_tables,
+                                   split_column = split_string,
+                                   original_first_rows = original_first_rows)
+
+    #Used with html_2_pandoc below to keeps the flow of the survey consistent with the output
+    flow = flow_from_survey(survey)
+
+    #Appends .docx to the file names collected by splitting the data to output them as Word Documents
+    filenames <- sapply(split_blocks, function(x)
+      x$split_group)
+    filenames <- sapply(filenames, function(x)
+      paste0(x, '.docx'))
+
+    #Outputs the data to word documents using html_2_pandoc
+    return_list <- c()
+    for (i in 1:length(filenames)) {
+      outpath <- html_2_pandoc(
+        html = c(
+          blocks_header_to_html(split_blocks[[i]]),
+          text_appendices_table(
+            blocks = split_blocks[[i]],
+            original_first_row = original_first_rows,
+            flow = flow,
+            n_threshold = n_threshold
+          )
+        ),
+        file_name = filenames[[i]],
+        output_dir = output_dir
+      )
+      return_list <- c(return_list, outpath)
+    }
+    return(return_list)
   }
 
 
