@@ -161,11 +161,10 @@ format_coded_comments_NVivo <- function(coded_comment_sheet) {
   # Identify the variable name; this should be the name of the second column for regular reports,
     #and the third column for split reports; check for SPLIT in the second column
   if (stringr::str_detect(names(coded_comment_sheet)[[2]],"-split$")) {
-    varname_index <- names(coded_comment_sheet)[[3]]
+    varname <- names(coded_comment_sheet)[[3]]
   } else if (!stringr::str_detect(names(coded_comment_sheet)[[2]],"-split$")) {
-    varname_index <-  names(coded_comment_sheet)[[2]]
+    varname <-  names(coded_comment_sheet)[[2]]
   }
-  varname <- names(coded_comment_sheet[[varname_index]])
   #Get the total number of comments
   total_comments <- nrow(coded_comment_sheet)
   #Construct the table
