@@ -163,7 +163,7 @@ format_coded_comments_NVivo <- function(coded_comment_sheet) {
   if (stringr::str_detect(names(coded_comment_sheet)[[2]],"-split$")) {
     varname_index <- names(coded_comment_sheet)[[3]]
   } else if (!stringr::str_detect(names(coded_comment_sheet)[[2]],"-split$")) {
-    varname <-  names(coded_comment_sheet)[[2]]
+    varname_index <-  names(coded_comment_sheet)[[2]]
   }
   varname <- names(coded_comment_sheet[[varname_index]])
   #Get the total number of comments
