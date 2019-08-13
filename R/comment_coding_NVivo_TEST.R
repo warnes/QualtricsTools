@@ -151,40 +151,34 @@ get_coded_comment_sheet_NVivo <- function(codedfile) {
 #' @return A pair (varname, coded_table) where varname corresponds
 #' to the corresponding original response column name and coded_table
 #' summarizes the frequencies of the provided coded comments.
-format_coded_comments <- function(coded_comment_sheet) {
-  # determine which column to start with
-  index_qname <-
-    which(tolower(names(coded_comment_sheet)) == "varname")
-
-  # get the varname from the sheet
-  varname = as.character(coded_comment_sheet[1, index_qname])
+format_coded_comments_NVivo <- function(coded_comment_sheet) {
+  # Identify the variable name; this should be the name of the second column
+  varname <- names(coded_comment_sheet)[[2]]
+  #Get the total number of comments
+  total_comments <- nrow(coded_comment_sheet)
 
   # get coded comments, and the number of comments for each
   codeList <-
-    names(coded_comment_sheet)[(index_qname + 2):ncol(coded_comment_sheet)]
+    names(coded_comment_sheet)[3:ncol(coded_comment_sheet)]
   numComments <-
     lapply (codeList, function(x)
       length(which(coded_comment_sheet[x] == 1)))
-
-  # construct the table
-  coded_table <-
-    as.data.frame(cbind(codeList, numComments, deparse.level = 0))
-  names(coded_table) <- c("Response", "N")
-
-  # remove zeroes
-  coded_table <- coded_table[coded_table['N'] != 0,]
-
-  # First sort in an ascending alphabetic sort, and then sort descending numerically.
-  # The first sort is so that two rows with the same "N" values but with different
-  # responses are sorted alphabetically.
-  coded_table <- coded_table[order(unlist(coded_table[, "Response"]), decreasing=FALSE), ]
-  coded_table <- coded_table[order(unlist(coded_table[, "N"]), decreasing=TRUE), ]
-
-  # add "Total" and the total N to the list of coded comments and Ns
-  n_responses <-
-    length(unique(as.data.frame(coded_comment_sheet)[, 1]))
-  coded_table <- rbind(coded_table, c("Total", n_responses))
-
+  #Construct the table
+  coded_table <- coded_comment_sheet %>%
+    #Gather values to make them long and lean so we can easily tabulate
+    gather(key = "Category", value="codeFlag", -ResponseID, -!!varname) %>%
+    #Filter the long and lean data to keep only values with "1" showing a mapping to the category
+    filter(codeFlag==1) %>%
+    #Use dplyr function "count" to tabulate the data
+    count(Category) %>%
+    #Rename columns to match our desired format
+    rename("Response"=Category,"N" = n) %>%
+    #Filter zeros
+    filter(N>0) %>%
+    #sort descending numeric with ascending alphabetical
+    arrange(desc(N),Response) %>%
+    #add "Total with total number of comments to the bottom of the table
+    bind_rows(tibble("Response"="Total", "N" = total_comments))
 
   # we return a pair, the varname and the coded table.
   return(list('varname'=varname, 'coded_table'=coded_table))
