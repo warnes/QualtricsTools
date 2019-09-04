@@ -170,11 +170,16 @@ format_coded_comments_NVivo <- function(coded_comment_sheet) {
   #Construct the table
   coded_table <- coded_comment_sheet %>%
     #Gather values to make them long and lean so we can easily tabulate
-    tidyr::gather(key = "Category", value="codeFlag", -ResponseID, -!!varname, -ends_with("-split")) %>%
-    #Filter the long and lean data to keep only values with "1" showing a mapping to the category
-    dplyr::filter(codeFlag==1) %>%
+    tidyr::gather(key = "Category", value="codeValue", -ResponseID, -!!varname, -ends_with("-split")) %>%
+    #Filter the long and lean data to keep only positive values showing a mapping to the category
+    #This used to be values equal to 1, but we want to be flexible with multi-part questions coded as a single question
+    #e.g. What are 3 strengths of the Fletcher School?
+    dplyr::filter(codeValue>0) %>%
+    #Group by Category so we will get the sum of each categories codeValues
+    group_by(Category) %>%
     #Use dplyr function "count" to tabulate the data
-    dplyr::count(Category) %>%
+    dplyr::summarize(n = sum(codeValue)) %>%
+    ungroup() %>%
     #Rename columns to match our desired format
     dplyr::rename("Response"=Category,"N" = n) %>%
     #Filter zeros
