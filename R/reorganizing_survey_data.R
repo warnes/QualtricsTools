@@ -756,8 +756,9 @@ create_response_lookup_table <-
 #' open ended text responses should be included in the dictionary of lean responses.
 #' @return a data frame with each row detailing an individual survey response.
 lean_responses <- function(question_blocks, survey_responses, include_text_entry = FALSE) {
-  requireNamespace("dplyr")
   requireNamespace("plyr")
+  requireNamespace("dplyr")
+
   # get the blocks, responses, and original_first_row from the global environment
   if (missing(question_blocks)) {
     blocks <- get("blocks", envir = 1)
@@ -861,6 +862,14 @@ lean_responses <- function(question_blocks, survey_responses, include_text_entry
                 # Format and merge the response lookup table into the dictionary
                 if (length(response_lookup) != 0) {
                   # Select only the "var" and "text" columns from the response_lookup dataframe
+                  #First check to see if there has been an error creating the lookup
+                  #This should be fixed in create_response_lookup_table(question) ideally!!
+                  if(! ("var" %in% names(response_lookup) & "text" %in% names(response_lookup))) {
+                    stop("\nError creating a response lookup table for the following question. ",
+                         "\nData Export Tag: ", question[['Payload']][['DataExportTag']],
+                         "\nSee blocks[[",b,"]][['BlockElements']][[",be,"]]")
+                  }
+
                   response_lookup <- response_lookup[, c("var", "text")]
                   # Rename the "text" column to "Coded Responses" so that it appears next to
                   # "Raw Response" with the correct name in the dataframe for this question
