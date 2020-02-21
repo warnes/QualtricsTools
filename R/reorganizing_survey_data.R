@@ -756,8 +756,9 @@ create_response_lookup_table <-
 #' open ended text responses should be included in the dictionary of lean responses.
 #' @return a data frame with each row detailing an individual survey response.
 lean_responses <- function(question_blocks, survey_responses, include_text_entry = FALSE) {
-  requireNamespace("dplyr")
   requireNamespace("plyr")
+  requireNamespace("dplyr")
+
   # get the blocks, responses, and original_first_row from the global environment
   if (missing(question_blocks)) {
     blocks <- get("blocks", envir = 1)
@@ -861,6 +862,14 @@ lean_responses <- function(question_blocks, survey_responses, include_text_entry
                 # Format and merge the response lookup table into the dictionary
                 if (length(response_lookup) != 0) {
                   # Select only the "var" and "text" columns from the response_lookup dataframe
+                  #First check to see if there has been an error creating the lookup
+                  #This should be fixed in create_response_lookup_table(question) ideally!!
+                  if(! ("var" %in% names(response_lookup) & "text" %in% names(response_lookup))) {
+                    stop("\nError creating a response lookup table for the following question. ",
+                         "\nData Export Tag: ", question[['Payload']][['DataExportTag']],
+                         "\nSee blocks[[",b,"]][['BlockElements']][[",be,"]]")
+                  }
+
                   response_lookup <- response_lookup[, c("var", "text")]
                   # Rename the "text" column to "Coded Responses" so that it appears next to
                   # "Raw Response" with the correct name in the dataframe for this question
@@ -1453,6 +1462,30 @@ create_response_column_dictionary <-
     return(dictionary)
   }
 
+
+#'Create a response column dictionary with only the qsf
+#'
+#'The user provides the survey qsf, and this creates a response column dictionary
+#'The data .csv is not required
+#'This can be used to identify quesiton types in the original survey, regardless
+#'of whether you changed questions for a shell survey.
+create_question_dictionary_from_qsf <- function(qsf_path) {
+  survey <- ask_for_qsf(qsf_path)
+  blocks <- blocks_from_survey(survey)
+  questions <- questions_from_survey(survey)
+  questions <- remove_trash_questions(questions, blocks)
+  blocks <- remove_trash_blocks(blocks)
+  questions_and_blocks <- split_side_by_sides(questions, blocks)
+  questions <- questions_and_blocks[[1]]
+  blocks <- questions_and_blocks[[2]]
+  questions <- clean_question_text(questions)
+  questions <- human_readable_qtype(questions)
+  blocks <- questions_into_blocks(questions, blocks)
+
+  flow <- flow_from_survey(survey)
+  qdict <- create_question_dictionary(blocks,flow)
+  return(qdict)
+}
 
 #' Create Panel Data for Reshaped Data
 #'
