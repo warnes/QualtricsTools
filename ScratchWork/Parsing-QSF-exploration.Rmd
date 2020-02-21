@@ -1,0 +1,134 @@
+---
+title: "QSF Parsing Exercise"
+author: "Emma Morgan"
+date: "2/21/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## Parsing the QSF
+
+This is an exploration of trying to improve the ways in which we parse the QSF for the QualtricsTools project. Emma will work on this as she is able. This is being done with a markdown document to try and get a little more familiar with markdown and make notes as I go along.
+
+Start by loading the QSF and CSV from the sample survey as a test
+
+
+```{r setpath}
+qsf_sample <- here::here("data","Sample Surveys", "Sample Survey","Sample_Survey.qsf")
+csv_sample <- here::here("data","Sample Surveys", "Sample Survey","Sample_Survey.csv")
+```
+
+The csv should not be necessary at this time and the goal is to do most things without it. To start, read in the QSF JSON and assign to variable "survey".
+
+```{r readsurvey}
+survey_sample <- rjson::fromJSON(file=qsf_sample)
+```
+
+The next stage we are going to need to look at is how we are getting the questions and blocks. Currently, the following code is being used.
+
+questions_and_blocks <-
+    get_reorganized_questions_and_blocks(survey, responses, original_first_rows)
+  questions <- questions_and_blocks[[1]]
+  blocks <- questions_and_blocks[[2]]
+  
+```{r questions-into-blocks}
+blocks_sample <- QualtricsTools::blocks_from_survey(survey_sample)
+
+
+blocks <- Filter(function(x) x[["Element"]]=="BL",
+                 survey[["SurveyElements"]])
+blocks <- blocks[[1]][["Payload"]]
+
+```
+
+The function blocks_from_survey pulls the "Survey Blocks" element from the json file. This creates placeholders for all of the survey elements. This could be done using purrr instead of the Filter function. 
+
+First step should be to go through and name each list item of survey elements based on the primary attribute. This will be much cleaner and easier to use since currently the items are unnamed. This should give us the QIDs for questions that we need, the information we need for Survey Blocks, Survey Flow, Survey Options, and the default response set.
+
+The steps are not going to use pipes for now so everything is explicit, but this can be made much easier at a later time.
+
+
+```{r revise-parse-qsf}
+#This is going to use the sample survey, but this could change.
+# Read the json survey file in to start
+survey_json <- rjson::fromJSON(file=qsf_sample)
+#Extract the survey elements from survey
+survey_elements_unnamed <- survey_json[["SurveyElements"]]
+# Name each item of survey elements based on the primary attribute.
+# This includes Survey Blocks, Survey Flow, Survey Options, and QIDs.
+# These names should make it much easier for us to get the information we need to extract.
+survey_elements <-purrr::set_names(survey_elements_unnamed, map_chr(survey_elements_unnamed, "PrimaryAttribute"))
+#Now extract the blocks as orignal stated
+blocks_orig <- purrr::pluck(survey_elements, "Survey Blocks")
+
+#Now we want to extract the list of questions. These can be identified as SurveyElements that have Element "SQ"
+questions <- purrr::keep(survey_elements, ~ .x[["Element"]]=="SQ")
+
+```
+
+## get_reorganized_questions_and_blocks
+
+This is the function we are trying to simplify in some ways
+
+```{r get_reorganized_questions_and_blocks}
+
+get_reorganized_questions_and_blocks <-
+  function(survey, responses, original_first_rows) {
+    # select the block elements from the survey
+    blocks <- blocks_from_survey(survey)
+
+    # select the questions from the survey
+    questions <- questions_from_survey(survey)
+
+    # remove the questions that were found in the trash block
+    questions <- remove_trash_questions(questions, blocks)
+
+    # remove the trash block from the blocks
+    blocks <- remove_trash_blocks(blocks)
+
+    # split side by side questions into their component questions
+    questions_and_blocks <- split_side_by_sides(questions, blocks)
+    questions <- questions_and_blocks[[1]]
+    blocks <- questions_and_blocks[[2]]
+
+    # clean the question text of HTML and CSS tags
+    questions <- clean_question_text(questions)
+
+    # categorize each question's Response Type
+    # (Single Answer, Multiple Answer,
+    #  Text Entry, Rank Order)
+    questions <- human_readable_qtype(questions)
+
+    # insert the response columns into their corresponding
+    # question under question[['Responses']]
+    questions <-
+      link_responses_to_questions(questions, responses, original_first_rows)
+
+    # generate each question's results table and insert it
+    # in question[['Table']]
+    questions <- generate_results(questions, original_first_rows)
+
+    # insert notes into their corresponding questions
+    notes <- notes_from_survey(survey)
+    questions <- insert_notes_into_questions(questions, notes)
+
+    # insert the questions into the blocks
+    blocks <- questions_into_blocks(questions, blocks)
+
+    # insert the header into the blocks
+    blocks[['header']] <- c(paste0("Survey Name: ",
+                                   survey[['SurveyEntry']][['SurveyName']]),
+                            paste0("Number of Respondents: ",
+                                   nrow(responses)))
+
+    # return questions and blocks as a list of 2 elements
+    questions_and_blocks <- list()
+    questions_and_blocks[['questions']] <- questions
+    questions_and_blocks[['blocks']] <- blocks
+    return(questions_and_blocks)
+  }
+```
