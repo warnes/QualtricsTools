@@ -48,10 +48,19 @@ survey_elements_unnamed <- survey_json[["SurveyElements"]]
 survey_elements <-purrr::set_names(survey_elements_unnamed, map_chr(survey_elements_unnamed, "PrimaryAttribute"))
 #Now extract the blocks; this is really the payload element of element "Survey Blocks"
 #Replace blocks_from_survey
-blocks <- purrr::pluck(survey_elements, "Survey Blocks", "Payload") %>%
+blocks_all <- purrr::pluck(survey_elements, "Survey Blocks", "Payload") %>%
   #Name the blocks with their descriptive value; this will be more user-friendly
   #Use "." to refer to the piped value within the map_chr function
-  purrr::set_names(map_chr(.,"Description")) %>%
+  purrr::set_names(map_chr(.,"Description"))
+
+trash_questions <- blocks_all %>%
+  #Now pluck just the trash block
+  pluck("Trash / Unused Questions", "BlockElements") %>%
+  #Pull a character vector of only the QIDs for questions that are in the trash
+  map_chr(.,"QuestionID")
+  
+
+blocks_notrash <- blocks_all %>%
   #Remove trash block based on the "Type" element of the block
   purrr::keep(~ .x[["Type"]]!= "Trash")
 
@@ -59,13 +68,19 @@ blocks <- purrr::pluck(survey_elements, "Survey Blocks", "Payload") %>%
 
 #Now we want to extract the list of questions. These can be identified as SurveyElements that have Element "SQ"
 #Replaces questions_from_survey
-questions <- purrr::keep(survey_elements, ~ .x[["Element"]]=="SQ")
-
-#Add a note that indicates which block each question is in??
-
-
+questions <- purrr::keep(survey_elements, ~ .x[["Element"]]=="SQ") %>%
+  #Remove questions that are in the trash, as specified by "trash_questions
+  discard( ~ .x[["PrimaryAttribute"]] %in% trash_questions)
 
 ```
+
+
+At this point we have created one list of all the questions excluding the ones in the trash, and a second list with the blocks excluding the trash block. The next step in get_setup is to split the side-by-side questions. I'm going to explore to see if we can split these more efficiently and with human readable text instead of trying to use all of the complicated block indexing.
+
+```{r split_side_by_side}
+
+```
+
 
 Now I want to try and create a response column dictionary. I'm going to go back to do this using the sample survey
 
@@ -94,7 +109,7 @@ qdict <- enframe(blocks_use, name = "Block Name", value = "BlockList") %>%
   mutate(ElementType = map_chr(BlockElements, "Type"),
          QID = map_chr(BlockElements, "QuestionID"))
 
-#Now we want to get the question ifnromation separately
+#Now we want to get the question information separately
 
 question_dict <- survey_elements %>%
   keep(~ .x[["Element"]] == "SQ") %>%
