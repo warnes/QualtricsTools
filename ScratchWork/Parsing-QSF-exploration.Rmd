@@ -61,8 +61,54 @@ blocks <- purrr::pluck(survey_elements, "Survey Blocks", "Payload") %>%
 #Replaces questions_from_survey
 questions <- purrr::keep(survey_elements, ~ .x[["Element"]]=="SQ")
 
+#Add a note that indicates which block each question is in??
+
+
 
 ```
+
+Now I want to try and create a response column dictionary. I'm going to go back to do this using the sample survey
+
+```{r response_column_dictionary}
+
+qsf_sample <- here::here("data","Sample Surveys", "Better Sample Survey","Better_Sample_Survey.qsf")
+csv_sample <- here::here("data","Sample Surveys", "Better Sample Survey","Better_Sample_Survey.csv")
+
+survey_json <- rjson::fromJSON(file=qsf_sample)
+#Extract the survey elements from survey
+survey_elements_unnamed <- survey_json[["SurveyElements"]]
+
+survey_elements <-purrr::set_names(survey_elements_unnamed, map_chr(survey_elements_unnamed, "PrimaryAttribute"))
+#Now I want to set up something from the Blocks with the list of questions and their corresponding Block
+
+blocks_use <- survey_elements %>%
+  pluck("Survey Blocks", "Payload") %>%
+  set_names(map_chr(., "Description"))
+
+#Now trying to make a data frame
+qdict <- enframe(blocks_use, name = "Block Name", value = "BlockList") %>%
+  #Now we want to expand the BlockList column
+  unnest_wider(BlockList) %>%
+  unnest_longer(BlockElements) %>%
+  
+  mutate(ElementType = map_chr(BlockElements, "Type"),
+         QID = map_chr(BlockElements, "QuestionID"))
+
+#Now we want to get the question ifnromation separately
+
+question_dict <- survey_elements %>%
+  keep(~ .x[["Element"]] == "SQ") %>%
+  enframe(name = "QID", value = "QuestionList") %>%
+  unnest_wider(QuestionList) %>%
+  unnest_wider(Payload)
+
+#At this point we have most of the information in a table. There are still lists for choices and recode values and 
+#we will need to worry about check all that apply and such, but it is getting closer.
+
+
+
+```
+
 
 ## get_reorganized_questions_and_blocks
 
