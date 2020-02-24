@@ -1,13 +1,14 @@
 ---
 title: "QSF Parsing Exercise"
 author: "Emma Morgan"
-date: "2/21/2020"
+date: "2/24/2020"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(QualtricsTools)
 ```
 
 ## Parsing the QSF
@@ -18,31 +19,14 @@ Start by loading the QSF and CSV from the sample survey as a test
 
 
 ```{r setpath}
-qsf_sample <- here::here("data","Sample Surveys", "Sample Survey","Sample_Survey.qsf")
-csv_sample <- here::here("data","Sample Surveys", "Sample Survey","Sample_Survey.csv")
+qsf_sample <- here::here("data","Sample Surveys", "Long Exhaustive Sample Survey","Long_Exhaustive_Sample_Survey.qsf")
+csv_sample <- here::here("data","Sample Surveys", "Long Exhaustive Sample Survey","Long_Exhaustive_Sample_Survey.csv")
 ```
 
 The csv should not be necessary at this time and the goal is to do most things without it. To start, read in the QSF JSON and assign to variable "survey".
 
 ```{r readsurvey}
 survey_sample <- rjson::fromJSON(file=qsf_sample)
-```
-
-The next stage we are going to need to look at is how we are getting the questions and blocks. Currently, the following code is being used.
-
-questions_and_blocks <-
-    get_reorganized_questions_and_blocks(survey, responses, original_first_rows)
-  questions <- questions_and_blocks[[1]]
-  blocks <- questions_and_blocks[[2]]
-  
-```{r questions-into-blocks}
-blocks_sample <- QualtricsTools::blocks_from_survey(survey_sample)
-
-
-blocks <- Filter(function(x) x[["Element"]]=="BL",
-                 survey[["SurveyElements"]])
-blocks <- blocks[[1]][["Payload"]]
-
 ```
 
 The function blocks_from_survey pulls the "Survey Blocks" element from the json file. This creates placeholders for all of the survey elements. This could be done using purrr instead of the Filter function. 
@@ -62,11 +46,21 @@ survey_elements_unnamed <- survey_json[["SurveyElements"]]
 # This includes Survey Blocks, Survey Flow, Survey Options, and QIDs.
 # These names should make it much easier for us to get the information we need to extract.
 survey_elements <-purrr::set_names(survey_elements_unnamed, map_chr(survey_elements_unnamed, "PrimaryAttribute"))
-#Now extract the blocks as orignal stated
-blocks_orig <- purrr::pluck(survey_elements, "Survey Blocks")
+#Now extract the blocks; this is really the payload element of element "Survey Blocks"
+#Replace blocks_from_survey
+blocks <- purrr::pluck(survey_elements, "Survey Blocks", "Payload") %>%
+  #Name the blocks with their descriptive value; this will be more user-friendly
+  #Use "." to refer to the piped value within the map_chr function
+  purrr::set_names(map_chr(.,"Description")) %>%
+  #Remove trash block based on the "Type" element of the block
+  purrr::keep(~ .x[["Type"]]!= "Trash")
+
+
 
 #Now we want to extract the list of questions. These can be identified as SurveyElements that have Element "SQ"
+#Replaces questions_from_survey
 questions <- purrr::keep(survey_elements, ~ .x[["Element"]]=="SQ")
+
 
 ```
 
@@ -131,4 +125,31 @@ get_reorganized_questions_and_blocks <-
     questions_and_blocks[['blocks']] <- blocks
     return(questions_and_blocks)
   }
+```
+
+
+```{r remove_trash_blocks}
+function (blocks) 
+{
+    for (i in number_of_blocks(blocks):1) {
+        if ("Type" %in% names(blocks[[i]])) {
+            if (blocks[[i]][["Type"]] == "Trash") {
+                blocks[[i]] <- NULL
+                next
+            }
+        }
+        if ("BlockElements" %in% names(blocks[[i]])) {
+            if (length(blocks[[i]][["BlockElements"]]) != 
+                0) {
+                for (j in length(blocks[[i]][["BlockElements"]]):1) {
+                  if (blocks[[i]][["BlockElements"]][[j]][["Type"]] != 
+                    "Question") {
+                    blocks[[i]][["BlockElements"]][[j]] <- NULL
+                  }
+                }
+            }
+        }
+    }
+    return(blocks)
+}
 ```
