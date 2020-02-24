@@ -77,8 +77,77 @@ questions <- purrr::keep(survey_elements, ~ .x[["Element"]]=="SQ") %>%
 
 At this point we have created one list of all the questions excluding the ones in the trash, and a second list with the blocks excluding the trash block. The next step in get_setup is to split the side-by-side questions. I'm going to explore to see if we can split these more efficiently and with human readable text instead of trying to use all of the complicated block indexing.
 
-```{r split_side_by_side}
+For each question, check if the Question Type is "SBS" for side-by-side
 
+```{r split_sBS_new}
+
+#Keep only the side-by-side questions for this exploration
+sbs <- keep(questions, ~.x[["Payload"]][["QuestionType"]]=="SBS") 
+
+sbs_sample <- sbs[[1]]
+  #Get just hte Payload for each of these questions, since this is what we actually need
+
+sbs_sample_split <- sbs_sample %>%
+  #Pull only the payload
+  pluck("Payload") 
+
+#Pull out the additional information from these questions
+addlq <- pluck(sbs_sample_split, "AdditionalQuestions") %>%
+  #Add names based on the QID
+  #There's an issue with the "#" symbol, so replace with underscore in the question name; may need to change this later
+  set_names(map_chr(.,~ str_replace(.x[["QuestionID"]], "#","_"))) 
+
+##Need to keep working on this
+
+
+
+```
+
+Existing function for splitting side_by_side questions
+
+```{r split_side_by_sides}
+
+
+{
+    for (i in length(questions):1) {
+        if (questions[[i]][["Payload"]][["QuestionType"]] == 
+            "SBS") {
+            split_questions <- list()
+            for (j in 1:questions[[i]][["Payload"]][["NumberOfQuestions"]]) {
+                split_questions[[j]] <- list()
+                split_questions[[j]][["Payload"]] <- questions[[i]][["Payload"]][["AdditionalQuestions"]][[as.character(j)]]
+                split_questions[[j]][["Payload"]][["QuestionText"]] <- paste0(clean_html(questions[[i]][["Payload"]][["QuestionText"]]), 
+                  "-", clean_html(questions[[i]][["Payload"]][["AdditionalQuestions"]][[as.character(j)]][["QuestionText"]]))
+                split_questions[[j]][["qtNotes"]] <- list()
+                if ("qtNotes" %in% names(questions[[i]])) 
+                  split_questions[[j]][["qtNotes"]] <- questions[[i]][["qtNotes"]]
+                split_questions[[j]][["qtNotes"]] <- c(split_questions[[j]][["qtNotes"]], 
+                  "This question was split from a side-by-side question.")
+            }
+            orig_question_id <- questions[[i]][["Payload"]][["QuestionID"]]
+            split_question_ids <- lapply(split_questions, function(x) x[["Payload"]][["QuestionID"]])
+            split_block_elements <- lapply(split_question_ids, 
+                function(x) list(Type = "Question", QuestionID = x))
+            for (k in 1:length(blocks)) {
+                if ("BlockElements" %in% names(blocks[[k]])) {
+                  for (j in 1:length(blocks[[k]][["BlockElements"]])) {
+                    block_elmt_question_id <- blocks[[k]][["BlockElements"]][[j]][["QuestionID"]]
+                    if (block_elmt_question_id == orig_question_id) {
+                      blocks[[k]][["BlockElements"]][[j]] <- NULL
+                      blocks[[k]][["BlockElements"]] <- append(blocks[[k]][["BlockElements"]], 
+                        split_block_elements, after = (j - 1))
+                      break
+                    }
+                  }
+                }
+            }
+            questions[[i]] <- NULL
+            questions <- append(questions, value = split_questions, 
+                after = (i - 1))
+        }
+    }
+    return(list(questions, blocks))
+}
 ```
 
 
