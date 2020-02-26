@@ -19,7 +19,7 @@ Start by loading the QSF and CSV from the sample survey as a test
 
 
 ```{r setpath}
-qsf_sample <- here::here("data","Sample Surveys", "Long Exhaustive Sample Survey","Long_Exhaustive_Sample_Survey.qsf")
+qsf_sample <- here::here("ScratchWork","Sample_survey_edits", "Long_Exhaustive_Sample_Survey.qsf")
 csv_sample <- here::here("data","Sample Surveys", "Long Exhaustive Sample Survey","Long_Exhaustive_Sample_Survey.csv")
 ```
 
@@ -63,7 +63,10 @@ trash_questions <- blocks_all %>%
 
 blocks_notrash <- blocks_all %>%
   #Remove trash block based on the "Type" element of the block
-  purrr::keep(~ .x[["Type"]]!= "Trash")
+  purrr::keep(~ .x[["Type"]]!= "Trash") %>%
+  #Name the BlockElements (quesiton items) within the blocks
+  map(~ modify_at(.x, "BlockElements", ~set_names(.x, map_chr(.x, ~ str_c(.x[["QuestionID"]],.x[["Type"]],sep="-")))))
+
 
 #Now we want to extract the list of questions. These can be identified as SurveyElements that have Element "SQ"
 #Replaces questions_from_survey
@@ -88,7 +91,7 @@ sbs <- keep(questions, ~.x[["Payload"]][["QuestionType"]]=="SBS")
 #First step will be splitting a single question, then we can work on doing this for all and re-inserting to the list.
 
 sbs_sample <- sbs[[1]]
-  #Get just hte Payload for each of these questions, since this is what we actually need
+  #Get just the Payload for each of these questions, since this is what we actually need
 
 sbs_sample_split <- sbs_sample %>%
   #Pull only the payload
@@ -105,9 +108,37 @@ addlq <- pluck(sbs_sample_split, "AdditionalQuestions") %>%
 #Do use this using modify_at to remove the AdditionalQuestions list element by reassinging to NULL
 mainq <- modify_at(sbs_sample_split, "AdditionalQuestions", ~NULL)
 
+#Names of Main question elements:"
+sort(names(mainq))
+
+#Names of Additional Question elements:
+sort(names(addlq[[1]]))
+
 ```
 
-Now we have separated the side-by-side question into a main question part.
+Now we have separated the side-by-side question into a main question part and the additional question parts. The goal now will be to identify what we need from the main question to be inserted into the additional questions.
+
+```{r split_SBS_new_2}
+
+#start with our first additional question.
+#Update the Question Text to include both the text from the main question and the sbs component question
+sbsq <- addlq[[1]]
+
+#Main question text
+mainq$QuestionText
+#Additional question text
+sbsq$QuestionText
+
+#I'm going to create a TEMPORARY placeholder for how to combine the text with "---"
+sbsq_new <- sbsq %>%
+  #Create a new original question text that is the SBS component only
+  list_modify("QuestionText_orig" = .[["QuestionText"]]) %>%
+  list_modify("QuestionText" = str_c(mainq[["QuestionText"]],"---",.[["QuestionText_orig"]])) %>%
+  #Insert Notes from the main question and additional note indicating split from side-by-side
+  {if_else(condition = "qtNotes" %in% names(.), true = , false = "NoName", missing=NULL)}
+
+
+```
 
 ### Creating response column dictionary from QSF
 
