@@ -26,7 +26,7 @@ csv_sample <- here::here("data","Sample Surveys", "Long Exhaustive Sample Survey
 The csv should not be necessary at this time and the goal is to do most things without it. To start, read in the QSF JSON and assign to variable "survey".
 
 ```{r readsurvey}
-survey_sample <- rjson::fromJSON(file=qsf_sample)
+survey_json <- rjson::fromJSON(file=qsf_sample)
 ```
 
 The function blocks_from_survey pulls the "Survey Blocks" element from the json file. This creates placeholders for all of the survey elements. This could be done using purrr instead of the Filter function. 
@@ -35,11 +35,12 @@ First step should be to go through and name each list item of survey elements ba
 
 The steps are not going to use pipes for now so everything is explicit, but this can be made much easier at a later time.
 
+### Revise setup process using purrr and %>%
 
 ```{r revise-parse-qsf}
+#goal to revise get_setup
 #This is going to use the sample survey, but this could change.
-# Read the json survey file in to start
-survey_json <- rjson::fromJSON(file=qsf_sample)
+#The survey JSON was read in during an early block, so we can just work with this.
 #Extract the survey elements from survey
 survey_elements_unnamed <- survey_json[["SurveyElements"]]
 # Name each item of survey elements based on the primary attribute.
@@ -64,20 +65,20 @@ blocks_notrash <- blocks_all %>%
   #Remove trash block based on the "Type" element of the block
   purrr::keep(~ .x[["Type"]]!= "Trash")
 
-
-
 #Now we want to extract the list of questions. These can be identified as SurveyElements that have Element "SQ"
 #Replaces questions_from_survey
 questions <- purrr::keep(survey_elements, ~ .x[["Element"]]=="SQ") %>%
   #Remove questions that are in the trash, as specified by "trash_questions
   discard( ~ .x[["PrimaryAttribute"]] %in% trash_questions)
 
+##split side by side questions into their component questions
+
 ```
 
 
-At this point we have created one list of all the questions excluding the ones in the trash, and a second list with the blocks excluding the trash block. The next step in get_setup is to split the side-by-side questions. I'm going to explore to see if we can split these more efficiently and with human readable text instead of trying to use all of the complicated block indexing.
+### Revise side-by-side split
 
-For each question, check if the Question Type is "SBS" for side-by-side
+At this point we have created one list of all the questions excluding the ones in the trash, and a second list with the blocks excluding the trash block. The next step in get_setup is to split the side-by-side questions. I'm going to explore to see if we can split these more efficiently and with human readable text instead of trying to use all of the complicated block indexing.
 
 ```{r split_sBS_new}
 
@@ -103,53 +104,7 @@ addlq <- pluck(sbs_sample_split, "AdditionalQuestions") %>%
 
 ```
 
-Existing function for splitting side_by_side questions
-
-```{r split_side_by_sides}
-
-
-{
-    for (i in length(questions):1) {
-        if (questions[[i]][["Payload"]][["QuestionType"]] == 
-            "SBS") {
-            split_questions <- list()
-            for (j in 1:questions[[i]][["Payload"]][["NumberOfQuestions"]]) {
-                split_questions[[j]] <- list()
-                split_questions[[j]][["Payload"]] <- questions[[i]][["Payload"]][["AdditionalQuestions"]][[as.character(j)]]
-                split_questions[[j]][["Payload"]][["QuestionText"]] <- paste0(clean_html(questions[[i]][["Payload"]][["QuestionText"]]), 
-                  "-", clean_html(questions[[i]][["Payload"]][["AdditionalQuestions"]][[as.character(j)]][["QuestionText"]]))
-                split_questions[[j]][["qtNotes"]] <- list()
-                if ("qtNotes" %in% names(questions[[i]])) 
-                  split_questions[[j]][["qtNotes"]] <- questions[[i]][["qtNotes"]]
-                split_questions[[j]][["qtNotes"]] <- c(split_questions[[j]][["qtNotes"]], 
-                  "This question was split from a side-by-side question.")
-            }
-            orig_question_id <- questions[[i]][["Payload"]][["QuestionID"]]
-            split_question_ids <- lapply(split_questions, function(x) x[["Payload"]][["QuestionID"]])
-            split_block_elements <- lapply(split_question_ids, 
-                function(x) list(Type = "Question", QuestionID = x))
-            for (k in 1:length(blocks)) {
-                if ("BlockElements" %in% names(blocks[[k]])) {
-                  for (j in 1:length(blocks[[k]][["BlockElements"]])) {
-                    block_elmt_question_id <- blocks[[k]][["BlockElements"]][[j]][["QuestionID"]]
-                    if (block_elmt_question_id == orig_question_id) {
-                      blocks[[k]][["BlockElements"]][[j]] <- NULL
-                      blocks[[k]][["BlockElements"]] <- append(blocks[[k]][["BlockElements"]], 
-                        split_block_elements, after = (j - 1))
-                      break
-                    }
-                  }
-                }
-            }
-            questions[[i]] <- NULL
-            questions <- append(questions, value = split_questions, 
-                after = (i - 1))
-        }
-    }
-    return(list(questions, blocks))
-}
-```
-
+### Creating response column dictionary from QSF
 
 Now I want to try and create a response column dictionary. I'm going to go back to do this using the sample survey
 
@@ -193,10 +148,110 @@ question_dict <- survey_elements %>%
 
 ```
 
+### get_setup
 
-## get_reorganized_questions_and_blocks
+The get_setup function is our starting point for QualtricsTools. Understanding and simplifying this will help us to make a better tool and allow more flexibility moving forward.
 
-This is the function we are trying to simplify in some ways
+```{r get_setup}
+get_setup <-
+  function (qsf_path,
+            csv_path,
+            headerrows,
+            already_loaded,
+            return_data_as_list = FALSE,
+            sample_data = FALSE)
+  {
+    if (missing(already_loaded)) {
+      already_loaded <- FALSE
+    }
+    if (already_loaded == FALSE && sample_data == FALSE) {
+      if (missing(headerrows)) {
+        headerrows <-
+          readline(prompt = "Enter the number of response data header rows [Default: 3]: ")
+        if (!grepl("^[0-9]+$", headerrows)) {
+          cat("Defaulting to headerrows = 3\n")
+          headerrows = 3
+        }
+        else
+          headerrows <- as.integer(headerrows)
+      }
+      if (missing(qsf_path)) {
+        survey <- ask_for_qsf()
+      }
+      else {
+        survey <- ask_for_qsf(qsf_path)
+      }
+      if (missing(csv_path)) {
+        capture.output(responses <- ask_for_csv(headerrows = headerrows))
+      }
+      else {
+        capture.output(responses <- ask_for_csv(csv_path,
+                                                headerrows = headerrows))
+      }
+      original_first_rows <- as.data.frame(responses[[2]])
+      responses <- as.data.frame(responses[[1]])
+    }
+    if (already_loaded == TRUE && sample_data == FALSE) {
+      if (exists("survey", where = globalenv()) && exists("responses",
+                                                          where = globalenv()) && exists("original_first_rows",
+                                                                                         where = globalenv())) {
+        survey <- get("survey", envir = globalenv())
+        responses <- get("responses", envir = globalenv())
+        original_first_rows <- get("original_first_rows",
+                                   envir = globalenv())
+      }
+      else
+        stop(
+          "\nThe necessary objects do not exist in the global scope. Each of survey,\nresponses, and original_first_rows should be in the global scope when\nusing the global scope when using the already_loaded=TRUE parameter.\nUse ask_for_qsf() and ask_for_csv() to get a survey object list from a\nQualtrics Survey File and a pair of dataframes (responses,\noriginal_first_rows) from a survey's CSV response data. Alternatively,\npass the parameters for qsf_path, csv_path, and headerrows, or use the\nsample_survey=TRUE parameter."
+        )
+    }
+    if (sample_data == TRUE) {
+      survey <- sample_survey
+      responses <- sample_responses
+      original_first_rows <- sample_original_first_rows
+    }
+    questions_and_blocks <-
+      get_reorganized_questions_and_blocks(survey,
+                                           responses, original_first_rows)
+    questions <- questions_and_blocks[[1]]
+    blocks <- questions_and_blocks[[2]]
+    blocks[["header"]] <- c(paste0("Survey Name: ",
+                                   survey[["SurveyEntry"]][["SurveyName"]]),
+                            paste0("Number of Respondents: ", nrow(responses)))
+    flow <- flow_from_survey(survey)
+    if (return_data_as_list) {
+      return_vals = list(
+        survey = survey,
+        responses = responses,
+        questions = questions,
+        blocks = blocks,
+        original_first_rows = original_first_rows,
+        flow = flow
+      )
+      return(return_vals)
+    }
+    else {
+      survey <<- survey
+      responses <<- responses
+      questions <<- questions
+      blocks <<- blocks
+      original_first_rows <<- original_first_rows
+      flow <<- flow_from_survey(survey)
+      if (exists("survey", 1) && exists("responses",
+                                        1) && exists("questions", 1) && exists("blocks",
+                                                                               1) && exists("original_first_rows")) {
+        cat(
+          "survey, responses, questions, blocks, original_first_rows,\n        and flow have now been made global objects.\n"
+        )
+      }
+    }
+  }
+```
+
+
+### get_reorganized_questions_and_blocks
+
+This is the function we are trying to simplify. In many ways, get_reorganized_questions_and_blocks is the starting workhorse upon which get_setup functions and orients a user to working with QualtricsTools.
 
 ```{r get_reorganized_questions_and_blocks}
 
@@ -257,29 +312,52 @@ get_reorganized_questions_and_blocks <-
   }
 ```
 
+Existing function for splitting side_by_side questions. This is for reference currently and should not be run as actual R script.
 
-```{r remove_trash_blocks}
-function (blocks) 
+### split_side_by_sides
+
+```{r split_side_by_sides}
+#This is the code to create the function splitting side-by-side questions. It will be tacked at a later date.
+
+split_side_by_sides <- function(questions, blocks)
 {
-    for (i in number_of_blocks(blocks):1) {
-        if ("Type" %in% names(blocks[[i]])) {
-            if (blocks[[i]][["Type"]] == "Trash") {
-                blocks[[i]] <- NULL
-                next
+  for (i in length(questions):1) {
+    if (questions[[i]][["Payload"]][["QuestionType"]] == 
+        "SBS") {
+      split_questions <- list()
+      for (j in 1:questions[[i]][["Payload"]][["NumberOfQuestions"]]) {
+        split_questions[[j]] <- list()
+        split_questions[[j]][["Payload"]] <- questions[[i]][["Payload"]][["AdditionalQuestions"]][[as.character(j)]]
+        split_questions[[j]][["Payload"]][["QuestionText"]] <- paste0(clean_html(questions[[i]][["Payload"]][["QuestionText"]]), 
+                                                                      "-", clean_html(questions[[i]][["Payload"]][["AdditionalQuestions"]][[as.character(j)]][["QuestionText"]]))
+        split_questions[[j]][["qtNotes"]] <- list()
+        if ("qtNotes" %in% names(questions[[i]])) 
+          split_questions[[j]][["qtNotes"]] <- questions[[i]][["qtNotes"]]
+        split_questions[[j]][["qtNotes"]] <- c(split_questions[[j]][["qtNotes"]], 
+                                               "This question was split from a side-by-side question.")
+      }
+      orig_question_id <- questions[[i]][["Payload"]][["QuestionID"]]
+      split_question_ids <- lapply(split_questions, function(x) x[["Payload"]][["QuestionID"]])
+      split_block_elements <- lapply(split_question_ids, 
+                                     function(x) list(Type = "Question", QuestionID = x))
+      for (k in 1:length(blocks)) {
+        if ("BlockElements" %in% names(blocks[[k]])) {
+          for (j in 1:length(blocks[[k]][["BlockElements"]])) {
+            block_elmt_question_id <- blocks[[k]][["BlockElements"]][[j]][["QuestionID"]]
+            if (block_elmt_question_id == orig_question_id) {
+              blocks[[k]][["BlockElements"]][[j]] <- NULL
+              blocks[[k]][["BlockElements"]] <- append(blocks[[k]][["BlockElements"]], 
+                                                       split_block_elements, after = (j - 1))
+              break
             }
+          }
         }
-        if ("BlockElements" %in% names(blocks[[i]])) {
-            if (length(blocks[[i]][["BlockElements"]]) != 
-                0) {
-                for (j in length(blocks[[i]][["BlockElements"]]):1) {
-                  if (blocks[[i]][["BlockElements"]][[j]][["Type"]] != 
-                    "Question") {
-                    blocks[[i]][["BlockElements"]][[j]] <- NULL
-                  }
-                }
-            }
-        }
+      }
+      questions[[i]] <- NULL
+      questions <- append(questions, value = split_questions, 
+                          after = (i - 1))
     }
-    return(blocks)
+  }
+  return(list(questions, blocks))
 }
 ```
