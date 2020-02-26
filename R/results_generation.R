@@ -384,6 +384,11 @@ mc_multiple_answer_results <-
     # construct and return the output data frame
     results_table <-
       data.frame(N, Percent, choices, row.names = NULL)
+
+    # Sort the data table descending by N then by choices
+    results_table <- results_table[order(-N, choices),]
+
+    # Remove choices as the name of the third column
     colnames(results_table)[3] <- ""
 
     # append the results table
