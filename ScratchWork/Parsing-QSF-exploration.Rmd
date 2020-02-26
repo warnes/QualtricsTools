@@ -133,12 +133,40 @@ sbsq$QuestionText
 sbsq_new <- sbsq %>%
   #Create a new original question text that is the SBS component only
   list_modify("QuestionText_orig" = .[["QuestionText"]]) %>%
-  list_modify("QuestionText" = str_c(mainq[["QuestionText"]],"---",.[["QuestionText_orig"]])) %>%
+  list_modify("QuestionText" = str_c(mainq[["QuestionText"]],"---",.[["QuestionText_orig"]])) 
   #Insert Notes from the main question and additional note indicating split from side-by-side
-  {if_else(condition = "qtNotes" %in% names(.), true = , false = "NoName", missing=NULL)}
+  #To do this we first need to have questions...which we don't. This is going to have to be something that gets updated
 
 
 ```
+
+### User Notes
+
+We need to update how we're thinking about user notes. These, too, should be easier to find! They should be labeled with the parent IDs (QIDs) so that we can easily link them to the appropriate quesitons.
+
+```{r usernotes}
+
+#First pull the notes from the survey elements
+user_notes_full <- keep(survey_elements, ~ .x[["Element"]]=="NT") %>%
+  #Now rename the user notes with their QID based on parent ID instead of the primary attribute
+  set_names(map_chr(., ~ .x[["Payload"]][["ParentID"]]))
+
+user_notes_text <- user_notes_full %>%
+  #Now we want to pull only the next for the user notes
+  #But only if the element "Removed" is false
+  #First keep only the "Notes" section within Payload, which has the information we need
+  map(~ pluck(.x, "Payload","Notes")) %>%
+  #only keep notes for which the "Removed" status is FALSE; these are notes that have not been deleted
+  map(~ keep(.x, ~ !.x[["Removed"]])) %>%
+  #Now we want to pluck only the messages
+  map(~map(.x, ~pluck(.x,"Message"))) %>%
+  map(~ flatten(.x))
+
+#This should end up with a list of user notes named by QID; these may have multiple elements if a question had more than one user note.
+  
+
+```
+
 
 ### Creating response column dictionary from QSF
 
