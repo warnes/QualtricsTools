@@ -72,7 +72,22 @@ blocks_notrash <- blocks_all %>%
 #Replaces questions_from_survey
 questions <- purrr::keep(survey_elements, ~ .x[["Element"]]=="SQ") %>%
   #Remove questions that are in the trash, as specified by "trash_questions
-  discard( ~ .x[["PrimaryAttribute"]] %in% trash_questions)
+  discard( ~ .x[["PrimaryAttribute"]] %in% trash_questions) %>%
+  #Now clean question text using clean_html
+  map(~ append(.x,list("QuestionTextClean" = clean_html(.x[["Payload"]][["QuestionText"]])))) %>%
+  #Add the Qualtrics question type; this is for reference and won't be used in results
+  map(~append(.x, list("Qualtrics_qtype" = .x[["Payload"]][["QuestionType"]]))) %>%
+  #Add human readable question type to each question; this can be edited if we want 
+  #We will want ot expand this as we keep going
+  #We will need to reclassify the question type when we split side-by-side!!
+  map(~append(.x,list("QuestionTypeHuman" = dplyr::case_when(is_multiple_answer(.x) ~ "Multiple Answer",
+                                                             is_single_answer(.x) ~ "Single Answer",
+                                                             is_rank_order(.x) ~ "Rank Order",
+                                                             is_text_entry(.x) ~ "Text Entry",
+                                                             .x[["Qualtrics_qtype"]]=="SBS" ~ "Side-by-side",
+                                                             .x[["Qualtrics_qtype"]]=="DB" ~ "Descriptive Box",
+                                                             TRUE ~ "Other question type"))))
+
 
 ##split side by side questions into their component questions
 
@@ -104,7 +119,7 @@ addlq <- pluck(sbs_sample_split, "AdditionalQuestions") %>%
   set_names(map_chr(.,~ str_replace(.x[["QuestionID"]], "#","_"))) 
 
 
-#Now we also want to pull the main quesiton information without the additinal questions part
+#Now we also want to pull the main question information without the additinal questions part
 #Do use this using modify_at to remove the AdditionalQuestions list element by reassinging to NULL
 mainq <- modify_at(sbs_sample_split, "AdditionalQuestions", ~NULL)
 
