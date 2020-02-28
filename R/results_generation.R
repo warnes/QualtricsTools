@@ -268,8 +268,11 @@ mc_single_answer_results <-
 #' and their (if present) recoded values to determine how to table the results paired to that question.
 #'
 #' @inheritParams mc_single_answer_results
+#' @param sort_by This determines how the data table is sorted. It is automatically set to
+#' sort by N then by Choices alphebetically, but if you want to only sort by Choices alphebetically,
+#' simply set sort_by = "Choices". If you don't want the table to be sorted, set sort_by = "NA".
 mc_multiple_answer_results <-
-  function(question, original_first_rows) {
+  function(question, original_first_rows, sort_by = "N") {
     # save the original responses
     orig_responses <- question[['Responses']]
 
@@ -385,8 +388,13 @@ mc_multiple_answer_results <-
     results_table <-
       data.frame(N, Percent, choices, row.names = NULL)
 
-    # Sort the data table descending by N then by choices
-    results_table <- results_table[order(-N, choices),]
+    # Sort the data table descending by N then by choices or by choices, depending on the user
+    if(sort_by == "N"){
+      results_table <- results_table[order(-N, choices),]
+    }else if(sort_by == "Choices_Alpha"){
+      results_table <- results_table[order(choices),]
+    }
+
 
     # Remove choices as the name of the third column
     colnames(results_table)[3] <- ""

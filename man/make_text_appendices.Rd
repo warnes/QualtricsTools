@@ -4,8 +4,13 @@
 \alias{make_text_appendices}
 \title{Export a file containing the text appendices}
 \usage{
-make_text_appendices(qsf_path, csv_path, headerrows, output_dir,
-  filename = "Text Appendices.docx")
+make_text_appendices(
+  qsf_path,
+  csv_path,
+  headerrows,
+  output_dir,
+  filename = "Text Appendices.docx"
+)
 }
 \arguments{
 \item{qsf_path}{(optional) is the string path location of the .qsf file to be processed.}

@@ -4,8 +4,14 @@
 \alias{get_setup}
 \title{Setup the Global Environment for a Survey}
 \usage{
-get_setup(qsf_path, csv_path, headerrows, already_loaded,
-  return_data_as_list = FALSE, sample_data = FALSE)
+get_setup(
+  qsf_path,
+  csv_path,
+  headerrows,
+  already_loaded,
+  return_data_as_list = FALSE,
+  sample_data = FALSE
+)
 }
 \arguments{
 \item{qsf_path}{The string location of the survey as a .QSF (Qualtrics Survey File)}

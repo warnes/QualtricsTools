@@ -4,7 +4,7 @@
 \alias{mc_multiple_answer_results}
 \title{Create the Results Table for a Multiple Choice Single Answer Question}
 \usage{
-mc_multiple_answer_results(question, original_first_rows)
+mc_multiple_answer_results(question, original_first_rows, sort_by = "N")
 }
 \arguments{
 \item{question}{This is a list object representing an individual question
@@ -17,6 +17,10 @@ handled by link_responses_to_questions.}
 for each column of response data. This dataframe includes a row for the DataExportTag based
 response column names, another for the Question Text stem and choice text (although
 truncated), and a row with QID based column names.}
+
+\item{sort_by}{This determines how the data table is sorted. It is automatically set to
+sort by N then by Choices alphebetically, but if you want to only sort by Choices alphebetically,
+simply set sort_by = "Choices". If you don't want the table to be sorted, set sort_by = "NA".}
 }
 \description{
 The mc_multiple_answer_results function uses the definition of the choices in the QSF file
