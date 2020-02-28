@@ -29,6 +29,7 @@ Imports:
     shiny,
     shinydashboard,
     tidyr,
+    tidyverse,
     xtable,
     XML
 Suggests: 
