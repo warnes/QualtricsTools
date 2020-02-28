@@ -442,16 +442,28 @@ clean_question_text <- function(questions) {
 #'
 #' @param text any text string that might contain HTML or whitespace that needs stripped.
 #' @return text without any html or extraneous whitespace.
+# clean_html <- function(text) {
+#   # Clean HTML Tags and HTML Entitie
+#   text <- gsub("<.*?>|&[# a-z 0-9]*;", " ", text)
+#   # Remove leading or trailing whitespace
+#   text <- gsub("^\\s+|\\s+$", "", text)
+#   # Remove extra whitespace
+#   text <- gsub("\\s+", " ", text)
+#   return(text)
+# }
 clean_html <- function(text) {
-  # Clean HTML Tags and HTML Entitie
-  text <- gsub("<.*?>|&[# a-z 0-9]*;", " ", text)
-  # Remove leading or trailing whitespace
-  text <- gsub("^\\s+|\\s+$", "", text)
-  # Remove extra whitespace
-  text <- gsub("\\s+", " ", text)
+  #Removes extra whitespace
+  text <- stringr::str_replace_all(text, "\\s+", " ")
+  #Cleans HTML tags and Entries
+  text <- stringr::str_replace_all(text, "<.*?>|&[# a-z 0-9]*;", " ")
+  # Removing all formatting tags
+  text <- stringr::str_replace_all(text, "\\{.*?\\}|&[# a-z 0-9]*;", " ")
+  # Removes CSS
+  text<- stringr::str_replace_all(text, ".Matrix.*?\\.c\\d", "")
+  # # Remove leading or trailing whitespace
+  text <- stringr::str_replace_all(text, "^\\s+|\\s+$", "")
   return(text)
 }
-
 
 #' Create Human Readable Question Types
 #'
