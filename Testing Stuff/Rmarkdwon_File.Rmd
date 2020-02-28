@@ -3,8 +3,8 @@ title: "Rmarkdown_File"
 author: "Matthew Hudes"
 date: "2/12/2020"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -85,5 +85,83 @@ make_results_tables(
 ```
 
 
+
+
+
+# We now have multiple options for how it sorts! Lets test that out.
+
+
+```{r initial setup}
+
+devtools::load_all(".")
+library(tidyverse)
+
+get_setup(
+  qsf_path = here::here("data", "Sample Surveys", "Multiple Answer Multiple Choices Questions", "Multiple_Answer_MC_Questions.qsf"),
+  csv_path = here::here("data", "Sample Surveys", "Multiple Answer Multiple Choices Questions", "Multiple_Answer_MC_Questions.csv"),
+  headerrows = 2
+
+)
+
+```
+
+
+#### Lets Sort by N first
+
+```{r echo = FALSE}
+
+q <- questions[[1]]
+
+q_table <- mc_multiple_answer_results(q, original_first_rows)
+rt <- q_table$Table
+
+knitr::kable(rt)
+
+```
+
+
+#### Now lets Sort by Choices
+
+```{r Sort_Choices}
+
+q <- questions[[1]]
+
+q_table <- mc_multiple_answer_results(q, original_first_rows, sort_by = "Choices_Alpha")
+rt <- q_table$Table
+
+knitr::kable(rt)
+
+```
+
+
+
+#### Finally lets sort by survay flow/ lets just not sort
+
+```{r Sort_Flow}
+
+q <- questions[[1]]
+
+q_table <- mc_multiple_answer_results(q, original_first_rows, sort_by = "NA")
+rt <- q_table$Table
+
+knitr::kable(rt)
+
+```
+
+
+
+
+
+
+## Okay I just updated the documentation for mc_multiple_answer_results, lets test it out
+
+```{r}
+
+
+devtools::document()
+
+?mc_multiple_answer_results
+
+```
 
 
