@@ -382,6 +382,40 @@ summary {
 </div>
 
 
+<p>##Updating functions</p>
+<p>This is a space where anything we functionalize new can be added to our environment so that we can work wiht and use it in the later steps.</p>
+<p>###Revise extraction of user notes and inserting into questions.</p>
+<p>Now we can functionalize how we are creating user notes. This should replace notes_from_survey. We will also want to update how we insert notes into questions above.</p>
+<pre class="r"><code>note_text_from_survey &lt;- function(survey) {
+  #From the survey, keep elements that have user notes; these are identified from the list of survey elements
+  #as those with Elements &quot;NT&quot;
+  user_notes_text &lt;- keep(survey[[&quot;SurveyElements&quot;]], ~.x[[&quot;Element&quot;]]==&quot;NT&quot;) %&gt;%
+    #Now rename the user notes with their QID based on parent ID instead of the primary attribute
+    set_names(map_chr(., ~ .x[[&quot;Payload&quot;]][[&quot;ParentID&quot;]])) %&gt;%
+    #From the notes block payload, pluck &quot;Notes&quot; element
+    #Now we want to pull only the next for the user notes
+    #But only if the element &quot;Removed&quot; is false
+    #First keep only the &quot;Notes&quot; section within Payload, which has the information we need
+    map(~ pluck(.x, &quot;Payload&quot;,&quot;Notes&quot;)) %&gt;%
+    #only keep notes for which the &quot;Removed&quot; status is FALSE; these are notes that have not been deleted
+    map(~ keep(.x, ~ !.x[[&quot;Removed&quot;]])) %&gt;%
+    #Now we want to pluck only the messages, which is the text of the note
+    map(~map(.x, ~pluck(.x,&quot;Message&quot;))) %&gt;%
+    map(~ flatten(.x)) %&gt;%
+    #Prepend each note with the &quot;User note: &quot; text tag
+    map(~map(.x,~stringr::str_c(&quot;User note: &quot;,.x)))
+  return(user_notes_text)
+}</code></pre>
+<p>###Notes into Questions</p>
+<p>Revise the function that appends a list of questions with the appropriate user notes</p>
+<pre class="r"><code>insert_notes_into_questions_rv &lt;- function(questions, notes) {
+  #For each question, first see if it has corresponding notes.
+  #If it does, append the question list with element &quot;qtNotes&quot;
+  questions_with_notes &lt;- questions %&gt;%
+    purrr::modify_if(~.x[[&quot;PrimaryAttribute&quot;]] %in% names(notes),
+                     ~ append(.x, list(&quot;qtNotes&quot;= pluck(notes,.x[[&quot;PrimaryAttribute&quot;]]))))
+  return(questions_with_notes)
+}</code></pre>
 <div id="parsing-the-qsf" class="section level2">
 <h2>Parsing the QSF</h2>
 <p>This is an exploration of trying to improve the ways in which we parse the QSF for the QualtricsTools project. Emma will work on this as she is able. This is being done with a markdown document to try and get a little more familiar with markdown and make notes as I go along.</p>
@@ -399,11 +433,14 @@ csv_sample &lt;- here::here(&quot;data&quot;,&quot;Sample Surveys&quot;, &quot;L
 #This is going to use the sample survey, but this could change.
 #The survey JSON was read in during an early block, so we can just work with this.
 #Extract the survey elements from survey
-survey_elements_unnamed &lt;- survey_json[[&quot;SurveyElements&quot;]]
-# Name each item of survey elements based on the primary attribute.
-# This includes Survey Blocks, Survey Flow, Survey Options, and QIDs.
-# These names should make it much easier for us to get the information we need to extract.
-survey_elements &lt;-purrr::set_names(survey_elements_unnamed, map_chr(survey_elements_unnamed, &quot;PrimaryAttribute&quot;))
+survey_elements &lt;- survey_json[[&quot;SurveyElements&quot;]] %&gt;%
+  # Name each item of survey elements based on the primary attribute.
+  # This includes Survey Blocks, Survey Flow, Survey Options, and QIDs.
+  # These names should make it much easier for us to get the information we need to extract.
+  purrr::set_names(map_chr(., &quot;PrimaryAttribute&quot;))
+
+qtNotesList &lt;- note_text_from_survey(survey_json)
+
 #Now extract the blocks; this is really the payload element of element &quot;Survey Blocks&quot;
 #Replace blocks_from_survey
 blocks_all &lt;- purrr::pluck(survey_elements, &quot;Survey Blocks&quot;, &quot;Payload&quot;) %&gt;%
@@ -429,9 +466,49 @@ blocks_notrash &lt;- blocks_all %&gt;%
 #Replaces questions_from_survey
 questions &lt;- purrr::keep(survey_elements, ~ .x[[&quot;Element&quot;]]==&quot;SQ&quot;) %&gt;%
   #Remove questions that are in the trash, as specified by &quot;trash_questions
-  discard( ~ .x[[&quot;PrimaryAttribute&quot;]] %in% trash_questions)
+  discard( ~ .x[[&quot;PrimaryAttribute&quot;]] %in% trash_questions) %&gt;%
+  #Now clean question text using clean_html
+  map(~ append(.x,list(&quot;QuestionTextClean&quot; = clean_html(.x[[&quot;Payload&quot;]][[&quot;QuestionText&quot;]])))) %&gt;%
+  #Add the Qualtrics question type; this is for reference and won&#39;t be used in results
+  map(~append(.x, list(&quot;Qualtrics_qtype&quot; = .x[[&quot;Payload&quot;]][[&quot;QuestionType&quot;]]))) %&gt;%
+  #Add human readable question type to each question; this can be edited if we want 
+  #We will want ot expand this as we keep going
+  #We will need to reclassify the question type when we split side-by-side!!
+  map(~append(.x,list(&quot;QuestionTypeHuman&quot; = dplyr::case_when(is_multiple_answer(.x) ~ &quot;Multiple Answer&quot;,
+                                                             is_single_answer(.x) ~ &quot;Single Answer&quot;,
+                                                             is_rank_order(.x) ~ &quot;Rank Order&quot;,
+                                                             is_text_entry(.x) ~ &quot;Text Entry&quot;,
+                                                             .x[[&quot;Qualtrics_qtype&quot;]]==&quot;SBS&quot; ~ &quot;Side-by-side&quot;,
+                                                             .x[[&quot;Qualtrics_qtype&quot;]]==&quot;DB&quot; ~ &quot;Descriptive Box&quot;,
+                                                             TRUE ~ &quot;Other question type&quot;)))) %&gt;%
+  #Now we want to insert notes into questions.
+  #Previously side-by-side questions were not getting their notes. 
+  #This is now happening before the split to ensure that notes are included
+  insert_notes_into_questions_rv(notes = qtNotesList)
+
 
 ##split side by side questions into their component questions</code></pre>
+</div>
+<div id="user-notes" class="section level3">
+<h3>User Notes</h3>
+<p>We need to update how we’re thinking about user notes. These, too, should be easier to find! They should be labeled with the parent IDs (QIDs) so that we can easily link them to the appropriate quesitons.</p>
+<pre class="r"><code>#First pull the notes from the survey elements
+user_notes_full &lt;- keep(survey_elements, ~ .x[[&quot;Element&quot;]]==&quot;NT&quot;) %&gt;%
+  #Now rename the user notes with their QID based on parent ID instead of the primary attribute
+  set_names(map_chr(., ~ .x[[&quot;Payload&quot;]][[&quot;ParentID&quot;]]))
+
+user_notes_text &lt;- user_notes_full %&gt;%
+  #Now we want to pull only the next for the user notes
+  #But only if the element &quot;Removed&quot; is false
+  #First keep only the &quot;Notes&quot; section within Payload, which has the information we need
+  map(~ pluck(.x, &quot;Payload&quot;,&quot;Notes&quot;)) %&gt;%
+  #only keep notes for which the &quot;Removed&quot; status is FALSE; these are notes that have not been deleted
+  map(~ keep(.x, ~ !.x[[&quot;Removed&quot;]])) %&gt;%
+  #Now we want to pluck only the messages
+  map(~map(.x, ~pluck(.x,&quot;Message&quot;))) %&gt;%
+  map(~ flatten(.x))
+
+#This should end up with a list of user notes named by QID; these may have multiple elements if a question had more than one user note.</code></pre>
 </div>
 <div id="revise-side-by-side-split" class="section level3">
 <h3>Revise side-by-side split</h3>
@@ -495,27 +572,6 @@ sbsq_new &lt;- sbsq %&gt;%
   list_modify(&quot;QuestionText&quot; = str_c(mainq[[&quot;QuestionText&quot;]],&quot;---&quot;,.[[&quot;QuestionText_orig&quot;]])) 
   #Insert Notes from the main question and additional note indicating split from side-by-side
   #To do this we first need to have questions...which we don&#39;t. This is going to have to be something that gets updated</code></pre>
-</div>
-<div id="user-notes" class="section level3">
-<h3>User Notes</h3>
-<p>We need to update how we’re thinking about user notes. These, too, should be easier to find! They should be labeled with the parent IDs (QIDs) so that we can easily link them to the appropriate quesitons.</p>
-<pre class="r"><code>#First pull the notes from the survey elements
-user_notes_full &lt;- keep(survey_elements, ~ .x[[&quot;Element&quot;]]==&quot;NT&quot;) %&gt;%
-  #Now rename the user notes with their QID based on parent ID instead of the primary attribute
-  set_names(map_chr(., ~ .x[[&quot;Payload&quot;]][[&quot;ParentID&quot;]]))
-
-user_notes_text &lt;- user_notes_full %&gt;%
-  #Now we want to pull only the next for the user notes
-  #But only if the element &quot;Removed&quot; is false
-  #First keep only the &quot;Notes&quot; section within Payload, which has the information we need
-  map(~ pluck(.x, &quot;Payload&quot;,&quot;Notes&quot;)) %&gt;%
-  #only keep notes for which the &quot;Removed&quot; status is FALSE; these are notes that have not been deleted
-  map(~ keep(.x, ~ !.x[[&quot;Removed&quot;]])) %&gt;%
-  #Now we want to pluck only the messages
-  map(~map(.x, ~pluck(.x,&quot;Message&quot;))) %&gt;%
-  map(~ flatten(.x))
-
-#This should end up with a list of user notes named by QID; these may have multiple elements if a question had more than one user note.</code></pre>
 </div>
 <div id="creating-response-column-dictionary-from-qsf" class="section level3">
 <h3>Creating response column dictionary from QSF</h3>
