@@ -456,8 +456,8 @@ clean_html <- function(text) {
   text <- stringr::str_replace_all(text, "\\s+", " ")
   #Cleans HTML tags and Entries
   text <- stringr::str_replace_all(text, "<.*?>|&[# a-z 0-9]*;", " ")
-  # Removing all formatting tags
-  text <- stringr::str_replace_all(text, "\\{.*?\\}|&[# a-z 0-9]*;", " ")
+  # Removing all formatting tags, except piped text
+  text <- stringr::str_replace_all(text, "(?<!\\$)\\{.*?\\}|&[# a-z 0-9]*;", " ")
   # Removes CSS
   text<- stringr::str_replace_all(text, ".Matrix.*?\\.c\\d", "")
   # # Remove leading or trailing whitespace
