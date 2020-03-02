@@ -487,28 +487,37 @@ questions &lt;- purrr::keep(survey_elements, ~ .x[[&quot;Element&quot;]]==&quot;
   insert_notes_into_questions_rv(notes = qtNotesList)
 
 
-##split side by side questions into their component questions</code></pre>
-</div>
-<div id="user-notes" class="section level3">
-<h3>User Notes</h3>
-<p>We need to update how we’re thinking about user notes. These, too, should be easier to find! They should be labeled with the parent IDs (QIDs) so that we can easily link them to the appropriate quesitons.</p>
-<pre class="r"><code>#First pull the notes from the survey elements
-user_notes_full &lt;- keep(survey_elements, ~ .x[[&quot;Element&quot;]]==&quot;NT&quot;) %&gt;%
-  #Now rename the user notes with their QID based on parent ID instead of the primary attribute
-  set_names(map_chr(., ~ .x[[&quot;Payload&quot;]][[&quot;ParentID&quot;]]))
+##split side by side questions into their component questions
 
-user_notes_text &lt;- user_notes_full %&gt;%
-  #Now we want to pull only the next for the user notes
-  #But only if the element &quot;Removed&quot; is false
-  #First keep only the &quot;Notes&quot; section within Payload, which has the information we need
-  map(~ pluck(.x, &quot;Payload&quot;,&quot;Notes&quot;)) %&gt;%
-  #only keep notes for which the &quot;Removed&quot; status is FALSE; these are notes that have not been deleted
-  map(~ keep(.x, ~ !.x[[&quot;Removed&quot;]])) %&gt;%
-  #Now we want to pluck only the messages
-  map(~map(.x, ~pluck(.x,&quot;Message&quot;))) %&gt;%
-  map(~ flatten(.x))
 
-#This should end up with a list of user notes named by QID; these may have multiple elements if a question had more than one user note.</code></pre>
+#Clean up some of this</code></pre>
+<p>###Revised function to split a single side-by-side question</p>
+<p>I want to be able to use map to iterate over the questions. I shouldn’t have to make this function include the iteration over the questions; we should be able to do this to questions and then split blocks based on a list of SBS questions.</p>
+<pre class="r"><code>#Keep only the side-by-side questions for this exploration
+sbs &lt;- keep(questions, ~.x[[&quot;Payload&quot;]][[&quot;QuestionType&quot;]]==&quot;SBS&quot;)
+
+
+#This applies to a single side-by-side question
+split_side_by_side_q &lt;- function(question) {
+  
+  #For a SBS question only
+  #There should be a chekc earlier that the side-by-side actually has additional questions
+  #Assume additional questions here
+  split_q &lt;- list()
+  mainq &lt;- modify_at(question, &quot;AdditionalQuestions&quot;, ~NULL)
+  additional_questions &lt;- question[[&quot;Payload&quot;]][[&quot;AdditionalQuestions&quot;]] %&gt;%
+  #Add names based on the QID
+  #There&#39;s an issue with the &quot;#&quot; symbol, so replace with underscore in the question name; may need to change this later
+    set_names(map_chr(.,~ str_replace(.x[[&quot;QuestionID&quot;]], &quot;#&quot;,&quot;_&quot;))) 
+  #Create copies of the main question for as many additional questions as we have
+  return(additional_questions)
+    
+  
+  return(split_q)
+
+}
+
+x &lt;- split_side_by_side_q(sbs[[1]])</code></pre>
 </div>
 <div id="revise-side-by-side-split" class="section level3">
 <h3>Revise side-by-side split</h3>
@@ -572,6 +581,27 @@ sbsq_new &lt;- sbsq %&gt;%
   list_modify(&quot;QuestionText&quot; = str_c(mainq[[&quot;QuestionText&quot;]],&quot;---&quot;,.[[&quot;QuestionText_orig&quot;]])) 
   #Insert Notes from the main question and additional note indicating split from side-by-side
   #To do this we first need to have questions...which we don&#39;t. This is going to have to be something that gets updated</code></pre>
+</div>
+<div id="user-notes" class="section level3">
+<h3>User Notes</h3>
+<p>We need to update how we’re thinking about user notes. These, too, should be easier to find! They should be labeled with the parent IDs (QIDs) so that we can easily link them to the appropriate quesitons. This has been functionalized above.</p>
+<pre class="r"><code>#First pull the notes from the survey elements
+user_notes_full &lt;- keep(survey_elements, ~ .x[[&quot;Element&quot;]]==&quot;NT&quot;) %&gt;%
+  #Now rename the user notes with their QID based on parent ID instead of the primary attribute
+  set_names(map_chr(., ~ .x[[&quot;Payload&quot;]][[&quot;ParentID&quot;]]))
+
+user_notes_text &lt;- user_notes_full %&gt;%
+  #Now we want to pull only the next for the user notes
+  #But only if the element &quot;Removed&quot; is false
+  #First keep only the &quot;Notes&quot; section within Payload, which has the information we need
+  map(~ pluck(.x, &quot;Payload&quot;,&quot;Notes&quot;)) %&gt;%
+  #only keep notes for which the &quot;Removed&quot; status is FALSE; these are notes that have not been deleted
+  map(~ keep(.x, ~ !.x[[&quot;Removed&quot;]])) %&gt;%
+  #Now we want to pluck only the messages
+  map(~map(.x, ~pluck(.x,&quot;Message&quot;))) %&gt;%
+  map(~ flatten(.x))
+
+#This should end up with a list of user notes named by QID; these may have multiple elements if a question had more than one user note.</code></pre>
 </div>
 <div id="creating-response-column-dictionary-from-qsf" class="section level3">
 <h3>Creating response column dictionary from QSF</h3>
