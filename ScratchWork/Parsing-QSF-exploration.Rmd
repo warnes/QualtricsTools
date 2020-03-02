@@ -147,31 +147,69 @@ questions <- purrr::keep(survey_elements, ~ .x[["Element"]]=="SQ") %>%
 
 ##split side by side questions into their component questions
 
+
+#Clean up some of this
+
 ```
 
-### User Notes
 
-We need to update how we're thinking about user notes. These, too, should be easier to find! They should be labeled with the parent IDs (QIDs) so that we can easily link them to the appropriate quesitons.
 
-```{r usernotes}
+###Revised function to split a single side-by-side question
 
-#First pull the notes from the survey elements
-user_notes_full <- keep(survey_elements, ~ .x[["Element"]]=="NT") %>%
-  #Now rename the user notes with their QID based on parent ID instead of the primary attribute
-  set_names(map_chr(., ~ .x[["Payload"]][["ParentID"]]))
+I want to be able to use map to iterate over the questions. I shouldn't have to make this function include the iteration over the questions; we should be able to do this to questions and then split blocks based on a list of SBS questions.
 
-user_notes_text <- user_notes_full %>%
-  #Now we want to pull only the next for the user notes
-  #But only if the element "Removed" is false
-  #First keep only the "Notes" section within Payload, which has the information we need
-  map(~ pluck(.x, "Payload","Notes")) %>%
-  #only keep notes for which the "Removed" status is FALSE; these are notes that have not been deleted
-  map(~ keep(.x, ~ !.x[["Removed"]])) %>%
-  #Now we want to pluck only the messages
-  map(~map(.x, ~pluck(.x,"Message"))) %>%
-  map(~ flatten(.x))
 
-#This should end up with a list of user notes named by QID; these may have multiple elements if a question had more than one user note.
+```{r split_side_by_side_q}
+
+#Keep only the side-by-side questions for this exploration
+sbs <- keep(questions, ~.x[["Payload"]][["QuestionType"]]=="SBS")
+
+
+#This applies to a single side-by-side question
+split_side_by_side_q <- function(question) {
+  
+  #For a SBS question only
+  #There should be a chekc earlier that the side-by-side actually has additional questions
+  #Assume additional questions here
+  split_q <- list()
+  
+  #We may not actually need this
+  mainq <- modify_at(question, "AdditionalQuestions", ~NULL)
+  
+  #Extract the question text from the main part of the question
+  #If we've already run the other parts of the question, this will be the clean question text
+    #If not, pull the original question text
+  mainq_text <- if_else("QuestionTextClean" %in% names(question),
+                        question[["QuestionTextClean"]],
+                        question[["Payload"]][["QuestionText"]]) 
+  
+  
+  additional_questions <- question[["Payload"]][["AdditionalQuestions"]] %>%
+  #Add names based on the QID
+  #There's an issue with the "#" symbol, so replace with underscore in the question name; may need to change this later
+    set_names(map_chr(.,~ str_replace(.x[["QuestionID"]], "#","_"))) 
+  
+  #Now we want to edit the split questions. In the original QualtricsTools, split quesitons ONLY have Payload and qtNotes
+    #We will have to decide at a later date if anything else should be included
+  
+  
+  split_q <- additional_questions %>%
+    #Modify the question text
+    map(~list_modify(.x,"QuestionText_SBS" = .x[["QuestionText"]])) %>%
+    map(~list_modify(.x,"QuestionText" = str_c(mainq_text,"---",.x[["QuestionText"]]))) %>%
+    #Assign the additional question information as Payload for the new question element
+    map(~ list("Payload" = .x)) %>%
+    #Pull qtNotes from the original question and append them to each item
+    map(~ rlist::list.append(.x,qt_notes = if_else("qtNotes" %in% names(mainq),
+                                                   list(append(mainq[["qtNotes"]],"This question was split from a side-by-side question.")),
+                                                   list("This question was split from a side-by-side question."))))
+    
+    #Add an additional note that this was split from side-by-side
+    
+    
+  return(split_q)
+
+}
 
 ```
 
@@ -235,6 +273,35 @@ sbsq_new <- sbsq %>%
 
 
 ```
+
+
+
+### User Notes
+
+We need to update how we're thinking about user notes. These, too, should be easier to find! They should be labeled with the parent IDs (QIDs) so that we can easily link them to the appropriate quesitons. This has been functionalized above.
+
+```{r usernotes}
+
+#First pull the notes from the survey elements
+user_notes_full <- keep(survey_elements, ~ .x[["Element"]]=="NT") %>%
+  #Now rename the user notes with their QID based on parent ID instead of the primary attribute
+  set_names(map_chr(., ~ .x[["Payload"]][["ParentID"]]))
+
+user_notes_text <- user_notes_full %>%
+  #Now we want to pull only the next for the user notes
+  #But only if the element "Removed" is false
+  #First keep only the "Notes" section within Payload, which has the information we need
+  map(~ pluck(.x, "Payload","Notes")) %>%
+  #only keep notes for which the "Removed" status is FALSE; these are notes that have not been deleted
+  map(~ keep(.x, ~ !.x[["Removed"]])) %>%
+  #Now we want to pluck only the messages
+  map(~map(.x, ~pluck(.x,"Message"))) %>%
+  map(~ flatten(.x))
+
+#This should end up with a list of user notes named by QID; these may have multiple elements if a question had more than one user note.
+
+```
+
 
 
 ### Creating response column dictionary from QSF
