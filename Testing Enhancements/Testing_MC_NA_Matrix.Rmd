@@ -1,0 +1,84 @@
+---
+title: "Testing_MC_NA_Matrix"
+author: "Matthew Hudes"
+date: "3/2/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+# Lets try and get a basic thing going to see what it used to be
+
+
+```{r Up_to_Speed}
+
+devtools::install_github("emma-morgan/QualtricsTools")
+
+library(tidyverse)
+library(QualtricsTools)
+
+get_setup(
+  qsf_path = here::here("Testing Enhancements", "MC_with_NA.qsf"),
+  csv_path = here::here("Testing Enhancements", "MC_with_NA.csv"),
+  headerrows = 3
+)
+
+```
+
+## Lets make some results tables
+
+
+```{r Result_Tables}
+
+make_results_tables(
+  output_dir = here::here("Testing Enhancements"),
+  filename = "Results Tables.docx"
+)
+
+```
+
+
+
+
+
+
+# Lets test it with my enhancements
+
+
+```{r Setup_Enhance}
+
+devtools::load_all(".")
+library(tidyverse)
+
+
+get_setup(
+  qsf_path = here::here("Testing Enhancements", "MC_with_NA.qsf"),
+  csv_path = here::here("Testing Enhancements", "MC_with_NA.csv"),
+  headerrows = 3
+)
+
+```
+
+
+
+
+## Lets make some enhanced results tables!!!
+
+
+```{r Enhanced_Result_Tables}
+
+make_results_tables(
+  output_dir = here::here("Testing Enhancements"),
+  filename = "Enhanced Results Tables.docx"
+)
+
+```
+
+
+
+

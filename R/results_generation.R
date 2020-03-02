@@ -1062,11 +1062,20 @@ process_question_results <-
           }
 
           # multiple choice single answer
-        } else if (is_mc_single_answer(question)) {
+        } else if (is_mc_single_answer(question) == "Regular") {
           if (should_use_ofr) {
             question <- mc_single_answer_results(question, original_first_rows)
           } else {
             question <- mc_single_answer_results(question)
+          }
+
+
+        } else if(is_mc_single_answer(question) == "Turn_Matrix") {
+          if (should_use_ofr) {
+            question <-
+              matrix_single_answer_results(question, original_first_rows)
+          } else {
+            question <- matrix_single_answer_results(question)
           }
 
           # matrix multiple answer
