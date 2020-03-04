@@ -257,6 +257,95 @@ insert_questions_into_block <- function(block,questions) {
 
 ```
 
+###Get reorganized questions and blocks
+
+This is a revised version of the function that is used as the workhorse in get_setup and does a LOT of what is required later on. It will still need to be documented VERY carefully and incorporated more fully into the package.
+
+```{r get_reorganized_questions_and_blocks_rv}
+#This is called by get_setup to pull what we need from survey and responses 
+
+get_reorganized_questions_and_blocks_rv <- function(survey,
+                                                 responses,
+                                                 original_first_rows) {
+  #The survey JSON was read in during an early block, so we can just work with this.
+  #Extract the survey elements from survey
+  survey_elements <- survey_json[["SurveyElements"]] %>%
+    # Name each item of survey elements based on the primary attribute.
+    # This includes Survey Blocks, Survey Flow, Survey Options, and QIDs.
+    # These names should make it much easier for us to get the information we need to extract.
+    purrr::set_names(map_chr(., "PrimaryAttribute"))
+  
+  qtNotesList <- note_text_from_survey(survey_json)
+  
+  #Now extract the blocks; this is really the payload element of element "Survey Blocks"
+  #Replace blocks_from_survey
+  blocks_all <- purrr::pluck(survey_elements, "Survey Blocks", "Payload") %>%
+    #Name the blocks with their descriptive value; this will be more user-friendly
+    #Use "." to refer to the piped value within the map_chr function
+    purrr::set_names(map_chr(.,"Description"))
+  
+  trash_questions <- blocks_all %>%
+    #Now pluck just the trash block
+    pluck("Trash / Unused Questions", "BlockElements") %>%
+    #Pull a character vector of only the QIDs for questions that are in the trash
+    map_chr(.,"QuestionID")
+  
+  
+  blocks_notrash <- blocks_all %>%
+    #Remove trash block based on the "Type" element of the block
+    purrr::keep(~ .x[["Type"]]!= "Trash") %>%
+    #Name the BlockElements (quesiton items) within the blocks
+    map(~ modify_at(.x, "BlockElements", ~set_names(.x, map_chr(.x, ~ str_c(.x[["QuestionID"]],.x[["Type"]],sep="-")))))
+  
+  
+  #Now we want to extract the list of questions. These can be identified as SurveyElements that have Element "SQ"
+  #Replaces questions_from_survey
+  questions <- purrr::keep(survey_elements, ~ .x[["Element"]]=="SQ") %>%
+    #Remove questions that are in the trash, as specified by "trash_questions
+    discard( ~ .x[["PrimaryAttribute"]] %in% trash_questions) %>%
+    #Now clean question text using clean_html
+    map(~ append(.x,list("QuestionTextClean" = clean_html(.x[["Payload"]][["QuestionText"]])))) %>%
+    #Add the Qualtrics question type; this is for reference and won't be used in results
+    map(~append(.x, list("Qualtrics_qtype" = .x[["Payload"]][["QuestionType"]]))) %>%
+    #Add human readable question type to each question; this can be edited if we want 
+    #We will want ot expand this as we keep going
+    #We will need to reclassify the question type when we split side-by-side!!
+    map(~append(.x,list("QuestionTypeHuman" = qtype_human(.x)))) %>%
+    #Now we want to insert notes into questions.
+    #Previously side-by-side questions were not getting their notes. 
+    #This is now happening before the split to ensure that notes are included
+    insert_notes_into_questions_rv(notes = qtNotesList) %>%
+    
+    #Insert skip logic into the questions
+    insert_skiplogic_into_questions(blocks=blocks_notrash) %>%
+    
+    #Split side-by-side questions into their components
+    #We can do this by first appending split side-by-side questions to the list, then removing the originals
+    split_sbs_questions() %>%
+    
+    #Link responses to questions
+    link_responses_to_questions(responses = responses,original_first_rows = original_first_rows) %>%
+    
+    #Generate a results table for each question
+    generate_results(original_first_rows = original_first_rows)
+  
+  #Now get a list of the side-by-side questions 
+  #This is a named list where the name is the NEW split question ID and the element is the original QID
+  sbs_question_qids<- keep(questions,~"SBS_origQID" %in% names(.x)) %>%
+    map("SBS_origQID")
+  
+  #Revise the blocks to create space for elements split from side-by-side questions
+  blocks <- map(blocks_notrash, ~ split_block_elements(.x,sbs_question_qids)) %>%
+    #Now insert questions into blocks
+    map(~ insert_questions_into_block(block = .x, questions = questions))
+  
+  return(list("questions" = questions, "blocks" = blocks))
+  
+}
+
+
+
+```
 
 
 ## Parsing the QSF
@@ -292,82 +381,6 @@ The steps are not going to use pipes for now so everything is explicit, but this
 
 ### Revise setup process using purrr and %>%
 
-```{r revise-parse-qsf}
-#goal to revise get_setup
-#This is going to use the sample survey, but this could change.
-#The survey JSON was read in during an early block, so we can just work with this.
-#Extract the survey elements from survey
-survey_elements <- survey_json[["SurveyElements"]] %>%
-  # Name each item of survey elements based on the primary attribute.
-  # This includes Survey Blocks, Survey Flow, Survey Options, and QIDs.
-  # These names should make it much easier for us to get the information we need to extract.
-  purrr::set_names(map_chr(., "PrimaryAttribute"))
-
-qtNotesList <- note_text_from_survey(survey_json)
-
-#Now extract the blocks; this is really the payload element of element "Survey Blocks"
-#Replace blocks_from_survey
-blocks_all <- purrr::pluck(survey_elements, "Survey Blocks", "Payload") %>%
-  #Name the blocks with their descriptive value; this will be more user-friendly
-  #Use "." to refer to the piped value within the map_chr function
-  purrr::set_names(map_chr(.,"Description"))
-
-trash_questions <- blocks_all %>%
-  #Now pluck just the trash block
-  pluck("Trash / Unused Questions", "BlockElements") %>%
-  #Pull a character vector of only the QIDs for questions that are in the trash
-  map_chr(.,"QuestionID")
-  
-
-blocks_notrash <- blocks_all %>%
-  #Remove trash block based on the "Type" element of the block
-  purrr::keep(~ .x[["Type"]]!= "Trash") %>%
-  #Name the BlockElements (quesiton items) within the blocks
-  map(~ modify_at(.x, "BlockElements", ~set_names(.x, map_chr(.x, ~ str_c(.x[["QuestionID"]],.x[["Type"]],sep="-")))))
-
-
-#Now we want to extract the list of questions. These can be identified as SurveyElements that have Element "SQ"
-#Replaces questions_from_survey
-questions <- purrr::keep(survey_elements, ~ .x[["Element"]]=="SQ") %>%
-  #Remove questions that are in the trash, as specified by "trash_questions
-  discard( ~ .x[["PrimaryAttribute"]] %in% trash_questions) %>%
-  #Now clean question text using clean_html
-  map(~ append(.x,list("QuestionTextClean" = clean_html(.x[["Payload"]][["QuestionText"]])))) %>%
-  #Add the Qualtrics question type; this is for reference and won't be used in results
-  map(~append(.x, list("Qualtrics_qtype" = .x[["Payload"]][["QuestionType"]]))) %>%
-  #Add human readable question type to each question; this can be edited if we want 
-  #We will want ot expand this as we keep going
-  #We will need to reclassify the question type when we split side-by-side!!
-  map(~append(.x,list("QuestionTypeHuman" = qtype_human(.x)))) %>%
-  #Now we want to insert notes into questions.
-  #Previously side-by-side questions were not getting their notes. 
-  #This is now happening before the split to ensure that notes are included
-  insert_notes_into_questions_rv(notes = qtNotesList) %>%
-  
-  #Insert skip logic into the questions
-  insert_skiplogic_into_questions(blocks=blocks_notrash) %>%
-  
-  #Split side-by-side questions into their components
-  #We can do this by first appending split side-by-side questions to the list, then removing the originals
-  split_sbs_questions() %>%
-  
-  #Link responses to questions
-  link_responses_to_questions(responses = responses,original_first_rows = original_first_rows) %>%
-  
-  #Generate a results table for each question
-  generate_results(original_first_rows = original_first_rows)
-
-#Now get a list of the side-by-side questions 
-#This is a named list where the name is the NEW split question ID and the element is the original QID
-sbs_question_qids<- keep(questions,~"SBS_origQID" %in% names(.x)) %>%
-  map("SBS_origQID")
-
-#Revise the blocks to create space for elements split from side-by-side questions
-blocks <- map(blocks_notrash, ~ split_block_elements(.x,sbs_question_qids)) %>%
-  #Now insert questions into blocks
-  map(~ insert_questions_into_block(block = .x, questions = questions))
-
-```
 
 
 This is my working version of inserting questions to blocks.
