@@ -449,6 +449,8 @@ split_side_by_side_q &lt;- function(question) {
                         question[[&quot;QuestionTextClean&quot;]],
                         question[[&quot;Payload&quot;]][[&quot;QuestionText&quot;]]) 
   
+  main_qid &lt;- mainq[[&quot;PrimaryAttribute&quot;]]
+  
   
   additional_questions &lt;- question[[&quot;Payload&quot;]][[&quot;AdditionalQuestions&quot;]] %&gt;%
   #Add names based on the QID
@@ -479,8 +481,10 @@ split_side_by_side_q &lt;- function(question) {
     map(~ rlist::list.append(.x, QuestionTypeHuman = qtype_human(.x))) %&gt;%
     
     #Add Primary Attribute that corresponds to the list element name
-    map(~ rlist::list.append(.x, PrimaryAttribute = str_replace(.x[[&quot;Payload&quot;]][[&quot;QuestionID&quot;]], &quot;#&quot;,&quot;_&quot;)))
-
+    map(~ rlist::list.append(.x, PrimaryAttribute = str_replace(.x[[&quot;Payload&quot;]][[&quot;QuestionID&quot;]], &quot;#&quot;,&quot;_&quot;))) %&gt;%
+    
+    #Add a new element indicating that this was split from a side-by-side question
+    map( ~ rlist::list.append(.x, SBS_origQID = main_qid))
     
     
   return(split_q)
@@ -502,6 +506,49 @@ split_side_by_side_q &lt;- function(question) {
   questions &lt;- questions %&gt;%
     discard(~ .x[[&quot;Qualtrics_qtype&quot;]]==&quot;SBS&quot;)
 }</code></pre>
+<p>###Splitting block elements as part of get_setup</p>
+<p>This function iterates through a block and, where appropriate, splits the block element for a side-by-side question into separate elements for each component of the side-by-side.</p>
+<pre class="r"><code>split_block_elements &lt;- function(block,sbs_question_qids) {
+  if (! &quot;BlockElements&quot; %in% names(block)) {
+    return(block)
+  }
+  block_elements &lt;- block[[&quot;BlockElements&quot;]]
+  
+  #Create the elements that we will want to split
+  sbs_questions &lt;- list()
+
+  for (i in 1:length(sbs_question_qids)) {
+    sbs_question_entry &lt;- list(Type = &quot;Question&quot;,
+                               QuestionID = names(sbs_question_qids)[[i]],
+                               ParentID = sbs_question_qids[[i]])
+    sbs_questions[[i]] &lt;- sbs_question_entry
+  }
+  
+  for (element in block_elements) {
+    #Check that the element has a question ID, then check whether it&#39;s in the list
+    if (&quot;QuestionID&quot; %in% names(element) &amp;&amp; 
+        element[[&quot;QuestionID&quot;]] %in% map_chr(sbs_questions,&quot;ParentID&quot;)) {
+      
+      qid_orig &lt;- element[[&quot;QuestionID&quot;]]
+      split_elements &lt;- keep(sbs_questions, ~.x[[&quot;ParentID&quot;]]==qid_orig) %&gt;%
+        #Now name them with the Question ID
+        set_names(paste0(map_chr(., &quot;QuestionID&quot;),&quot;-Question&quot;)) %&gt;%
+        #And now remove the parent ID element
+        map(~rlist::list.remove(.x,&quot;ParentID&quot;))
+      
+      block_elements &lt;- append(block_elements,
+                               split_elements,
+                               after = match(element[[&quot;QuestionID&quot;]],str_replace(names(block_elements),&quot;-Question$&quot;,&quot;&quot;)))
+    }
+  }
+  
+  #And now we want to remove those original question elements
+  block_elements &lt;- discard(block_elements, ~.x[[&quot;QuestionID&quot;]] %in% sbs_question_qids)
+  
+  block[[&quot;BlockElements&quot;]] &lt;- block_elements
+  return(block)
+  
+}</code></pre>
 <div id="parsing-the-qsf" class="section level2">
 <h2>Parsing the QSF</h2>
 <p>This is an exploration of trying to improve the ways in which we parse the QSF for the QualtricsTools project. Emma will work on this as she is able. This is being done with a markdown document to try and get a little more familiar with markdown and make notes as I go along.</p>
@@ -509,7 +556,9 @@ split_side_by_side_q &lt;- function(question) {
 <pre class="r"><code>qsf_sample &lt;- here::here(&quot;ScratchWork&quot;,&quot;Sample_survey_edits&quot;, &quot;Long_Exhaustive_Sample_Survey.qsf&quot;)
 csv_sample &lt;- here::here(&quot;data&quot;,&quot;Sample Surveys&quot;, &quot;Long Exhaustive Sample Survey&quot;,&quot;Long_Exhaustive_Sample_Survey.csv&quot;)</code></pre>
 <p>The csv should not be necessary at this time and the goal is to do most things without it. To start, read in the QSF JSON and assign to variable “survey”.</p>
-<pre class="r"><code>survey_json &lt;- rjson::fromJSON(file=qsf_sample)</code></pre>
+<pre class="r"><code>survey_json &lt;- rjson::fromJSON(file=qsf_sample)
+responses &lt;- ask_for_csv(csv_sample,headerrows = 3)[[1]]
+original_first_rows &lt;- ask_for_csv(csv_sample,headerrows = 3)[[2]]</code></pre>
 <p>The function blocks_from_survey pulls the “Survey Blocks” element from the json file. This creates placeholders for all of the survey elements. This could be done using purrr instead of the Filter function.</p>
 <p>First step should be to go through and name each list item of survey elements based on the primary attribute. This will be much cleaner and easier to use since currently the items are unnamed. This should give us the QIDs for questions that we need, the information we need for Survey Blocks, Survey Flow, Survey Options, and the default response set.</p>
 <p>The steps are not going to use pipes for now so everything is explicit, but this can be made much easier at a later time.</p>
@@ -568,7 +617,21 @@ questions &lt;- purrr::keep(survey_elements, ~ .x[[&quot;Element&quot;]]==&quot;
   
   #Split side-by-side questions into their components
   #We can do this by first appending split side-by-side questions to the list, then removing the originals
-  split_sbs_questions()</code></pre>
+  split_sbs_questions() %&gt;%
+  
+  #Link responses to questions
+  link_responses_to_questions(responses = responses,original_first_rows = original_first_rows) %&gt;%
+  
+  #Generate a results table for each question
+  generate_results(original_first_rows = original_first_rows)
+
+#Now get a list of the side-by-side questions 
+#This is a named list where the name is the NEW split question ID and the element is the original QID
+sbs_question_qids&lt;- keep(questions,~&quot;SBS_origQID&quot; %in% names(.x)) %&gt;%
+  map(&quot;SBS_origQID&quot;)
+
+#Revise the blocks to create space for elements split from side-by-side questions
+blocks &lt;- map(blocks_notrash, ~ split_block_elements(.x,sbs_question_qids))</code></pre>
 </div>
 <div id="creating-response-column-dictionary-from-qsf" class="section level3">
 <h3>Creating response column dictionary from QSF</h3>
