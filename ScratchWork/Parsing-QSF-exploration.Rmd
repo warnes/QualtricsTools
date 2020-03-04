@@ -104,6 +104,8 @@ split_side_by_side_q <- function(question) {
                         question[["QuestionTextClean"]],
                         question[["Payload"]][["QuestionText"]]) 
   
+  main_qid <- mainq[["PrimaryAttribute"]]
+  
   
   additional_questions <- question[["Payload"]][["AdditionalQuestions"]] %>%
   #Add names based on the QID
@@ -134,8 +136,10 @@ split_side_by_side_q <- function(question) {
     map(~ rlist::list.append(.x, QuestionTypeHuman = qtype_human(.x))) %>%
     
     #Add Primary Attribute that corresponds to the list element name
-    map(~ rlist::list.append(.x, PrimaryAttribute = str_replace(.x[["Payload"]][["QuestionID"]], "#","_")))
-
+    map(~ rlist::list.append(.x, PrimaryAttribute = str_replace(.x[["Payload"]][["QuestionID"]], "#","_"))) %>%
+    
+    #Add a new element indicating that this was split from a side-by-side question
+    map( ~ rlist::list.append(.x, SBS_origQID = main_qid))
     
     
   return(split_q)
@@ -167,7 +171,53 @@ split_sbs_questions <-  function(questions) {
 
 ```
 
+###Splitting block elements as part of get_setup
 
+This function iterates through a block and, where appropriate, splits the block element for a side-by-side question into separate elements for each component of the side-by-side.
+
+```{r split_block_elements}
+split_block_elements <- function(block,sbs_question_qids) {
+  if (! "BlockElements" %in% names(block)) {
+    return(block)
+  }
+  block_elements <- block[["BlockElements"]]
+  
+  #Create the elements that we will want to split
+  sbs_questions <- list()
+
+  for (i in 1:length(sbs_question_qids)) {
+    sbs_question_entry <- list(Type = "Question",
+                               QuestionID = names(sbs_question_qids)[[i]],
+                               ParentID = sbs_question_qids[[i]])
+    sbs_questions[[i]] <- sbs_question_entry
+  }
+  
+  for (element in block_elements) {
+    #Check that the element has a question ID, then check whether it's in the list
+    if ("QuestionID" %in% names(element) && 
+        element[["QuestionID"]] %in% map_chr(sbs_questions,"ParentID")) {
+      
+      qid_orig <- element[["QuestionID"]]
+      split_elements <- keep(sbs_questions, ~.x[["ParentID"]]==qid_orig) %>%
+        #Now name them with the Question ID
+        set_names(paste0(map_chr(., "QuestionID"),"-Question")) %>%
+        #And now remove the parent ID element
+        map(~rlist::list.remove(.x,"ParentID"))
+      
+      block_elements <- append(block_elements,
+                               split_elements,
+                               after = match(element[["QuestionID"]],str_replace(names(block_elements),"-Question$","")))
+    }
+  }
+  
+  #And now we want to remove those original question elements
+  block_elements <- discard(block_elements, ~.x[["QuestionID"]] %in% sbs_question_qids)
+  
+  block[["BlockElements"]] <- block_elements
+  return(block)
+  
+}
+```
 
 ## Parsing the QSF
 
@@ -185,6 +235,8 @@ The csv should not be necessary at this time and the goal is to do most things w
 
 ```{r readsurvey}
 survey_json <- rjson::fromJSON(file=qsf_sample)
+responses <- ask_for_csv(csv_sample,headerrows = 3)[[1]]
+original_first_rows <- ask_for_csv(csv_sample,headerrows = 3)[[2]]
 ```
 
 The function blocks_from_survey pulls the "Survey Blocks" element from the json file. This creates placeholders for all of the survey elements. This could be done using purrr instead of the Filter function. 
@@ -249,8 +301,21 @@ questions <- purrr::keep(survey_elements, ~ .x[["Element"]]=="SQ") %>%
   
   #Split side-by-side questions into their components
   #We can do this by first appending split side-by-side questions to the list, then removing the originals
-  split_sbs_questions()
+  split_sbs_questions() %>%
+  
+  #Link responses to questions
+  link_responses_to_questions(responses = responses,original_first_rows = original_first_rows) %>%
+  
+  #Generate a results table for each question
+  generate_results(original_first_rows = original_first_rows)
 
+#Now get a list of the side-by-side questions 
+#This is a named list where the name is the NEW split question ID and the element is the original QID
+sbs_question_qids<- keep(questions,~"SBS_origQID" %in% names(.x)) %>%
+  map("SBS_origQID")
+
+#Revise the blocks to create space for elements split from side-by-side questions
+blocks <- map(blocks_notrash, ~ split_block_elements(.x,sbs_question_qids))
 
 ```
 
