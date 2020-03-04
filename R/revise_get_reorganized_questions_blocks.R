@@ -149,6 +149,7 @@ split_block_elements <- function(block,sbs_question_qids) {
 
   #Create the elements that we will want to split
   sbs_questions <- list()
+  if (! length(sbs_question_qids)>=1) {return(block)}
 
   for (i in 1:length(sbs_question_qids)) {
     sbs_question_entry <- list(Type = "Question",
@@ -227,13 +228,13 @@ get_reorganized_questions_and_blocks_rv <- function(survey,
                                                     original_first_rows) {
   #The survey JSON was read in during an early block, so we can just work with this.
   #Extract the survey elements from survey
-  survey_elements <- survey_json[["SurveyElements"]] %>%
+  survey_elements <- survey[["SurveyElements"]] %>%
     # Name each item of survey elements based on the primary attribute.
     # This includes Survey Blocks, Survey Flow, Survey Options, and QIDs.
     # These names should make it much easier for us to get the information we need to extract.
     purrr::set_names(map_chr(., "PrimaryAttribute"))
 
-  qtNotesList <- note_text_from_survey(survey_json)
+  qtNotesList <- note_text_from_survey(survey)
 
   #Now extract the blocks; this is really the payload element of element "Survey Blocks"
   #Replace blocks_from_survey
