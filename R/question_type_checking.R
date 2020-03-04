@@ -80,7 +80,7 @@ is_mc_single_answer <- function(question) {
       has_na <- FALSE
 
 
-    browser()
+
     # If it has any NA-type choices tell us...
     if(is_Multiple_Choice && has_SingleAnswer_selector) {
       if(has_na){
