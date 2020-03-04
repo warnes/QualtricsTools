@@ -119,6 +119,7 @@ split_side_by_side_q <- function(question) {
     #Assign the additional question information as Payload for the new question element
     map(~ list("Payload" = .x)) %>%
     #Pull qtNotes from the original question and append them to each item
+    #Add an additional note that this was split from a side-by-side question
     map(~ rlist::list.append(.x,qt_notes = if_else("qtNotes" %in% names(mainq),
                                                    list(append(mainq[["qtNotes"]],
                                                                "This question was split from a side-by-side question.")),
@@ -130,10 +131,11 @@ split_side_by_side_q <- function(question) {
     map( ~ rlist::list.append(.x, Qualtrics_qtype = paste0("SBS_",.x[["Payload"]][["QuestionType"]]))) %>%
     
     #Add human readable question type
-    map(~ rlist::list.append(.x, QuestionTypeHuman = qtype_human(.x)))
-  
+    map(~ rlist::list.append(.x, QuestionTypeHuman = qtype_human(.x))) %>%
     
-    #Add an additional note that this was split from side-by-side
+    #Add Primary Attribute that corresponds to the list element name
+    map(~ rlist::list.append(.x, PrimaryAttribute = str_replace(.x[["Payload"]][["QuestionID"]], "#","_")))
+
     
     
   return(split_q)
@@ -141,6 +143,30 @@ split_side_by_side_q <- function(question) {
 }
 
 ```
+
+
+###Splitting side by side questions as part of get_setup
+
+```{r split_sbs_questions}
+
+split_sbs_questions <-  function(questions) {
+  #Iterate through the questions
+  for (q in questions) {
+    #For each side-by-side question
+    if(q[["Qualtrics_qtype"]]=="SBS") {
+      #Update the list of split questions
+      questions <- append(questions,
+                          split_side_by_side_q(q), 
+                          after=match(q[["PrimaryAttribute"]],names(questions)))
+    }
+  }
+  #Now remove the original side-by-side questions since we no longer need these
+  questions <- questions %>%
+    discard(~ .x[["Qualtrics_qtype"]]=="SBS")
+}
+
+```
+
 
 
 ## Parsing the QSF
@@ -219,9 +245,30 @@ questions <- purrr::keep(survey_elements, ~ .x[["Element"]]=="SQ") %>%
   #Now we want to insert notes into questions.
   #Previously side-by-side questions were not getting their notes. 
   #This is now happening before the split to ensure that notes are included
-  insert_notes_into_questions_rv(notes = qtNotesList)
+  insert_notes_into_questions_rv(notes = qtNotesList) %>%
   
   #Split side-by-side questions into their components
+  #We can do this by first appending split side-by-side questions to the list, then removing the originals
+  split_sbs_questions()
+
+
+
+
+questions2 <- questions %>%
+  map(~ if(.x[["Qualtrics_qtype"]]=="SBS") {
+    append(.,values = split_side_by_side_q(.x))}
+    return(.))
+
+    append(., split_side_by_side_q(.x),
+           after=match(.x[["PrimaryAttribute"]],names(.)))
+
+
+
+  
+  map(~if_else(.x[["Qualtrics_qtype"]]=="SBS",~append(.,split_side_by_side_q(.x)),.x))
+  
+  
+  map_if(~.x[["Qualtrics_qtype"]]=="SBS",~split_side_by_side_q(.x))
   
   
 
