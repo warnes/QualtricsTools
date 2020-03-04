@@ -431,36 +431,26 @@ clean_question_text <- function(questions) {
 #' Clean HTML and whitespace from a string
 #'
 #' This function uses regex extensively to clean HTML out of a given text block.
-#' "(&[a-z]*;|<.*?>)" is the first regular expression used.
-#' It matches a substring that starts with & and ends with ; with
-#' lower case letters between them, or a substring with < and > on each side, with
-#' any characters between. Each matched substring is replaced with a space character.
-#' The next regex is "\\s+". It matches multiple characters of whitespace, and
-#' reduces them to a single space character.
-#' The last regex used is "^\\s+|\\s+$". It matches whitespace at the beginning
-#' or end of the text and removes it.
+#' The first regex used is "\\s+". It matches multiple characters of whitespace, and
+#' reduces them to a single space character. HTML tags and Entries are then clean
+#' with this regular expression: "<.*?>|&[# a-z 0-9]*". It matches a substring that
+#' starts with & and ends with ; with lower case letters between them, or a substring
+#' with < and > on each side, with any characters between. Each matched substring is
+#' replaced with a space character.
 #'
-#' @param text any text string that might contain HTML or whitespace that needs stripped.
+#' @param text any text string that might contain HTML or whitespace that needs to be stripped.
 #' @return text without any html or extraneous whitespace.
-# clean_html <- function(text) {
-#   # Clean HTML Tags and HTML Entitie
-#   text <- gsub("<.*?>|&[# a-z 0-9]*;", " ", text)
-#   # Remove leading or trailing whitespace
-#   text <- gsub("^\\s+|\\s+$", "", text)
-#   # Remove extra whitespace
-#   text <- gsub("\\s+", " ", text)
-#   return(text)
-# }
+
 clean_html <- function(text) {
-  #Removes extra whitespace
+  # Removes extra whitespace
   text <- stringr::str_replace_all(text, "\\s+", " ")
-  #Cleans HTML tags and Entries
+  # Cleans HTML tags and Entries
   text <- stringr::str_replace_all(text, "<.*?>|&[# a-z 0-9]*;", " ")
   # Removing all formatting tags, except piped text
   text <- stringr::str_replace_all(text, "(?<!\\$)\\{.*?\\}|&[# a-z 0-9]*;", " ")
   # Removes CSS
   text<- stringr::str_replace_all(text, ".Matrix.*?\\.c\\d", "")
-  # # Remove leading or trailing whitespace
+  # Remove leading or trailing whitespace
   text <- stringr::str_replace_all(text, "^\\s+|\\s+$", "")
   return(text)
 }
