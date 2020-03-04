@@ -142,7 +142,7 @@ is_multiple_answer <- function(x) {
 
 #' Determine if a question is a single answer question
 is_single_answer <- function(x) {
-  return(is_mc_single_answer(x) || is_matrix_bipolar(x) || is_matrix_single_answer(x))
+  return(is_mc_single_answer(x) == "Regular" || is_matrix_bipolar(x) || is_matrix_single_answer(x))
 }
 
 

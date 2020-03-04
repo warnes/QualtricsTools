@@ -82,3 +82,14 @@ make_results_tables(
 
 
 
+## Hmmm this isn't working lets get into the weeds
+
+```{r}
+
+question <- questions[[2]]
+
+question
+
+```
+
+

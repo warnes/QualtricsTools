@@ -409,6 +409,312 @@ mc_multiple_answer_results <-
   }
 
 
+
+
+
+
+
+#' Create the Results Table for special Multiple Choice Single Answer Questions with NA
+#'
+#' The mc_multiple_answer_results_NA function uses the definition of the choices in the QSF file
+#' and their (if present) recoded values to determine how to table the results paired to that question.
+#'
+#' @inheritParams mc_single_answer_results
+mc_multiple_answer_results_NA <-
+  function(question, original_first_rows) {
+
+    # save the original responses
+    orig_responses <- question[['Responses']]
+
+    # determine if we should use the original_first_rows
+    if (!missing(original_first_rows) &&
+        all(names(orig_responses) %in% names(original_first_rows)) &&
+        nrow(original_first_rows) >= 2) {
+      should_use_ofr <- TRUE
+    } else
+      should_use_ofr <- FALSE
+
+    # search either the import IDs or response column names
+    # for the string "TEXT", and include all but those including
+    # "TEXT" from the relevant_responses
+    if (should_use_ofr) {
+      relevant_responses <-
+        orig_responses[which(unlist(lapply(colnames(orig_responses), function(x)
+          ! grepl("TEXT", original_first_rows[2, x]))))]
+    } else {
+      relevant_responses <-
+        orig_responses[which(unlist(lapply(colnames(orig_responses), function(x)
+          ! grepl("TEXT", x))))]
+    }
+
+    # replace the column names with the answer indices
+    if (should_use_ofr) {
+      # if we should use the original_first_rows,
+      # then replace the column names with the import tags,
+      # then remove the question-ID from those import tags,
+      # leaving only the choice indices
+      question_id <- question[['Payload']][['QuestionID']]
+    } else {
+      # create a list of possible variations of the data export tag
+      data_export_tag <-
+        paste0("^", question[['Payload']][['DataExportTag']])
+      data_export_tags <-
+        c(
+          data_export_tag,
+          gsub("#", "_", data_export_tag),
+          gsub("-", "_", data_export_tag)
+        )
+      data_export_tags <-
+        unique(c(paste0(data_export_tags, "_"), data_export_tags))
+      data_export_tags <- paste0(data_export_tags, collapse = "|")
+
+      # remove the data export tag from the response column names
+      colnames(relevant_responses) <-
+        lapply(colnames(relevant_responses), function(x)
+          gsub(data_export_tags, "", x))
+
+      # if the question is taken from a side-by-side question,
+      # then it has an AnswerDataExportTag that
+      # needs removed from the end of the column names
+      if ("AnswerDataExportTag" %in% names(question[['Payload']])) {
+        colnames(relevant_responses) <-
+          lapply(colnames(relevant_responses), function(x)
+            gsub(
+              paste0("_",
+                     question[['Payload']][['AnswerDataExportTag']],
+                     "$"),
+              "", x))
+      }
+
+      # if there's ChoiceDataExportTags being used,
+      # translate the column names from recode values
+      # to answer indices
+      if ("ChoiceDataExportTags" %in% names(question[['Payload']]) &&
+          typeof(question[['Payload']][['ChoiceDataExportTags']]) != "logical"  &&
+          all(colnames(relevant_responses) %in%
+              question[['Payload']][['ChoiceDataExportTags']])) {
+        colnames(relevant_responses) <-
+          lapply(colnames(relevant_responses), function(x) {
+            names(question[['Payload']][['ChoiceDataExportTags']])[
+              which(question[['Payload']][['ChoiceDataExportTags']] == x)]
+          })
+      }
+    }
+
+    # determine if the question has any NA-type choices
+    if ('RecodeValues' %in% names(question[['Payload']])) {
+      has_na <- any(question[['Payload']][['RecodeValues']] < 0)
+    } else
+      has_na <- FALSE
+
+    # calculate the valid denominator for each answer
+    valid_denominator <-
+      apply(relevant_responses, 2, function(x)
+        sum(x >= 0))
+
+    # calculate the total denominator for each answer
+    total_denominator <-
+      apply(relevant_responses, 2, function(x)
+        sum(x != -99 & x != ""))
+
+    # get the na responses for the question, if it has NA responses
+    if (has_na) {
+      na_factors <-
+        question[['Payload']][['RecodeValues']][
+          which(question[['Payload']][['RecodeValues']] < 0)]
+    }
+
+    # get the valid responses for the question
+    if ("RecodeValues" %in% names(question[['Payload']]) &&
+        length(question[['Payload']][['RecodeValues']]) > 0) {
+      valid_factors <-
+        question[['Payload']][['RecodeValues']][
+          which(question[['Payload']][['RecodeValues']] >= 0)]
+    } else {
+      valid_factors <- names(question[['Payload']][['Answers']])
+    }
+
+    # table the responses
+    valid_responses <-
+      sapply(relevant_responses, function(x)
+        table(factor(x, valid_factors)))
+    if (!is.data.frame(valid_responses)) {
+      valid_responses <- as.data.frame(valid_responses)
+    }
+
+    if (!(length(colnames(relevant_responses)) == length(rownames(valid_responses))
+          &&
+          all(colnames(relevant_responses) == rownames(valid_responses)))) {
+      valid_responses <- t(valid_responses)
+
+      #Think these should already be true?
+      colnames(valid_responses) <- valid_factors
+      rownames(valid_responses) <- colnames(relevant_responses)
+    }
+
+
+    if (has_na) {
+      na_responses <-
+        sapply(relevant_responses, function(x)
+          table(factor(x, na_factors)))
+      if (!is.data.frame(na_responses)) {
+        na_responses <- as.data.frame(na_responses)
+      }
+
+      if (!(
+        nrow(na_responses) == ncol(relevant_responses) &&
+        ncol(na_responses) == length(na_factors)
+      )) {
+        na_responses <- t(na_responses)
+      }
+
+      colnames(na_responses) <- na_factors
+      rownames(na_responses) <- colnames(relevant_responses)
+
+    }
+
+    valid_responses <- as.data.frame(valid_responses)
+
+    # convert the number of respondents for each answer
+    # (row) by choice (column) combination
+    # to a percentage
+    for (i in 1:nrow(valid_responses)) {
+      for (j in 1:ncol(valid_responses)) {
+        if (valid_responses[i, j] == 0 | valid_denominator[[i]] == 0) {
+          valid_responses[i, j] <- percent0(0)
+        } else {
+          valid_responses[i, j] <-
+            percent0(as.integer(valid_responses[i, j]) / valid_denominator[[i]])
+        }
+      }
+    }
+
+    # if there's a set of na_responses
+    # convert the number of respondents for each
+    # answer (row) by choice (column) combination
+    # to a percentage
+    if (has_na) {
+      for (i in 1:nrow(na_responses)) {
+        for (j in 1:ncol(na_responses)) {
+          if (na_responses[i, j] == 0 | total_denominator[[i]] == 0) {
+            na_responses[i, j] <- percent0(0)
+          } else {
+            na_responses[i, j] <-
+              percent0(as.integer(na_responses[i, j]) / total_denominator[[i]])
+          }
+        }
+      }
+    }
+
+    # translate the recode values to choice indices
+    if ("RecodeValues" %in% names(question[['Payload']]) &&
+        colnames(valid_responses) %in% question[['Payload']][['RecodeValues']]) {
+      colnames(valid_responses) <-
+        lapply(colnames(valid_responses), function(x) {
+          names(question[['Payload']][['RecodeValues']])[
+            which(question[['Payload']][['RecodeValues']] == x)]
+        })
+      if (has_na) {
+        colnames(na_responses) <-
+          lapply(colnames(na_responses), function(x) {
+            names(question[['Payload']][['RecodeValues']])[
+              which(question[['Payload']][['RecodeValues']] == x)]
+          })
+      }
+    }
+
+    # Reorder using the AnswerOrder
+    if ("AnswerOrder" %in% names(question[['Payload']]) &&
+        should_use_ofr) {
+      if (has_na) {
+        answers <-
+          sapply(unlist(question[['Payload']][['AnswerOrder']]), function(x)
+            question[['Payload']][['RecodeValues']][[toString(x)]])
+        valid_answers <- which(answers >= 0)
+        valid_responses <- valid_responses[, valid_answers]
+      } else {
+        valid_responses <-
+          valid_responses[, unlist(as.character(question$Payload$AnswerOrder))]
+      }
+    }
+
+    # translate the choice indices to choice text
+    colnames(valid_responses) <-
+      lapply(colnames(valid_responses), function(x)
+        question[['Payload']][['Answers']][[x]][[1]])
+    if (has_na)
+      colnames(na_responses) <-
+      lapply(colnames(na_responses), function(x)
+        question[['Payload']][['Answers']][[x]][[1]])
+    colnames(valid_responses) <-
+      lapply(colnames(valid_responses), clean_html)
+    if (has_na)
+      colnames(na_responses) <-
+      lapply(colnames(na_responses), clean_html)
+
+    #Lines added from above to rename row values
+    #EM insertion
+    rownames(valid_responses) <-
+      lapply(rownames(valid_responses), function(x)
+        original_first_rows[2, x])
+    rownames(valid_responses) <-
+      lapply(rownames(valid_responses), function(x)
+        gsub(paste0(question_id, "-"), "", x))
+
+    # get the answer text as a list
+    choices <- rownames(valid_responses)
+    if ('ChoiceDataExportTags' %in% names(question[['Payload']]) &&
+        typeof(question[['Payload']][['ChoiceDataExportTags']]) != 'logical' &&
+        rownames(valid_responses) %in%
+        question[['Payload']][['ChoiceDataExportTags']]) {
+      choices <-
+        lapply(choices, function(x)
+          names(question[['Payload']][['ChoiceDataExportTags']])[
+            which(question[['Payload']][['ChoiceDataExportTags']] == x)])
+    }
+    choices <-
+      lapply(choices, function(x)
+        question[['Payload']][['Choices']][[x]][[1]])
+    choices <- lapply(choices, clean_html)
+    choices <- unlist(choices, use.names = FALSE)
+
+    # construct the data frame
+    if (has_na) {
+      results_table <-
+        data.frame(
+          choices,
+          N = valid_denominator,
+          valid_responses,
+          total_N = total_denominator,
+          na_responses,
+          check.names = FALSE,
+          row.names = NULL
+        )
+    } else {
+      results_table <-
+        data.frame(
+          choices,
+          N = valid_denominator,
+          valid_responses,
+          check.names = FALSE,
+          row.names = NULL
+        )
+    }
+
+    # clean up the colnames and rownames
+    colnames(results_table)[1] <- ""
+    rownames(results_table) <- NULL
+
+    # append the results table
+    question[['Table']] <- results_table
+    return(question)
+  }
+
+
+
+
+
+
 #' Create the Results Table for a Matrix Single Answer Question
 #'
 #' The matrix_single_answer_results function uses the
@@ -1073,9 +1379,9 @@ process_question_results <-
         } else if(is_mc_single_answer(question) == "Turn_Matrix") {
           if (should_use_ofr) {
             question <-
-              matrix_single_answer_results(question, original_first_rows)
+              mc_multiple_answer_results_NA(question, original_first_rows)
           } else {
-            question <- matrix_single_answer_results(question)
+            question <- mc_multiple_answer_results_NA(question)
           }
 
           # matrix multiple answer
