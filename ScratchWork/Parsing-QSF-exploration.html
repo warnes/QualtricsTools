@@ -504,20 +504,44 @@ split_side_by_side_q &lt;- function(question) {
   #There should be a chekc earlier that the side-by-side actually has additional questions
   #Assume additional questions here
   split_q &lt;- list()
+  
+  #We may not actually need this
   mainq &lt;- modify_at(question, &quot;AdditionalQuestions&quot;, ~NULL)
+  
+  #Extract the question text from the main part of the question
+  #If we&#39;ve already run the other parts of the question, this will be the clean question text
+    #If not, pull the original question text
+  mainq_text &lt;- if_else(&quot;QuestionTextClean&quot; %in% names(question),
+                        question[[&quot;QuestionTextClean&quot;]],
+                        question[[&quot;Payload&quot;]][[&quot;QuestionText&quot;]]) 
+  
+  
   additional_questions &lt;- question[[&quot;Payload&quot;]][[&quot;AdditionalQuestions&quot;]] %&gt;%
   #Add names based on the QID
   #There&#39;s an issue with the &quot;#&quot; symbol, so replace with underscore in the question name; may need to change this later
     set_names(map_chr(.,~ str_replace(.x[[&quot;QuestionID&quot;]], &quot;#&quot;,&quot;_&quot;))) 
-  #Create copies of the main question for as many additional questions as we have
-  return(additional_questions)
-    
   
+  #Now we want to edit the split questions. In the original QualtricsTools, split quesitons ONLY have Payload and qtNotes
+    #We will have to decide at a later date if anything else should be included
+  
+  
+  split_q &lt;- additional_questions %&gt;%
+    #Modify the question text
+    map(~list_modify(.x,&quot;QuestionText_SBS&quot; = .x[[&quot;QuestionText&quot;]])) %&gt;%
+    map(~list_modify(.x,&quot;QuestionText&quot; = str_c(mainq_text,&quot;---&quot;,.x[[&quot;QuestionText&quot;]]))) %&gt;%
+    #Assign the additional question information as Payload for the new question element
+    map(~ list(&quot;Payload&quot; = .x)) %&gt;%
+    #Pull qtNotes from the original question and append them to each item
+    map(~ rlist::list.append(.x,qt_notes = if_else(&quot;qtNotes&quot; %in% names(mainq),
+                                                   list(append(mainq[[&quot;qtNotes&quot;]],&quot;This question was split from a side-by-side question.&quot;)),
+                                                   list(&quot;This question was split from a side-by-side question.&quot;))))
+    
+    #Add an additional note that this was split from side-by-side
+    
+    
   return(split_q)
 
-}
-
-x &lt;- split_side_by_side_q(sbs[[1]])</code></pre>
+}</code></pre>
 </div>
 <div id="revise-side-by-side-split" class="section level3">
 <h3>Revise side-by-side split</h3>

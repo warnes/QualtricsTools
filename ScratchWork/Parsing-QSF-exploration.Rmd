@@ -60,6 +60,89 @@ insert_notes_into_questions_rv <- function(questions, notes) {
 
 ```
 
+###Add a function for determining Qualtrics Type human readable from the Payload information. This is used intially with quesitons, then again when splitting side-by-side questions into their components. Functionalizing this will allow us to more easily add cases for other questino types as we move forward with development and enhancements.
+
+```{r qtype_human}
+
+qtype_human <- function(question) {
+  
+  QuestionTypeHuman <-  dplyr::case_when(is_multiple_answer(question) ~ "Multiple Answer",
+                                         is_single_answer(question) ~ "Single Answer",
+                                         is_rank_order(question) ~ "Rank Order",
+                                         is_text_entry(question) ~ "Text Entry",
+                                         question[["Payload"]][["QuestionType"]]=="SBS" ~ "Side-by-side",
+                                         question[["Payload"]][["QuestionType"]]=="DB" ~ "Descriptive Box",
+                                         TRUE ~ "Other question type")
+  return(QuestionTypeHuman)
+  
+}
+
+
+```
+
+###Revise splitting a single side-by-side question
+
+This  function will be iterated over questions. A separate step of get_setup will split blocks based on the list of SBS questions.
+
+```{r split_side_by_side_q}
+
+#This applies to a single side-by-side question
+split_side_by_side_q <- function(question) {
+  
+  #For a SBS question only
+  #There should be a chekc earlier that the side-by-side actually has additional questions
+  #Assume additional questions here
+  split_q <- list()
+  
+  #We may not actually need this
+  mainq <- modify_at(question, "AdditionalQuestions", ~NULL)
+  
+  #Extract the question text from the main part of the question
+  #If we've already run the other parts of the question, this will be the clean question text
+    #If not, pull the original question text
+  mainq_text <- if_else("QuestionTextClean" %in% names(question),
+                        question[["QuestionTextClean"]],
+                        question[["Payload"]][["QuestionText"]]) 
+  
+  
+  additional_questions <- question[["Payload"]][["AdditionalQuestions"]] %>%
+  #Add names based on the QID
+  #There's an issue with the "#" symbol, so replace with underscore in the question name; may need to change this later
+    set_names(map_chr(.,~ str_replace(.x[["QuestionID"]], "#","_"))) 
+  
+  #Now we want to edit the split questions. In the original QualtricsTools, split quesitons ONLY have Payload and qtNotes
+    #We will have to decide at a later date if anything else should be included
+  
+  
+  split_q <- additional_questions %>%
+    
+    #Assign the additional question information as Payload for the new question element
+    map(~ list("Payload" = .x)) %>%
+    #Pull qtNotes from the original question and append them to each item
+    map(~ rlist::list.append(.x,qt_notes = if_else("qtNotes" %in% names(mainq),
+                                                   list(append(mainq[["qtNotes"]],
+                                                               "This question was split from a side-by-side question.")),
+                                                   list("This question was split from a side-by-side question.")))) %>%
+    #Add clean question text to the side-by-side question element
+    map(~ rlist::list.append(.x, QuestionTextClean = str_c(mainq_text,"---",.x[["Payload"]][["QuestionText"]]))) %>%
+    
+    #Add QualtricsQtype for the side by side; prepend with "SBS" to indicate this came from a side-by-side question
+    map( ~ rlist::list.append(.x, Qualtrics_qtype = paste0("SBS_",.x[["Payload"]][["QuestionType"]]))) %>%
+    
+    #Add human readable question type
+    map(~ rlist::list.append(.x, QuestionTypeHuman = qtype_human(.x)))
+  
+    
+    #Add an additional note that this was split from side-by-side
+    
+    
+  return(split_q)
+
+}
+
+```
+
+
 ## Parsing the QSF
 
 This is an exploration of trying to improve the ways in which we parse the QSF for the QualtricsTools project. Emma will work on this as she is able. This is being done with a markdown document to try and get a little more familiar with markdown and make notes as I go along.
@@ -132,17 +215,15 @@ questions <- purrr::keep(survey_elements, ~ .x[["Element"]]=="SQ") %>%
   #Add human readable question type to each question; this can be edited if we want 
   #We will want ot expand this as we keep going
   #We will need to reclassify the question type when we split side-by-side!!
-  map(~append(.x,list("QuestionTypeHuman" = dplyr::case_when(is_multiple_answer(.x) ~ "Multiple Answer",
-                                                             is_single_answer(.x) ~ "Single Answer",
-                                                             is_rank_order(.x) ~ "Rank Order",
-                                                             is_text_entry(.x) ~ "Text Entry",
-                                                             .x[["Qualtrics_qtype"]]=="SBS" ~ "Side-by-side",
-                                                             .x[["Qualtrics_qtype"]]=="DB" ~ "Descriptive Box",
-                                                             TRUE ~ "Other question type")))) %>%
+  map(~append(.x,list("QuestionTypeHuman" = qtype_human(.x)))) %>%
   #Now we want to insert notes into questions.
   #Previously side-by-side questions were not getting their notes. 
   #This is now happening before the split to ensure that notes are included
   insert_notes_into_questions_rv(notes = qtNotesList)
+  
+  #Split side-by-side questions into their components
+  
+  
 
 
 ##split side by side questions into their component questions
@@ -152,66 +233,6 @@ questions <- purrr::keep(survey_elements, ~ .x[["Element"]]=="SQ") %>%
 
 ```
 
-
-
-###Revised function to split a single side-by-side question
-
-I want to be able to use map to iterate over the questions. I shouldn't have to make this function include the iteration over the questions; we should be able to do this to questions and then split blocks based on a list of SBS questions.
-
-
-```{r split_side_by_side_q}
-
-#Keep only the side-by-side questions for this exploration
-sbs <- keep(questions, ~.x[["Payload"]][["QuestionType"]]=="SBS")
-
-
-#This applies to a single side-by-side question
-split_side_by_side_q <- function(question) {
-  
-  #For a SBS question only
-  #There should be a chekc earlier that the side-by-side actually has additional questions
-  #Assume additional questions here
-  split_q <- list()
-  
-  #We may not actually need this
-  mainq <- modify_at(question, "AdditionalQuestions", ~NULL)
-  
-  #Extract the question text from the main part of the question
-  #If we've already run the other parts of the question, this will be the clean question text
-    #If not, pull the original question text
-  mainq_text <- if_else("QuestionTextClean" %in% names(question),
-                        question[["QuestionTextClean"]],
-                        question[["Payload"]][["QuestionText"]]) 
-  
-  
-  additional_questions <- question[["Payload"]][["AdditionalQuestions"]] %>%
-  #Add names based on the QID
-  #There's an issue with the "#" symbol, so replace with underscore in the question name; may need to change this later
-    set_names(map_chr(.,~ str_replace(.x[["QuestionID"]], "#","_"))) 
-  
-  #Now we want to edit the split questions. In the original QualtricsTools, split quesitons ONLY have Payload and qtNotes
-    #We will have to decide at a later date if anything else should be included
-  
-  
-  split_q <- additional_questions %>%
-    #Modify the question text
-    map(~list_modify(.x,"QuestionText_SBS" = .x[["QuestionText"]])) %>%
-    map(~list_modify(.x,"QuestionText" = str_c(mainq_text,"---",.x[["QuestionText"]]))) %>%
-    #Assign the additional question information as Payload for the new question element
-    map(~ list("Payload" = .x)) %>%
-    #Pull qtNotes from the original question and append them to each item
-    map(~ rlist::list.append(.x,qt_notes = if_else("qtNotes" %in% names(mainq),
-                                                   list(append(mainq[["qtNotes"]],"This question was split from a side-by-side question.")),
-                                                   list("This question was split from a side-by-side question."))))
-    
-    #Add an additional note that this was split from side-by-side
-    
-    
-  return(split_q)
-
-}
-
-```
 
 ### Revise side-by-side split
 
@@ -273,36 +294,6 @@ sbsq_new <- sbsq %>%
 
 
 ```
-
-
-
-### User Notes
-
-We need to update how we're thinking about user notes. These, too, should be easier to find! They should be labeled with the parent IDs (QIDs) so that we can easily link them to the appropriate quesitons. This has been functionalized above.
-
-```{r usernotes}
-
-#First pull the notes from the survey elements
-user_notes_full <- keep(survey_elements, ~ .x[["Element"]]=="NT") %>%
-  #Now rename the user notes with their QID based on parent ID instead of the primary attribute
-  set_names(map_chr(., ~ .x[["Payload"]][["ParentID"]]))
-
-user_notes_text <- user_notes_full %>%
-  #Now we want to pull only the next for the user notes
-  #But only if the element "Removed" is false
-  #First keep only the "Notes" section within Payload, which has the information we need
-  map(~ pluck(.x, "Payload","Notes")) %>%
-  #only keep notes for which the "Removed" status is FALSE; these are notes that have not been deleted
-  map(~ keep(.x, ~ !.x[["Removed"]])) %>%
-  #Now we want to pluck only the messages
-  map(~map(.x, ~pluck(.x,"Message"))) %>%
-  map(~ flatten(.x))
-
-#This should end up with a list of user notes named by QID; these may have multiple elements if a question had more than one user note.
-
-```
-
-
 
 ### Creating response column dictionary from QSF
 
