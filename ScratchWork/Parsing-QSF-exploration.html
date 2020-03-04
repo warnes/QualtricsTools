@@ -549,12 +549,42 @@ split_side_by_side_q &lt;- function(question) {
   return(block)
   
 }</code></pre>
+<p>###Skip logic into questions</p>
+<pre class="r"><code>#Add skip logic to questions
+insert_skiplogic_into_questions &lt;- function(questions,blocks) {
+  for (b in blocks) {
+    if (! &quot;BlockElements&quot; %in% names(b)) {
+      return(questions)
+    } else {
+      for (be in b[[&quot;BlockElements&quot;]]) {
+        has_skip_logic &lt;- &quot;SkipLogic&quot; %in% names(be)
+        if(has_skip_logic) {
+          skip_logic &lt;- be[[&quot;SkipLogic&quot;]]
+          #Add display logic to the question
+          questions &lt;- modify_at(questions,be[[&quot;QuestionID&quot;]], ~rlist::list.append(.x,SkipLogic = skip_logic))
+        }
+      }
+      return(questions)
+    }
+  }
+}</code></pre>
+<p>###Insert questions into blocks</p>
+<pre class="r"><code>insert_questions_into_block &lt;- function(block,questions) {
+  if (&quot;BlockElements&quot; %in% names(block)) {
+    block[[&quot;BlockElements&quot;]] &lt;- modify_if(block[[&quot;BlockElements&quot;]],
+                                           ~.x[[&quot;Type&quot;]]==&quot;Question&quot;,
+                                           ~pluck(questions,.x[[&quot;QuestionID&quot;]]))
+  }
+  return(block)
+}</code></pre>
 <div id="parsing-the-qsf" class="section level2">
 <h2>Parsing the QSF</h2>
 <p>This is an exploration of trying to improve the ways in which we parse the QSF for the QualtricsTools project. Emma will work on this as she is able. This is being done with a markdown document to try and get a little more familiar with markdown and make notes as I go along.</p>
 <p>Start by loading the QSF and CSV from the sample survey as a test</p>
 <pre class="r"><code>qsf_sample &lt;- here::here(&quot;ScratchWork&quot;,&quot;Sample_survey_edits&quot;, &quot;Long_Exhaustive_Sample_Survey.qsf&quot;)
 csv_sample &lt;- here::here(&quot;data&quot;,&quot;Sample Surveys&quot;, &quot;Long Exhaustive Sample Survey&quot;,&quot;Long_Exhaustive_Sample_Survey.csv&quot;)</code></pre>
+<pre class="r"><code>qsf_sample &lt;- here::here(&quot;data&quot;,&quot;Sample Surveys&quot;, &quot;Better Sample Survey&quot;, &quot;Better_Sample_Survey.qsf&quot;)
+csv_sample &lt;- here::here(&quot;data&quot;,&quot;Sample Surveys&quot;, &quot;Better Sample Survey&quot;,&quot;Better_Sample_Survey.csv&quot;)</code></pre>
 <p>The csv should not be necessary at this time and the goal is to do most things without it. To start, read in the QSF JSON and assign to variable “survey”.</p>
 <pre class="r"><code>survey_json &lt;- rjson::fromJSON(file=qsf_sample)
 responses &lt;- ask_for_csv(csv_sample,headerrows = 3)[[1]]
@@ -615,6 +645,9 @@ questions &lt;- purrr::keep(survey_elements, ~ .x[[&quot;Element&quot;]]==&quot;
   #This is now happening before the split to ensure that notes are included
   insert_notes_into_questions_rv(notes = qtNotesList) %&gt;%
   
+  #Insert skip logic into the questions
+  insert_skiplogic_into_questions(blocks=blocks_notrash) %&gt;%
+  
   #Split side-by-side questions into their components
   #We can do this by first appending split side-by-side questions to the list, then removing the originals
   split_sbs_questions() %&gt;%
@@ -631,7 +664,10 @@ sbs_question_qids&lt;- keep(questions,~&quot;SBS_origQID&quot; %in% names(.x)) %
   map(&quot;SBS_origQID&quot;)
 
 #Revise the blocks to create space for elements split from side-by-side questions
-blocks &lt;- map(blocks_notrash, ~ split_block_elements(.x,sbs_question_qids))</code></pre>
+blocks &lt;- map(blocks_notrash, ~ split_block_elements(.x,sbs_question_qids)) %&gt;%
+  #Now insert questions into blocks
+  map(~ insert_questions_into_block(block = .x, questions = questions))</code></pre>
+<p>This is my working version of inserting questions to blocks.</p>
 </div>
 <div id="creating-response-column-dictionary-from-qsf" class="section level3">
 <h3>Creating response column dictionary from QSF</h3>

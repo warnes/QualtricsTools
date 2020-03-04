@@ -43,6 +43,7 @@ note_text_from_survey <- function(survey) {
 }
 ```   
 
+
 ###Notes into Questions
 
 Revise the function that appends a list of questions with the appropriate user notes
@@ -219,6 +220,45 @@ split_block_elements <- function(block,sbs_question_qids) {
 }
 ```
 
+###Skip logic into questions
+```{r insert_skiplogic_into_questions}
+#Add skip logic to questions
+insert_skiplogic_into_questions <- function(questions,blocks) {
+  for (b in blocks) {
+    if (! "BlockElements" %in% names(b)) {
+      return(questions)
+    } else {
+      for (be in b[["BlockElements"]]) {
+        has_skip_logic <- "SkipLogic" %in% names(be)
+        if(has_skip_logic) {
+          skip_logic <- be[["SkipLogic"]]
+          #Add display logic to the question
+          questions <- modify_at(questions,be[["QuestionID"]], ~rlist::list.append(.x,SkipLogic = skip_logic))
+        }
+      }
+      return(questions)
+    }
+  }
+}
+```
+
+###Insert questions into blocks
+
+```{r insert_questions_into_block}
+
+insert_questions_into_block <- function(block,questions) {
+  if ("BlockElements" %in% names(block)) {
+    block[["BlockElements"]] <- modify_if(block[["BlockElements"]],
+                                           ~.x[["Type"]]=="Question",
+                                           ~pluck(questions,.x[["QuestionID"]]))
+  }
+  return(block)
+}
+
+```
+
+
+
 ## Parsing the QSF
 
 This is an exploration of trying to improve the ways in which we parse the QSF for the QualtricsTools project. Emma will work on this as she is able. This is being done with a markdown document to try and get a little more familiar with markdown and make notes as I go along.
@@ -229,6 +269,11 @@ Start by loading the QSF and CSV from the sample survey as a test
 ```{r setpath}
 qsf_sample <- here::here("ScratchWork","Sample_survey_edits", "Long_Exhaustive_Sample_Survey.qsf")
 csv_sample <- here::here("data","Sample Surveys", "Long Exhaustive Sample Survey","Long_Exhaustive_Sample_Survey.csv")
+```
+
+```{r setpath_bettersamplesurvey}
+qsf_sample <- here::here("data","Sample Surveys", "Better Sample Survey", "Better_Sample_Survey.qsf")
+csv_sample <- here::here("data","Sample Surveys", "Better Sample Survey","Better_Sample_Survey.csv")
 ```
 
 The csv should not be necessary at this time and the goal is to do most things without it. To start, read in the QSF JSON and assign to variable "survey".
@@ -299,6 +344,9 @@ questions <- purrr::keep(survey_elements, ~ .x[["Element"]]=="SQ") %>%
   #This is now happening before the split to ensure that notes are included
   insert_notes_into_questions_rv(notes = qtNotesList) %>%
   
+  #Insert skip logic into the questions
+  insert_skiplogic_into_questions(blocks=blocks_notrash) %>%
+  
   #Split side-by-side questions into their components
   #We can do this by first appending split side-by-side questions to the list, then removing the originals
   split_sbs_questions() %>%
@@ -315,10 +363,14 @@ sbs_question_qids<- keep(questions,~"SBS_origQID" %in% names(.x)) %>%
   map("SBS_origQID")
 
 #Revise the blocks to create space for elements split from side-by-side questions
-blocks <- map(blocks_notrash, ~ split_block_elements(.x,sbs_question_qids))
+blocks <- map(blocks_notrash, ~ split_block_elements(.x,sbs_question_qids)) %>%
+  #Now insert questions into blocks
+  map(~ insert_questions_into_block(block = .x, questions = questions))
 
 ```
 
+
+This is my working version of inserting questions to blocks.
 
 ### Creating response column dictionary from QSF
 
