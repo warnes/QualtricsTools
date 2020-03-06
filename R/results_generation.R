@@ -641,11 +641,11 @@ mc_multiple_answer_results_NA <-
     # translate the choice indices to choice text
     colnames(valid_responses) <-
       lapply(colnames(valid_responses), function(x)
-        question[['Payload']][['Answers']][[x]][[1]])
+        question[['Payload']][['Choices']][[x]][[1]])
     if (has_na)
       colnames(na_responses) <-
       lapply(colnames(na_responses), function(x)
-        question[['Payload']][['Answers']][[x]][[1]])
+        question[['Payload']][['Choices']][[x]][[1]])
     colnames(valid_responses) <-
       lapply(colnames(valid_responses), clean_html)
     if (has_na)
@@ -672,17 +672,17 @@ mc_multiple_answer_results_NA <-
           names(question[['Payload']][['ChoiceDataExportTags']])[
             which(question[['Payload']][['ChoiceDataExportTags']] == x)])
     }
-    choices <-
-      lapply(choices, function(x)
-        question[['Payload']][['Choices']][[x]][[1]])
-    choices <- lapply(choices, clean_html)
-    choices <- unlist(choices, use.names = FALSE)
+    # choices <-
+    #   lapply(choices, function(x)
+    #     question[['Payload']][['Choices']][[x]][[1]])
+    # choices <- lapply(choices, clean_html)
+    # choices <- unlist(choices, use.names = FALSE)
 
     # construct the data frame
     if (has_na) {
       results_table <-
         data.frame(
-          choices,
+          #choices,
           N = valid_denominator,
           valid_responses,
           total_N = total_denominator,
@@ -693,7 +693,7 @@ mc_multiple_answer_results_NA <-
     } else {
       results_table <-
         data.frame(
-          choices,
+         # choices,
           N = valid_denominator,
           valid_responses,
           check.names = FALSE,
@@ -702,8 +702,8 @@ mc_multiple_answer_results_NA <-
     }
 
     # clean up the colnames and rownames
-    colnames(results_table)[1] <- ""
-    rownames(results_table) <- NULL
+    #colnames(results_table)[1] <- ""
+    #rownames(results_table) <- NULL
 
     # append the results table
     question[['Table']] <- results_table
@@ -1356,6 +1356,7 @@ process_question_results <-
 
     if (has_responses) {
       question[['Table']] <- NULL
+
 
       try({
         # multiple choice multiple answer
