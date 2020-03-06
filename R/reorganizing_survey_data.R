@@ -380,7 +380,9 @@ link_responses_to_questions <-
 questions_into_blocks <- function(questions, blocks) {
   for (i in 1:number_of_blocks(blocks)) {
     # loop through each block, and in each block, loop through the BlockElements
-    if (length(blocks[[i]][['BlockElements']]) != 0) {
+    # Check that the block includes BlockElements; a header block or other information will not.
+    if ("BlockElements" %in% names(blocks[[i]]) &&
+        length(blocks[[i]][['BlockElements']]) != 0) {
       for (j in 1:length(blocks[[i]][['BlockElements']])) {
         # create matching_question as a list of indices of questions which
         # have the corresponding QuestionID
