@@ -3,8 +3,8 @@ title: "Rmarkdown_File"
 author: "Matthew Hudes"
 date: "2/12/2020"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -29,7 +29,7 @@ get_setup(
 
 ```
 
-To work with multiple choice processing, I need to get my original first rows and a specific question. All of the questions in this sample survey are multiple choice multiple answer, so I'm going to use the first one as a test to start.
+# To work with multiple choice processing, I need to get my original first rows and a specific question. All of the questions in this sample survey are multiple choice multiple answer, so I'm going to use the first one as a test to start.
 
 ```{r process_mc_ma_question}
 

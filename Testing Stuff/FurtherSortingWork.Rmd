@@ -1,0 +1,130 @@
+---
+title: "Rmarkdown_File"
+author: "Matthew Hudes"
+date: "3/9/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<!-- ## Okay lets check out where I left off... -->
+
+
+<!-- ```{r initial setup} -->
+
+<!-- devtools::load_all(".") -->
+<!-- library(tidyverse) -->
+
+<!-- get_setup( -->
+<!--   qsf_path = here::here("data", "Sample Surveys", "Multiple Answer Multiple Choices Questions", "Multiple_Answer_MC_Questions.qsf"), -->
+<!--   csv_path = here::here("data", "Sample Surveys", "Multiple Answer Multiple Choices Questions", "Multiple_Answer_MC_Questions.csv"), -->
+<!--   headerrows = 2 -->
+
+<!-- ) -->
+
+<!-- ``` -->
+
+
+<!-- #### Lets Sort by N first -->
+
+<!-- ```{r echo = FALSE} -->
+
+<!-- q <- questions[[1]] -->
+
+<!-- q_table <- mc_multiple_answer_results(q, original_first_rows) -->
+<!-- rt <- q_table$Table -->
+
+<!-- knitr::kable(rt) -->
+
+<!-- ``` -->
+
+
+<!-- #### Now lets Sort by Choices -->
+
+<!-- ```{r Sort_Choices} -->
+
+<!-- q <- questions[[1]] -->
+
+<!-- q_table <- mc_multiple_answer_results(q, original_first_rows, sort_by = "Choices_Alpha") -->
+<!-- rt <- q_table$Table -->
+
+<!-- knitr::kable(rt) -->
+
+<!-- ``` -->
+
+
+
+<!-- #### Finally lets sort by survey flow/ lets just not sort -->
+
+<!-- ```{r Sort_Flow} -->
+
+<!-- q <- questions[[1]] -->
+
+<!-- q_table <- mc_multiple_answer_results(q, original_first_rows, sort_by = "NA") -->
+<!-- rt <- q_table$Table -->
+
+<!-- knitr::kable(rt) -->
+
+<!-- ``` -->
+
+
+
+
+
+
+<!-- ## Okay I just updated the documentation for mc_multiple_answer_results, lets test it out -->
+
+<!-- ```{r} -->
+
+
+<!-- devtools::document() -->
+
+<!-- ?mc_multiple_answer_results -->
+
+<!-- ``` -->
+
+
+
+
+
+
+
+# Okay I made a new survey for us to use to test this stuff with
+
+```{r echo = FALSE}
+
+devtools::load_all(".")
+library(tidyverse)
+
+get_setup(
+  qsf_path = here::here("Testing Stuff", "MCMA_with_Recodes__900.qsf"),
+  csv_path = here::here("Testing Stuff", "MCMA_with_Recodes__900.csv"),
+  headerrows = 2
+
+)
+
+```
+
+
+
+
+#### Lets Sort by N first
+
+```{r}
+
+for(i in 1:4){
+  q <- questions[[i]]
+
+  q_table <- mc_multiple_answer_results(q, original_first_rows)
+  rt <- q_table$Table
+
+  print(rt)
+}
+
+
+```
+
