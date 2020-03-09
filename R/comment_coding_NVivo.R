@@ -119,10 +119,7 @@ get_coded_comment_sheet_NVivo <- function(codedfile) {
     } else {coded_orig <- readxl::read_excel(codedfile, sheet = sheetindex,
                                              col_types = "text", .name_repair = "minimal")}
   }
-  #NVivo crosstab includes the last "Total" column; check for this and remove if it exists
-  if (names(coded_orig)[[ncol(coded_orig)]]=="Total") {
-    coded_orig <- select(coded_orig, -Total)
-  }
+
 
   #For NVivo exports, the second column of the exported sheet contains the question name
   qname <- names(coded_orig)[[2]]
@@ -138,6 +135,11 @@ get_coded_comment_sheet_NVivo <- function(codedfile) {
       #These are identified with 1 value in the qname column
       #Use the filter to keep anyone with >0, in case we later want multiple comments to tally
     dplyr::filter(!!as.name(qname)>0)
+
+  #NVivo crosstab includes the last "Total" column; check for this and remove if it exists
+  if (names(coded_orig)[[ncol(coded_orig)]]=="Total") {
+    coded_use <- select(coded_use, -Total)
+  }
 
   # Return the Coded Comments Data Frame (unprocessed)
   return(coded_use)
