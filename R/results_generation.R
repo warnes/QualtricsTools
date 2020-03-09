@@ -262,7 +262,7 @@ mc_single_answer_results <-
   }
 
 
-#' Create the Results Table for a Multiple Choice Single Answer Question
+#' Create the Results Table for a Multiple Choice Multiple Answer Question
 #'
 #' The mc_multiple_answer_results function uses the definition of the choices in the QSF file
 #' and their (if present) recoded values to determine how to table the results paired to that question.
@@ -682,22 +682,34 @@ matrix_single_answer_results <-
       lapply(rownames(valid_responses), function(x)
         gsub(paste0(question_id, "-"), "", x))
 
-    # get the answer text as a list
-    choices <- rownames(valid_responses)
-    if ('ChoiceDataExportTags' %in% names(question[['Payload']]) &&
-        typeof(question[['Payload']][['ChoiceDataExportTags']]) != 'logical' &&
-        rownames(valid_responses) %in%
-        question[['Payload']][['ChoiceDataExportTags']]) {
+
+    if(is_matrix_single_answer(question)){
+      # get the answer text as a list
+      choices <- rownames(valid_responses)
+      if ('ChoiceDataExportTags' %in% names(question[['Payload']]) &&
+          typeof(question[['Payload']][['ChoiceDataExportTags']]) != 'logical' &&
+          rownames(valid_responses) %in%
+          question[['Payload']][['ChoiceDataExportTags']]) {
+        choices <-
+          lapply(choices, function(x)
+            names(question[['Payload']][['ChoiceDataExportTags']])[
+              which(question[['Payload']][['ChoiceDataExportTags']] == x)])
+      }
+
       choices <-
         lapply(choices, function(x)
-          names(question[['Payload']][['ChoiceDataExportTags']])[
-            which(question[['Payload']][['ChoiceDataExportTags']] == x)])
+          question[['Payload']][['Choices']][[x]][[1]])
+      choices <- lapply(choices, clean_html)
+      choices <- unlist(choices, use.names = FALSE)
+    } else{
+      # Get the question text
+      question_text <- question[['Payload']][['QuestionText']]
+
+      # Clean it up
+      question_text <- lapply(question_text, clean_html)
+      question_text <- unlist(question_text, use.names = FALSE)
     }
-    choices <-
-      lapply(choices, function(x)
-        question[['Payload']][['Choices']][[x]][[1]])
-    choices <- lapply(choices, clean_html)
-    choices <- unlist(choices, use.names = FALSE)
+
 
     # construct the data frame - do this differently if it is a
     # MC single answer question with an NA
@@ -727,6 +739,7 @@ matrix_single_answer_results <-
       if (has_na) {
         results_table <-
           data.frame(
+            question_text,
             N = valid_denominator,
             valid_responses,
             total_N = total_denominator,
@@ -737,12 +750,18 @@ matrix_single_answer_results <-
       } else {
         results_table <-
           data.frame(
+            question_text,
             N = valid_denominator,
             valid_responses,
             check.names = FALSE,
             row.names = NULL
           )
       }
+
+      # Clean up the colnames and rownames for our special mcsa to matrix case
+      colnames(results_table)[1] <- ""
+      rownames(results_table) <- NULL
+
     }
 
 
