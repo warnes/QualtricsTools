@@ -45,6 +45,13 @@ is_matrix_multiple_answer <- function(question) {
   return(is_Matrix_Multiple_Answer)
 }
 
+#' Determine if a question is a text entry question with a numerical validation
+is_TE_numerical <- function(question){
+  is_TE = (question[['Payload']][['QuestionType']] == "TE")
+  has_numerical_validation = (question[['PayLoad']][['Validation']][['Settings']][['Type']]=="ValidNumber" )
+  is_both <- isTrue(is_TE && has_numerical_validation)
+  return(is_both)
+}
 
 #' Determine if a question is a single answer question
 #'
