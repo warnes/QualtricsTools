@@ -179,18 +179,22 @@ question_variable_to_choice_text <- function(question, choice, use_recode_values
 
 generate_summary_stats <-
   function(question) {
+    # Extracting the datatexport tag from question
     exp<-question[[1]][['Payload']][['DataExportTag']]
-    # entries <- data.frame(unlist(question[[1]][['Responses']][[(exp)]]))
+    # assinging data frame of responses to entries
     entries <- question[[1]][['Responses']][[(exp)]]
+    # clearning entries of all empty values
     entries <- entries[!is.na(entries)]
+    # calcuating stats
     N <- length(entries)
     a <- mean(entries)
     b<-  median(entries)
     c <- sd(entries)
     e <- min(entries)
     f <- max(entries)
+    # adding stats to new data frame
     results_table <- data.frame("",N,a,b,c,e,f, row.names=NULL)
-
+    # setting up column names in new data frame
     colnames(results_table)[1] <- ""
     colnames(results_table)[2] <- "N"
     colnames(results_table)[3] <- "Mean"
@@ -198,11 +202,10 @@ generate_summary_stats <-
     colnames(results_table)[5] <- "Standard Deviation"
     colnames(results_table)[6] <- "Minimum"
     colnames(results_table)[7] <- "Maximum"
-
+    # appending dataframe with all stats to question
     question[['Table']] <- results_table
     return(question)
   }
-
 
 #' Create the Results Table for a Multiple Choice Single Answer Question
 #'
