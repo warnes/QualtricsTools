@@ -41,7 +41,7 @@ is_mc_multiple_answer <- function(question) {
 is_matrix_multiple_answer <- function(question) {
   is_Matrix = (question[['Payload']][['QuestionType']] == "Matrix")
   has_Matrix_MA_selector = (question[['Payload']][['SubSelector']] == "MultipleAnswer")
-  is_Matrix_Multiple_Answer <- isTRUE(is_Matrix && has_Matrix_MA_selector)
+  is_Matrix_Multiple_Answer = isTRUE(is_Matrix && has_Matrix_MA_selector)
   return(is_Matrix_Multiple_Answer)
 }
 
