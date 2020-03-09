@@ -396,6 +396,77 @@ mc_multiple_answer_results <-
     }
 
 
+
+
+
+
+
+    # Determine if the question has recode values greater than 900 or a recode value
+    # of -1 indicating it is an NA that we shou;ld sort to the bottom
+    if ('RecodeValues' %in% names(question[['Payload']])) {
+      sort_na <- any(question[['Payload']][['RecodeValues']] > 900)
+      sort_na <- any(question[['Payload']][['RecodeValues']] < 0)
+    } else
+      sort_na <- FALSE
+
+
+
+
+    # get the na responses for the question, if it has NA responses
+    if (sort_na) {
+      na_factors <-
+        question[['Payload']][['RecodeValues']][
+          which(question[['Payload']][['RecodeValues']] < 0)]
+    }
+
+    # get the valid responses for the question
+    if ("RecodeValues" %in% names(question[['Payload']]) &&
+        length(question[['Payload']][['RecodeValues']]) > 0) {
+      valid_factors <-
+        question[['Payload']][['RecodeValues']][
+          which(question[['Payload']][['RecodeValues']] >= 0)]
+    } else {
+      valid_factors <- names(question[['Payload']][['Answers']])
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     # Remove choices as the name of the third column
     colnames(results_table)[3] <- ""
 
