@@ -171,6 +171,39 @@ question_variable_to_choice_text <- function(question, choice, use_recode_values
   return(choice_text)
 }
 
+
+# Create Summary Statistics tables for numerical data only questions
+#
+# The generate_summary_stats function uses the data frame of responses that have been linked to a question to generate summary statistics using basic R functions mean(), median(), min(), max(), sd(). Creates a new data frame with colnames and the stats and appends to question['Table']
+#
+
+generate_summary_stats <-
+  function(question) {
+    exp<-question[[1]][['Payload']][['DataExportTag']]
+    # entries <- data.frame(unlist(question[[1]][['Responses']][[(exp)]]))
+    entries <- question[[1]][['Responses']][[(exp)]]
+    entries <- entries[!is.na(entries)]
+    N <- length(entries)
+    a <- mean(entries)
+    b<-  median(entries)
+    c <- sd(entries)
+    e <- min(entries)
+    f <- max(entries)
+    results_table <- data.frame("",N,a,b,c,e,f, row.names=NULL)
+
+    colnames(results_table)[1] <- ""
+    colnames(results_table)[2] <- "N"
+    colnames(results_table)[3] <- "Mean"
+    colnames(results_table)[4] <- "Median"
+    colnames(results_table)[5] <- "Standard Deviation"
+    colnames(results_table)[6] <- "Minimum"
+    colnames(results_table)[7] <- "Maximum"
+
+    question[['Table']] <- results_table
+    return(question)
+  }
+
+
 #' Create the Results Table for a Multiple Choice Single Answer Question
 #'
 #' The mc_single_answer_results function uses the definition of the choices in the QSF file
