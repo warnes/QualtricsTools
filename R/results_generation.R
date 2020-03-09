@@ -180,11 +180,12 @@ question_variable_to_choice_text <- function(question, choice, use_recode_values
 generate_summary_stats <-
   function(question) {
     # Extracting the datatexport tag from question
-    exp<-question[[1]][['Payload']][['DataExportTag']]
+    exp<-question[['Payload']][['DataExportTag']]
     # assinging data frame of responses to entries
-    entries <- question[[1]][['Responses']][[(exp)]]
+    entries <- question[['Responses']][[(exp)]]
     # clearning entries of all empty values
     entries <- entries[!is.na(entries)]
+    entries <- as.integer(entries)
     # calcuating stats
     N <- length(entries)
     a <- mean(entries)
@@ -1089,7 +1090,10 @@ process_question_results <-
 
       try({
         # multiple choice multiple answer
-        if (is_mc_multiple_answer(question)) {
+        if(is_TE_numerical(question)){
+          generate_summary_stats(question)
+        }
+        else if (is_mc_multiple_answer(question)) {
           if (should_use_ofr) {
             question <-
               mc_multiple_answer_results(question, original_first_rows)

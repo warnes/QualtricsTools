@@ -41,15 +41,16 @@ is_mc_multiple_answer <- function(question) {
 is_matrix_multiple_answer <- function(question) {
   is_Matrix = (question[['Payload']][['QuestionType']] == "Matrix")
   has_Matrix_MA_selector = (question[['Payload']][['SubSelector']] == "MultipleAnswer")
-  is_Matrix_Multiple_Answer = isTRUE(is_Matrix && has_Matrix_MA_selector)
+  is_Matrix_Multiple_Answer <- isTRUE(is_Matrix && has_Matrix_MA_selector)
   return(is_Matrix_Multiple_Answer)
 }
 
 #' Determine if a question is a text entry question with a numerical validation
 is_TE_numerical <- function(question){
   is_TE = (question[['Payload']][['QuestionType']] == "TE")
-  has_numerical_validation = (question[['PayLoad']][['Validation']][['Settings']][['Type']]=="ValidNumber" )
-  is_both <- isTrue(is_TE && has_numerical_validation)
+  has_content_validation = (question[['Payload']][['Validation']][['Settings']][['Type']] == "ContentType" )
+  has_numerical_validation = (question[['Payload']][['Validation']][['Settings']][['ContentType']] == "ValidNumber" )
+  is_both <- isTRUE(is_TE && has_numerical_validation && has_content_validation )
   return(is_both)
 }
 
