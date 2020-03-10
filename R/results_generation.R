@@ -1091,7 +1091,7 @@ process_question_results <-
       try({
         # multiple choice multiple answer
         if(is_TE_numerical(question)){
-          generate_summary_stats(question)
+          question<-generate_summary_stats(question)
         }
         else if (is_mc_multiple_answer(question)) {
           if (should_use_ofr) {
