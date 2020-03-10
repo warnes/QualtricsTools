@@ -188,23 +188,46 @@ generate_summary_stats <-
     entries <- as.integer(entries)
     # calcuating stats
     N <- length(entries)
-    a <- mean(entries)
-    b<-  median(entries)
-    c <- sd(entries)
-    e <- min(entries)
-    f <- max(entries)
-    # adding stats to new data frame
-    results_table <- data.frame("",N,a,b,c,e,f, row.names=NULL)
-    # setting up column names in new data frame
-    colnames(results_table)[1] <- ""
-    colnames(results_table)[2] <- "N"
-    colnames(results_table)[3] <- "Mean"
-    colnames(results_table)[4] <- "Median"
-    colnames(results_table)[5] <- "Standard Deviation"
-    colnames(results_table)[6] <- "Minimum"
-    colnames(results_table)[7] <- "Maximum"
+    a <- round(mean(entries), digits=2)
+    b<-  round(median(entries), digits=2)
+    c <- round(sd(entries), digits = 2)
+    d <- min(entries)
+    e <- max(entries)
+
+    # # use this code if horizontal representation is preffered
+    # # currently= OFF
+    # # Start here
+    # results_table <- data.frame("",N,a,b,c,d,e, row.names=NULL)
+    # # setting up column names in new data frame
+    # colnames(results_table)[1] <- ""
+    # colnames(results_table)[2] <- "N"
+    # colnames(results_table)[3] <- "Mean"
+    # colnames(results_table)[4] <- "Median"
+    # colnames(results_table)[5] <- "Standard Deviation"
+    # colnames(results_table)[6] <- "Minimum"
+    # colnames(results_table)[7] <- "Maximum"
+    # # End here
+
+    # # use this code if vertical representation is preffered
+    # # currently= ON
+    # # Start here
+    # #
+    # initialising data data frame with 2 columns
+    results_table <- data.frame("N", N, row.names=NULL , check.names = FALSE)
+    # setting up column names
+    colnames(results_table)[1]<-"Summary Statistics"
+    colnames(results_table)[2]<-""
+    # Adding rest of statistics
+    results_table <- rbind(results_table, c("Mean", a))
+    results_table <- rbind(results_table, c("Median", b))
+    results_table <- rbind(results_table, c("Standard Deviation", c))
+    results_table <- rbind(results_table, c("Minimum", d))
+    results_table <- rbind(results_table, c("Maximum", e))
+    # End here
+    # #
     # appending dataframe with all stats to question
     question[['Table']] <- results_table
+    question[['qtNotes']] <- "Note: Data must be cleaned before processing summary statistics."
     return(question)
   }
 
