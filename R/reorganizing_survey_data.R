@@ -421,7 +421,7 @@ clean_question_text <- function(questions) {
 
   for (i in 1:length(questions)) {
     questions[[i]][['Payload']][['QuestionTextClean']] <-
-      clean_html(questions[[i]][['Payload']][['QuestionText']])
+      clean_html_and_css(questions[[i]][['Payload']][['QuestionText']])
   }
 
   return(questions)
@@ -441,7 +441,7 @@ clean_question_text <- function(questions) {
 #' @param text any text string that might contain HTML or whitespace that needs to be stripped.
 #' @return text without any html or extraneous whitespace.
 
-clean_html <- function(text) {
+clean_html_and_css <- function(text) {
   # Removes extra whitespace
   text <- stringr::str_replace_all(text, "\\s+", " ")
   # Cleans HTML tags and Entries
@@ -712,7 +712,7 @@ create_response_lookup_table <-
           }
         }
         # Insert the choice text that corresponds to r
-        lookup_table[[i]][['text']] <- clean_html(question[['Payload']][['Choices']][[r]][[1]])
+        lookup_table[[i]][['text']] <- clean_html_and_css(question[['Payload']][['Choices']][[r]][[1]])
       }
     } else if (is_matrix_single_answer(question)) {
       has_recode_values <- any("RecodeValues" == names(question[['Payload']]))
@@ -733,7 +733,7 @@ create_response_lookup_table <-
         }
         # Matrix questions use "Answers" instead of "Choices" -- look up the text corresponding
         # to r and insert it as r's corresponding "text".
-        lookup_table[[i]][['text']] <- clean_html(question[['Payload']][['Answers']][[r]][[1]])
+        lookup_table[[i]][['text']] <- clean_html_and_css(question[['Payload']][['Answers']][[r]][[1]])
       }
     }
     # Convert the lookup table from a list to a Dataframe:
@@ -990,9 +990,9 @@ split_side_by_sides <- function(questions, blocks) {
         # question text will include the SBS question's original question text and the
         # specific question component's question text.
         split_questions[[j]][['Payload']][['QuestionText']] <-
-          paste0(clean_html(questions[[i]][['Payload']][['QuestionText']]),
+          paste0(clean_html_and_css(questions[[i]][['Payload']][['QuestionText']]),
                  "-",
-                 clean_html(questions[[i]][['Payload']][['AdditionalQuestions']][[as.character(j)]][['QuestionText']]))
+                 clean_html_and_css(questions[[i]][['Payload']][['AdditionalQuestions']][[as.character(j)]][['QuestionText']]))
 
         # append a qtNote to split side-by-side questions
         split_questions[[j]][['qtNotes']] <- list()
@@ -1080,7 +1080,7 @@ display_logic_from_question <- function(question) {
       for (j in dl_indices_2) {
         if ("Description" %in% names(question[['Payload']][['DisplayLogic']][[i]][[j]])) {
           display_logic[[e]] <-
-            clean_html(question[['Payload']][['DisplayLogic']][[i]][[j]][['Description']])
+            clean_html_and_css(question[['Payload']][['DisplayLogic']][[i]][[j]][['Description']])
           e <- e + 1
         }
       }
@@ -1114,7 +1114,7 @@ display_logic_from_question <- function(question) {
           for (k in dl_indices_2) {
             if ("Description" %in% names(question[['Payload']][['Choices']][[i]][['DisplayLogic']][[j]][[k]])) {
               display_logic[[e]] <-
-                clean_html(question[['Payload']][['Choices']][[i]][['DisplayLogic']][[j]][[k]][['Description']])
+                clean_html_and_css(question[['Payload']][['Choices']][[i]][['DisplayLogic']][[j]][[k]][['Description']])
               e <- e + 1
             }
           }
@@ -1148,7 +1148,7 @@ display_logic_from_question <- function(question) {
           for (k in dl_indices_2) {
             if ("Description" %in% names(question[['Payload']][['Answers']][[i]][['DisplayLogic']][[j]][[k]])) {
               display_logic[[e]] <-
-                clean_html(question[['Payload']][['Answers']][[i]][['DisplayLogic']][[j]][[k]][['Description']])
+                clean_html_and_css(question[['Payload']][['Answers']][[i]][['DisplayLogic']][[j]][[k]][['Description']])
               e <- e + 1
             }
           }
