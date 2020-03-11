@@ -364,7 +364,7 @@ summary {
 
 <h1 class="title toc-ignore">Rmarkdown_File</h1>
 <h4 class="author">Matthew Hudes</h4>
-<h4 class="date">2/12/2020</h4>
+<h4 class="date">3/9/2020</h4>
 
 </div>
 
@@ -417,17 +417,19 @@ summary {
 <pre><code>## The following objects are masked from &#39;package:base&#39;:
 ## 
 ##     intersect, setdiff, setequal, union</code></pre>
+<pre><code>## Warning: package &#39;testthat&#39; was built under R version 3.6.3</code></pre>
 <pre><code>## 
 ## Attaching package: &#39;testthat&#39;</code></pre>
 <pre><code>## The following object is masked from &#39;package:dplyr&#39;:
 ## 
 ##     matches</code></pre>
-<pre><code>## -- Attaching packages ------------------------------------------------------------------------ tidyverse 1.3.0 --</code></pre>
+<pre><code>## Warning: package &#39;tidyverse&#39; was built under R version 3.6.3</code></pre>
+<pre><code>## -- Attaching packages ---------------------------------------------------------------------------------------------- tidyverse 1.3.0 --</code></pre>
 <pre><code>## v ggplot2 3.2.1     v purrr   0.3.3
 ## v tibble  2.1.3     v stringr 1.4.0
 ## v tidyr   1.0.2     v forcats 0.4.0
 ## v readr   1.3.1</code></pre>
-<pre><code>## -- Conflicts --------------------------------------------------------------------------- tidyverse_conflicts() --
+<pre><code>## -- Conflicts ------------------------------------------------------------------------------------------------- tidyverse_conflicts() --
 ## x dplyr::filter()  masks stats::filter()
 ## x purrr::is_null() masks testthat::is_null()
 ## x dplyr::lag()     masks stats::lag()
@@ -481,6 +483,54 @@ summary {
 ## 7 31   60.8%                        Disagree
 ## 6 31   60.8%               Somewhat disagree
 ## 1 31   60.8%                  Strongly agree</code></pre>
+</div>
+<div id="now-lets-sort-by-choice" class="section level4">
+<h4>Now lets sort by choice</h4>
+<pre class="r"><code>for(i in 1:4){
+  q &lt;- questions[[i]]
+
+  q_table &lt;- mc_multiple_answer_results(q, original_first_rows, sort_by = &quot;Choices_Alpha&quot;)
+  rt &lt;- q_table$Table
+
+  print(rt)
+}</code></pre>
+<pre><code>##    N Percent                                
+## 7 32   62.7%            Dislike a great deal
+## 5 37   72.5%                Dislike a little
+## 6 31   60.8%       Dislike a moderate amount
+## 1 35   68.6%               Like a great deal
+## 3 33   64.7%                   Like a little
+## 2 29   56.9%          Like a moderate amount
+## 8 33   64.7% NA, I haven&#39;t experienced this.
+## 4 29   56.9%        Neither like nor dislike
+##    N Percent                                
+## 2 33   64.7%                           Agree
+## 6 39   76.5%                        Disagree
+## 8 34   66.7% NA, I haven&#39;t experienced this.
+## 4 40   78.4%      Neither agree nor disagree
+## 3 35   68.6%                  Somewhat agree
+## 5 30   58.8%               Somewhat disagree
+## 1 32   62.7%                  Strongly agree
+## 7 31   60.8%               Strongly disagree
+##    N Percent                                
+## 2 34   66.7%                           Agree
+## 6 30   58.8%                        Disagree
+## 9 32   62.7%   NA, I don&#39;t have any opinion.
+## 8 32   62.7% NA, I haven&#39;t experienced this.
+## 4 33   64.7%      Neither agree nor disagree
+## 3 32   62.7%                  Somewhat agree
+## 5 26   51.0%               Somewhat disagree
+## 1 27   52.9%                  Strongly agree
+## 7 31   60.8%               Strongly disagree
+##    N Percent                                
+## 2 31   60.8%                           Agree
+## 7 31   60.8%                        Disagree
+## 5 38   74.5% NA, I haven&#39;t experienced this.
+## 4 39   76.5%      Neither agree nor disagree
+## 3 32   62.7%                  Somewhat agree
+## 6 31   60.8%               Somewhat disagree
+## 1 31   60.8%                  Strongly agree
+## 8 36   70.6%               Strongly disagree</code></pre>
 </div>
 </div>
 

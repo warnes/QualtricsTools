@@ -128,3 +128,21 @@ for(i in 1:4){
 
 ```
 
+
+
+
+#### Now lets sort by choice
+
+```{r}
+
+for(i in 1:4){
+  q <- questions[[i]]
+
+  q_table <- mc_multiple_answer_results(q, original_first_rows, sort_by = "Choices_Alpha")
+  rt <- q_table$Table
+
+  print(rt)
+}
+
+
+```
