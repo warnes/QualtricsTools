@@ -107,6 +107,9 @@ get_setup(
 
 )
 
+# grab one for testing stuff
+question <- questions[[3]]
+
 ```
 
 
