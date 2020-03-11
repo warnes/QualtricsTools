@@ -398,14 +398,13 @@ mc_multiple_answer_results <-
 
 
 
-
-
-
     # Determine if the question has recode values greater than 900 or a recode value
-    # of -1 indicating it is an NA that we shou;ld sort to the bottom
+    # of -1 indicating it is an NA that we should sort to the bottom
     if ('RecodeValues' %in% names(question[['Payload']])) {
       sort_na <- any(question[['Payload']][['RecodeValues']] > 900)
-      sort_na <- any(question[['Payload']][['RecodeValues']] < 0)
+      if(!sort_na){
+        sort_na <- any(question[['Payload']][['RecodeValues']] < 0)
+      }
     } else
       sort_na <- FALSE
 
@@ -417,6 +416,9 @@ mc_multiple_answer_results <-
       na_factors <-
         question[['Payload']][['RecodeValues']][
           which(question[['Payload']][['RecodeValues']] < 0)]
+      na_factors <-
+        question[['Payload']][['RecodeValues']][
+          which(question[['Payload']][['RecodeValues']] > 900)]
     }
 
     # get the valid responses for the question
