@@ -176,7 +176,7 @@ question_variable_to_choice_text <- function(question, choice, use_recode_values
 #
 # The generate_summary_stats function uses the data frame of responses that have been linked to a question to generate summary statistics using basic R functions mean(), median(), min(), max(), sd(). Creates a new data frame with colnames and the stats and appends to question['Table']
 #
-
+#Just Testing whether is works from my laptop
 generate_summary_stats <-
   function(question) {
     # Extracting the datatexport tag from question
