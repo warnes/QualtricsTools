@@ -346,7 +346,7 @@ text_appendices_table <-
                              function(x)
                                grepl("TEXT", x)))
 
-              # Text Entry Text Appendices
+              # Text Entry Text Appendices (excluding the text entried with numerical validation,since we longer generate appendices for them)
               if (question[['Payload']][['QuestionType']] == "TE" || !(is_TE_numerical(question))){
 
                 # Clean Responses. Remove any responses which are -99 or
