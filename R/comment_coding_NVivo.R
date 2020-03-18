@@ -1,5 +1,3 @@
-requireNamespace("tidyverse")
-
 #' Turn a Directory into a list of Coded Comment Data Frames (unprocessed)
 #'
 #' This function takes as an argument a string representative of a
@@ -124,17 +122,16 @@ get_coded_comment_sheet_NVivo <- function(codedfile) {
   #For NVivo exports, the second column of the exported sheet contains the question name
   qname <- names(coded_orig)[[2]]
   #NVivo exports include an unlabeled first column, so we will need to fix this
-  coded_use <- coded_orig %>%
-    #Rename the first column as "ResponseID"
-    dplyr::rename("ResponseID"=1) %>%
-    #filter data to keep only values with ResponseID starting with R_ (filter out blanks)
-    dplyr::filter(stringr::str_detect(ResponseID, "^R_")) %>%
-    #Convert all columns other than responseID to integer
-    mutate_at(vars(-ResponseID), funs(as.integer(.))) %>%
-    #Now filter to keep only rows for respondents who answered the question
-      #These are identified with 1 value in the qname column
-      #Use the filter to keep anyone with >0, in case we later want multiple comments to tally
-    dplyr::filter(!!as.name(qname)>0)
+  #Rename the first column as "ResponseID"
+  coded_use <- dplyr::rename(coded_orig, "ResponseID"=1)
+  #filter data to keep only values with ResponseID starting with R_ (filter out blanks)
+  coded_use <- dplyr::filter(coded_use, stringr::str_detect(ResponseID, "^R_"))
+  #Convert all columns other than responseID to integer
+  coded_use <- mutate_at(coded_use, vars(-ResponseID), funs(as.integer(.)))
+  #Now filter to keep only rows for respondents who answered the question
+  #These are identified with 1 value in the qname column
+  #Use the filter to keep anyone with >0, in case we later want multiple comments to tally
+  coded_use <- dplyr::filter(coded_use,!!as.name(qname)>0)
 
   #NVivo crosstab includes the last "Total" column; check for this and remove if it exists
   if (names(coded_use)[[ncol(coded_use)]]=="Total") {
@@ -170,26 +167,26 @@ format_coded_comments_NVivo <- function(coded_comment_sheet) {
   #Get the total number of comments
   total_comments <- nrow(coded_comment_sheet)
   #Construct the table
-  coded_table <- coded_comment_sheet %>%
-    #Gather values to make them long and lean so we can easily tabulate
-    tidyr::gather(key = "Category", value="codeValue", -ResponseID, -!!varname, -ends_with("-split")) %>%
-    #Filter the long and lean data to keep only positive values showing a mapping to the category
-    #This used to be values equal to 1, but we want to be flexible with multi-part questions coded as a single question
-    #e.g. What are 3 strengths of the Fletcher School?
-    dplyr::filter(codeValue>0) %>%
-    #Group by Category so we will get the sum of each categories codeValues
-    group_by(Category) %>%
-    #Use dplyr function "count" to tabulate the data
-    dplyr::summarize(n = sum(codeValue)) %>%
-    ungroup() %>%
-    #Rename columns to match our desired format
-    dplyr::rename("Response"=Category,"N" = n) %>%
-    #Filter zeros
-    dplyr::filter(N>0) %>%
-    #sort descending numeric with ascending alphabetical
-    dplyr::arrange(desc(N),Response) %>%
-    #add "Total with total number of comments to the bottom of the table
-    dplyr::bind_rows(tibble("Response"="Total", "N" = total_comments))
+  coded_table <- coded_comment_sheet
+  #Gather values to make them long and lean so we can easily tabulate
+  coded_table <- tidyr::gather(coded_table, key = "Category", value="codeValue", -ResponseID, -!!varname, -ends_with("-split"))
+  #Filter the long and lean data to keep only positive values showing a mapping to the category
+  #This used to be values equal to 1, but we want to be flexible with multi-part questions coded as a single question
+  #e.g. What are 3 strengths of the Fletcher School?
+  coded_table <- dplyr::filter(coded_table, codeValue>0)
+  #Group by Category so we will get the sum of each categories codeValues
+  coded_table <- group_by(coded_table, Category)
+  #Use dplyr function "count" to tabulate the data
+  coded_table <- dplyr::summarize(coded_table, n = sum(codeValue))
+  coded_table <- ungroup(coded_table)
+  #Rename columns to match our desired format
+  coded_table <- dplyr::rename(coded_table, "Response"=Category,"N" = n)
+  #Filter zeros
+  coded_table <- dplyr::filter(coded_table, N>0)
+  #sort descending numeric with ascending alphabetical
+  coded_table <- dplyr::arrange(coded_table, desc(N),Response)
+  #add "Total with total number of comments to the bottom of the table
+  coded_table <- dplyr::bind_rows(coded_table, tibble("Response"="Total", "N" = total_comments))
 
   # we return a pair, the varname and the coded table.
   return(list('varname'=varname, 'coded_table'=coded_table))
@@ -226,7 +223,7 @@ format_coded_comment_sheets_NVivo <- function(coded_comment_sheets) {
 #' The first list is a list for each split group, and each list within those is a
 #' list of pairs of question IDs and their coded comments tables.
 #'
-#' @inheritParams format_coded_comment_sheets
+#' @inheritParams format_coded_comment_sheets_NVivo
 #' @inheritParams merge_split_column_into_comment_sheet
 #' @param split_column The string name of the column across which the coded comments
 #' should be split.
@@ -284,9 +281,7 @@ format_and_split_comment_sheets_NVivo <-
 #' from the specified `sheets_dir` parameter.
 #'
 #' @inheritParams make_results_tables
-#' @param sheets_dir is the string path location of the directory which contains Excel documents
-#' with a "Coded" sheet formatted as specified on the wiki:
-#' https://github.com/ctesta01/QualtricsTools/wiki/Comment-Coding
+#' @param sheets_dir is the string path location of the directory which contains NVivo crosstab export files for each coded question.
 #' @param n_threshold is the number of verbatim comments which must appear before an appendix of
 #' coded comments will be included.
 make_coded_comments_NVivo <-
@@ -352,7 +347,7 @@ make_coded_comments_NVivo <-
 #' specifies how many coded comments there must be before the coded
 #' comment appendices are included, and headerrows is an argument
 #' necessary to process the survey results correctly.
-#' @inheritParams make_coded_comments
+#' @inheritParams make_coded_comments_NVivo
 #' @inheritParams make_split_results_tables
 make_split_coded_comments_NVivo <-
   function(qsf_path,
