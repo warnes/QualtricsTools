@@ -174,7 +174,8 @@ question_variable_to_choice_text <- function(question, choice, use_recode_values
 
 # Create Summary Statistics tables for numerical data only questions
 #
-# The generate_summary_stats function uses the data frame of responses that have been linked to a question to generate summary statistics using basic R functions mean(), median(), min(), max(), sd(). Creates a new data frame with colnames and the stats and appends to question['Table']
+# The generate_summary_stats function uses the data frame of responses that have been linked to a question to generate
+# summary statistics using basic R functions mean(), median(), min(), max(), sd(). Creates a new data frame with colnames # and the stats and appends to question['Table']
 #
 
 generate_summary_stats <-
@@ -207,8 +208,6 @@ generate_summary_stats <-
     # colnames(results_table)[6] <- "Minimum"
     # colnames(results_table)[7] <- "Maximum"
     # # End here
-    #
-    #
     #
     #
     # # Use this code if vertical representation is preffered
@@ -1115,10 +1114,11 @@ process_question_results <-
       question[['Table']] <- NULL
 
       try({
-        # multiple choice multiple answer
+        # numerical text answer
         if(is_TE_numerical(question)){
           question<-generate_summary_stats(question)
         }
+        # multiple choice multiple answer
         else if (is_mc_multiple_answer(question)) {
           if (should_use_ofr) {
             question <-
