@@ -4,7 +4,9 @@
 \name{sample_survey}
 \alias{sample_survey}
 \title{Sample Qualtrics Survey Data}
-\format{An object of class \code{list} of length 2.}
+\format{
+An object of class \code{list} of length 2.
+}
 \usage{
 sample_survey
 }

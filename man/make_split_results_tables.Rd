@@ -4,8 +4,13 @@
 \alias{make_split_results_tables}
 \title{Generate Results Tables Reports Split (or Grouped By) their entries in a Response Column}
 \usage{
-make_split_results_tables(qsf_path, csv_path, output_dir, split_by,
-  headerrows = 3)
+make_split_results_tables(
+  qsf_path,
+  csv_path,
+  output_dir,
+  split_by,
+  headerrows = 3
+)
 }
 \arguments{
 \item{qsf_path}{(optional) is the string path location of the .qsf file to be processed.}

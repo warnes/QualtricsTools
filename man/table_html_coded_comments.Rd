@@ -4,8 +4,13 @@
 \alias{table_html_coded_comments}
 \title{Create a Text Appendix for Coded Comments}
 \usage{
-table_html_coded_comments(question, cc_index, appendix_e, blocks,
-  original_first_row)
+table_html_coded_comments(
+  question,
+  cc_index,
+  appendix_e,
+  blocks,
+  original_first_row
+)
 }
 \arguments{
 \item{question}{is the question to which the coded comments belong.}

@@ -4,8 +4,11 @@
 \alias{merge_split_column_into_comment_sheet}
 \title{Merge a Splitting Column into an Unprocessed Coded Comment Sheet}
 \usage{
-merge_split_column_into_comment_sheet(coded_comment_sheet, responses,
-  split_column)
+merge_split_column_into_comment_sheet(
+  coded_comment_sheet,
+  responses,
+  split_column
+)
 }
 \arguments{
 \item{coded_comment_sheet}{A single dataframe, imported from a
