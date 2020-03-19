@@ -127,7 +127,7 @@ get_coded_comment_sheet_NVivo <- function(codedfile) {
   #filter data to keep only values with ResponseID starting with R_ (filter out blanks)
   coded_use <- dplyr::filter(coded_use, stringr::str_detect(ResponseID, "^R_"))
   #Convert all columns other than responseID to integer
-  coded_use <- mutate_at(coded_use, vars(-ResponseID), funs(as.integer(.)))
+  coded_use <- dplyr::mutate_at(coded_use, vars(-ResponseID), funs(as.integer(.)))
   #Now filter to keep only rows for respondents who answered the question
   #These are identified with 1 value in the qname column
   #Use the filter to keep anyone with >0, in case we later want multiple comments to tally
@@ -135,7 +135,7 @@ get_coded_comment_sheet_NVivo <- function(codedfile) {
 
   #NVivo crosstab includes the last "Total" column; check for this and remove if it exists
   if (names(coded_use)[[ncol(coded_use)]]=="Total") {
-    coded_use <- select(coded_use, -Total)
+    coded_use <- dplyr::select(coded_use, -Total)
   }
 
   # Return the Coded Comments Data Frame (unprocessed)
@@ -175,10 +175,10 @@ format_coded_comments_NVivo <- function(coded_comment_sheet) {
   #e.g. What are 3 strengths of the Fletcher School?
   coded_table <- dplyr::filter(coded_table, codeValue>0)
   #Group by Category so we will get the sum of each categories codeValues
-  coded_table <- group_by(coded_table, Category)
+  coded_table <- dplyr::group_by(coded_table, Category)
   #Use dplyr function "count" to tabulate the data
   coded_table <- dplyr::summarize(coded_table, n = sum(codeValue))
-  coded_table <- ungroup(coded_table)
+  coded_table <- dplyr::ungroup(coded_table)
   #Rename columns to match our desired format
   coded_table <- dplyr::rename(coded_table, "Response"=Category,"N" = n)
   #Filter zeros
