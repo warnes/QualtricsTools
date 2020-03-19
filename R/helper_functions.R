@@ -833,6 +833,11 @@ make_text_appendices <-
 #' https://github.com/ctesta01/QualtricsTools/wiki/Comment-Coding
 #' @param n_threshold is the number of verbatim comments which must appear before an appendix of
 #' coded comments will be included.
+#' @param code_type type of coded comment data export. The default is
+#' to use NVivo crosstab export with the ResponseID in the first row and
+#' second column labeled with the varnmae and containing response presence
+#' 1/0 indicator. For old filemaker pro format, use "fmp" specification.
+#' (\code{"nvivo"} or \code{"fmp"})
 make_coded_comments <-
   function(qsf_path,
            csv_path,
@@ -840,7 +845,8 @@ make_coded_comments <-
            sheets_dir,
            output_dir,
            filename = 'Text Appendices with Coded Comments.docx',
-           n_threshold = 15
+           n_threshold = 15,
+           code_type = "nvivo"
   ) {
     # Either use the passed parameters or interactively get setup with the survey data.
     get_setup_in_environment(
@@ -850,14 +856,14 @@ make_coded_comments <-
       environment = environment()
     )
 
-    coded_sheets <- directory_get_coded_comment_sheets(sheets_dir)
+    coded_sheets <- directory_get_coded_comment_sheets(sheets_dir, code_type = "nvivo")
 
     if (is.null(coded_sheets)) {
       stop("Please fix errors before attempting again")
     }
 
     comment_tables <-
-      format_coded_comment_sheets(coded_comment_sheets = coded_sheets)
+      format_coded_comment_sheets(coded_comment_sheets = coded_sheets, code_type = "nvivo")
     blocks <-
       insert_coded_comments(
         blocks = blocks,
