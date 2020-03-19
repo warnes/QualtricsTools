@@ -11,8 +11,6 @@ Description: This package is for automating the processing of Qualtrics surveys.
     format.
 License: BSD
 LazyData: true
-Depends:
-
 Imports:
     digest,
     dplyr,
