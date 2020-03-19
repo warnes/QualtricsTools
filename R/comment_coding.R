@@ -2,18 +2,25 @@
 #'
 #' This function takes as an argument a string representative of a
 #' directory, loads the CSVs and Excel data from that directory,
-#' looks for 'Coded' sheets, extracts the coded sheets,
-#' and saves the coded comment table and the question ID
+#' extracts the coded sheets,and saves the coded comment table and the question ID
 #' as a pair in the output coded_appendix_tables list. If there
 #' are sheets which contain non-numeric data, warnings are raised.
 #' @param directory A string path to the directory containing the coded comments
 #' sheets, which are formatted as described in the Wiki.
 #' https://github.com/ctesta01/QualtricsTools/wiki/Comment-Coding
+#' @param code_type type of coded comment data export. The default is
+#' to use NVivo crosstab export with the ResponseID in the first row and
+#' second column labeled with the varnmae and containing response presence
+#' 1/0 indicator. For old filemaker pro format, use "fmp" specification.
+#' (\code{"nvivo"} or \code{"fmp"})
 #' @return A list of dataframes for each sheet of coded comments.
-directory_get_coded_comment_sheets <- function(directory) {
+directory_get_coded_comment_sheets <- function(directory, code_type) {
   # ask for directory if not provided
   if (missing(directory))
-    directory <- choose.dir()
+    directory <- choose.dir(caption = "Select coded comment directory")
+  if (missing(code_type)) {
+    code_type <- readline(prompt = "Specify the format of your coded comment exports, nvivo or fmp: ")
+  }
 
   # we only want to look at Excel or CSV files in the given directory
   files_list <- list.files(path = directory, full.names = TRUE)
@@ -41,9 +48,10 @@ directory_get_coded_comment_sheets <- function(directory) {
   for (i in 1:length(files_list)) {
     # For each file in the files_list, try to get its coded comment sheet.
     # If it warns, save the error and filename to warnings_list and warning_files_list.
+    #This will execute a different function depending on coded comment export type
     tryCatch(
       coded_appendix_tables[[length(coded_appendix_tables) + 1]] <-
-        get_coded_comment_sheet(files_list[[i]]),
+        get_coded_comment_sheet(codedfile = files_list[[i]], code_type = code_type),
       warning = function(w) {
         warning_files_list[[i]] <- files_list[[i]]
         warnings_list[[i]] <- w
@@ -86,15 +94,47 @@ directory_get_coded_comment_sheets <- function(directory) {
   return(coded_appendix_tables)
 }
 
+
+#' Turn a Single Coded File into a Data Frame
+#'
+#' This retreives comment coding data as a dataframe from an excel
+#' or .csv file. Use code_type to specify the format of coded comment data:
+#' NVivo crosstab export (current) or  Filemaker Pro exports (legacy).
+#' This is a wrapper function that calls get_coded_comment_sheet_fmp
+#' or get_coded_comment_sheet_nvivo based on code_type.
+#'
+#' @param codedfile The string path to a Excel file.
+#' @param codetype Type of coded comment data export. The default is
+#' to use NVivo crosstab export with the ResponseID in the first row and
+#' second column labeled with the varnmae and containing response presence
+#' 1/0 indicator. For old filemaker pro format, use "fmp" specification.
+#' (\code{"nvivo"} or \code{"fmp"})
+#' @return A dataframe version of the contents of the coded comments
+#' in the codedfile.
+
+get_coded_comment_sheet <- function(codedfile, code_type) {
+  if (code_type == "nvivo") {
+    coded_use <- get_coded_comment_sheet_fmp(codedfile = codedfile)
+  } else if (code_type == "fmp") {
+    coded_use <- get_coded_comment_sheet_NVivo(codedfile = codedfile)
+  }
+  else {
+    stop("The specification of code_type is not fmp or nvivo and is not supported by Qualtricstools.")
+  }
+  return(coded_use)
+}
+
+
 #' Turn a Single Coded File into a Data Frame
 #'
 #' This retrieves comment coding data as a dataframe
 #' from a Excel file. Coded comments are retrieved from the sheet named "Coded"
-#' (case does not matter).
+#' (case does not matter). This works with the legacy coded comment format
+#' based on exports from Filemaker Pro.
 #' @param codedfile The string path to a Excel file.
 #' @return A dataframe version of the contents of the coded comments
 #' in the codedfile.
-get_coded_comment_sheet <- function(codedfile) {
+get_coded_comment_sheet_fmp <- function(codedfile) {
   # Ask for the Coded File if there isn't one provided
   if (missing(codedfile))
     codedfile <- file.choose()
@@ -136,6 +176,64 @@ get_coded_comment_sheet <- function(codedfile) {
   return(coded_use)
 }
 
+#' Turn a Single NVivo Crosstab Coded File into a Data Frame
+#'
+#' This retreives comment coding data as a data frame. Data must be
+#' formatted with NVivo crosstab export format with ResponseID unlabeled
+#' in the first column and second column labeled with the variable name
+#' and values indicating response presence. Subsequent columns indicate
+#' coded comment categories.
+#' @inheritParams get_coded_comment_sheet_fmp
+#' @return A dataframe version of the contents of the coded comments
+#' in the codedfile.
+
+get_coded_comment_sheet_NVivo <- function(codedfile) {
+  # Ask for the Coded File if there isn't one provided
+  if (missing(codedfile)) {
+    codedfile <- file.choose()
+  }
+
+  # Check if there is more than one sheet. If there are multiple
+  #   sheets, pick out the sheet called "Coded"
+  # Warn if no such sheet exists.
+  # Load the Coded Comments data frame
+  sheet_count <- length(readxl::excel_sheets(codedfile))
+  if (sheet_count == 1) {
+    coded_orig <- readxl::read_excel(codedfile, col_types = "text", .name_repair = "minimal")
+  } else if (sheet_count >1) {
+    sheetindex <- which(tolower(readxl::excel_sheets(codedfile)) == "coded")
+    if (length(sheetindex) == 0) {
+      warning(paste0(codedfile, "had multiple sheets and did not have a Coded tab\n"))
+      return(NA)
+    } else {coded_orig <- readxl::read_excel(codedfile, sheet = sheetindex,
+                                             col_types = "text", .name_repair = "minimal")}
+  }
+
+
+  #For NVivo exports, the second column of the exported sheet contains the question name
+  qname <- names(coded_orig)[[2]]
+  #NVivo exports include an unlabeled first column, so we will need to fix this
+  #Rename the first column as "ResponseID"
+  coded_use <- dplyr::rename(coded_orig, "ResponseID"=1)
+  #filter data to keep only values with ResponseID starting with R_ (filter out blanks)
+  coded_use <- dplyr::filter(coded_use, stringr::str_detect(ResponseID, "^R_"))
+  #Convert all columns other than responseID to integer
+  coded_use <- dplyr::mutate_at(coded_use, dplyr::vars(-ResponseID), function(x) as.integer(x))
+  #Now filter to keep only rows for respondents who answered the question
+  #These are identified with 1 value in the qname column
+  #Use the filter to keep anyone with >0, in case we later want multiple comments to tally
+  coded_use <- dplyr::filter(coded_use,!!as.name(qname)>0)
+
+  #NVivo crosstab includes the last "Total" column; check for this and remove if it exists
+  if (names(coded_use)[[ncol(coded_use)]]=="Total") {
+    coded_use <- dplyr::select(coded_use, -Total)
+  }
+
+  # Return the Coded Comments Data Frame (unprocessed)
+  return(coded_use)
+}
+
+
 #' Process a Dataframe of Coded Comments
 #'
 #' This turns the original dataframe of coded comments
@@ -145,12 +243,11 @@ get_coded_comment_sheet <- function(codedfile) {
 #' summarizes the responses to the coded comments with
 #' frequencies for each coded category.
 #' @param coded_comment_sheet A single dataframe, imported from a
-#' file in the format as specified by the wiki.
-#' https://github.com/ctesta01/QualtricsTools/wiki/Comment-Coding
+#' file in the format used in legacy Filemaker Pro coded comment exports.
 #' @return A pair (varname, coded_table) where varname corresponds
 #' to the corresponding original response column name and coded_table
 #' summarizes the frequencies of the provided coded comments.
-format_coded_comments <- function(coded_comment_sheet) {
+format_coded_comments_fmp <- function(coded_comment_sheet) {
   # determine which column to start with
   index_qname <-
     which(tolower(names(coded_comment_sheet)) == "varname")
@@ -187,8 +284,58 @@ format_coded_comments <- function(coded_comment_sheet) {
 
   # we return a pair, the varname and the coded table.
   return(list('varname'=varname, 'coded_table'=coded_table))
+}
+
+#' Process a Dataframe of Coded Comments
+#'
+#' This turns the original dataframe of coded comments
+#' into a pair (varname, coded_table), where the varname
+#' is the column name in the response CSV data from Qualtrics
+#' that the coded comments correspond to and coded_table
+#' summarizes the responses to the coded comments with
+#' frequencies for each coded category.
+#' @param coded_comment_sheet A single dataframe, imported from a
+#' file formatted by NVivo crosstab data exports.
+#' @return A pair (varname, coded_table) where varname corresponds
+#' to the corresponding original response column name and coded_table
+#' summarizes the frequencies of the provided coded comments.
+format_coded_comments_NVivo <- function(coded_comment_sheet) {
+  # Identify the variable name; this should be the name of the second column for regular reports,
+  #and the third column for split reports; check for SPLIT in the second column
+  if (stringr::str_detect(names(coded_comment_sheet)[[2]],"-split$")) {
+    varname <- names(coded_comment_sheet)[[3]]
+  } else if (!stringr::str_detect(names(coded_comment_sheet)[[2]],"-split$")) {
+    varname <-  names(coded_comment_sheet)[[2]]
+  }
+  #Get the total number of comments
+  total_comments <- nrow(coded_comment_sheet)
+  #Construct the table
+  coded_table <- coded_comment_sheet
+  #Gather values to make them long and lean so we can easily tabulate
+  coded_table <- tidyr::gather(coded_table, key = "Category", value="codeValue", -ResponseID, -!!varname, -ends_with("-split"))
+  #Filter the long and lean data to keep only positive values showing a mapping to the category
+  #This used to be values equal to 1, but we want to be flexible with multi-part questions coded as a single question
+  #e.g. What are 3 strengths of the Fletcher School?
+  coded_table <- dplyr::filter(coded_table, codeValue>0)
+  #Group by Category so we will get the sum of each categories codeValues
+  coded_table <- dplyr::group_by(coded_table, Category)
+  #Use dplyr function "count" to tabulate the data
+  coded_table <- dplyr::summarize(coded_table, n = sum(codeValue))
+  coded_table <- dplyr::ungroup(coded_table)
+  #Rename columns to match our desired format
+  coded_table <- dplyr::rename(coded_table, "Response"=Category,"N" = n)
+  #Filter zeros
+  coded_table <- dplyr::filter(coded_table, N>0)
+  #sort descending numeric with ascending alphabetical
+  coded_table <- dplyr::arrange(coded_table, desc(N),Response)
+  #add "Total with total number of comments to the bottom of the table
+  coded_table <- dplyr::bind_rows(coded_table, tibble::tibble("Response"="Total", "N" = total_comments))
+
+  # we return a pair, the varname and the coded table.
+  return(list('varname'=varname, 'coded_table'=coded_table))
 
 }
+
 
 #' Format Comment Coding Data into Frequency Tables
 #'
@@ -200,15 +347,28 @@ format_coded_comments <- function(coded_comment_sheet) {
 #'
 #' @param coded_comment_sheets A list of dataframes for
 #' each sheet of coded comments.
+#' @param code_type type of coded comment data export. The default is
+#' to use NVivo crosstab export with the ResponseID in the first row and
+#' second column labeled with the varnmae and containing response presence
+#' 1/0 indicator. For old filemaker pro format, use "fmp" specification.
+#' (\code{"nvivo"} or \code{"fmp"})
 #' @return A list of pairs (varname, coded_table) where varname corresponds
 #' to the response column name of the comments coded and coded_table
 #' summarizes the frequencies of the provided coded comments.
-format_coded_comment_sheets <- function(coded_comment_sheets) {
+format_coded_comment_sheets <- function(coded_comment_sheets, code_type) {
   coded_comments <- list()
   cc_length <- length(coded_comment_sheets)
+  if (missing(code_type) || ! code_type %in% c("nvivo", "fmp")) {
+    stop("The specification of code_type is not fmp or nvivo and is not supported by Qualtricstools.")
+    }
   for (i in 1:cc_length) {
-    coded_comments[[i]] <-
-      format_coded_comments(coded_comment_sheets[[i]])
+    if (code_type == "nvivo") {
+      coded_comments[[i]] <-
+        format_coded_comments_NVivo(coded_comment_sheets[[i]])
+    } else if (code_type == "fmp") {
+      coded_comments[[i]] <-
+        format_coded_comments_fmp(coded_comment_sheets[[i]])
+    }
   }
   return(coded_comments)
 }
