@@ -114,9 +114,9 @@ directory_get_coded_comment_sheets <- function(directory, code_type) {
 
 get_coded_comment_sheet <- function(codedfile, code_type) {
   if (code_type == "nvivo") {
-    coded_use <- get_coded_comment_sheet_fmp(codedfile = codedfile)
-  } else if (code_type == "fmp") {
     coded_use <- get_coded_comment_sheet_NVivo(codedfile = codedfile)
+  } else if (code_type == "fmp") {
+    coded_use <- get_coded_comment_sheet_fmp(codedfile = codedfile)
   }
   else {
     stop("The specification of code_type is not fmp or nvivo and is not supported by Qualtricstools.")
@@ -462,7 +462,7 @@ format_and_split_comment_sheets <-
     for (i in 1:length(split_coded_comment_sheets)) {
       if (!is.null(split_coded_comment_sheets[[i]]))
         split_coded_comment_sheets[[i]] <-
-          format_coded_comment_sheets(split_coded_comment_sheets[[i]])
+          format_coded_comment_sheets(coded_comment_sheets = split_coded_comment_sheets[[i]], code_type = code_type)
     }
 
     return(split_coded_comment_sheets)
