@@ -195,7 +195,7 @@ choice_text_from_question <- function(question, choice) {
     choice <- "Seen, but Unanswered"
   if (is.na(choice) || identical(choice, original))
     choice <- ""
-  choice <- clean_html(choice)
+  choice <- clean_html_and_css(choice)
   return(choice)
 }
 
@@ -503,7 +503,7 @@ choice_text_from_response_column <-
     j <- question_indices[[2]]
     question_text <-
       blocks[[i]][['BlockElements']][[j]][['Payload']][['QuestionText']]
-    question_text <- clean_html(question_text)
+    question_text <- clean_html_and_css(question_text)
 
     # get the first-row-entry from the responses for the given response column,
     # count the number of dashes in the cleaned question text,
@@ -533,7 +533,7 @@ choice_text_from_response_column <-
         substr(first_row_entry,
                first_row_dashes[[stem_dash_n + 1]] + 1,
                nchar(first_row_entry))
-      choice_text <- clean_html(choice_text)
+      choice_text <- clean_html_and_css(choice_text)
 
     } else {
       choice_text <- ""

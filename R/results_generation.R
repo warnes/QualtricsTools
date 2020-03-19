@@ -161,7 +161,7 @@ question_variable_to_choice_text <- function(question, choice, use_recode_values
     }
 
     # Clean the choice text of HTML entities.
-    choice_text <- clean_html(choice_text)
+    choice_text <- clean_html_and_css(choice_text)
 
     # Insert the corresponding export tag into the question choice.
     choice_text <- paste0(choice_text,
@@ -654,10 +654,10 @@ matrix_single_answer_results <-
       lapply(colnames(na_responses), function(x)
         question[['Payload']][['Answers']][[x]][[1]])
     colnames(valid_responses) <-
-      lapply(colnames(valid_responses), clean_html)
+      lapply(colnames(valid_responses), clean_html_and_css)
     if (has_na)
       colnames(na_responses) <-
-      lapply(colnames(na_responses), clean_html)
+      lapply(colnames(na_responses), clean_html_and_css)
 
     #Lines added from above to rename row values
     #EM insertion
@@ -682,7 +682,7 @@ matrix_single_answer_results <-
     choices <-
       lapply(choices, function(x)
         question[['Payload']][['Choices']][[x]][[1]])
-    choices <- lapply(choices, clean_html)
+    choices <- lapply(choices, clean_html_and_css)
     choices <- unlist(choices, use.names = FALSE)
 
     # construct the data frame
@@ -1005,9 +1005,9 @@ matrix_multiple_answer_results <-
 
     # clean html out of the colnames and rownames
     rownames(responses_tabled) <-
-      sapply(rownames(responses_tabled), clean_html)
+      sapply(rownames(responses_tabled), clean_html_and_css)
     colnames(responses_tabled) <-
-      sapply(colnames(responses_tabled), clean_html)
+      sapply(colnames(responses_tabled), clean_html_and_css)
 
     # include the rownames as the first row
     responses_tabled <-
