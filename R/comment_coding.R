@@ -429,7 +429,8 @@ merge_split_column_into_comment_sheet <-
 format_and_split_comment_sheets <-
   function(coded_comment_sheets,
            responses,
-           split_column) {
+           split_column,
+           code_type) {
     # split_coded_comment_sheets will be a list of coded comment sheets for each respondent group
     levels <- levels(factor(responses[, split_column]))
     split_coded_comment_sheets <- sapply(levels, function(x)

@@ -857,14 +857,14 @@ make_coded_comments <-
       environment = environment()
     )
 
-    coded_sheets <- directory_get_coded_comment_sheets(sheets_dir, code_type = "nvivo")
+    coded_sheets <- directory_get_coded_comment_sheets(sheets_dir, code_type = code_type)
 
     if (is.null(coded_sheets)) {
       stop("Please fix errors before attempting again")
     }
 
     comment_tables <-
-      format_coded_comment_sheets(coded_comment_sheets = coded_sheets, code_type = "nvivo")
+      format_coded_comment_sheets(coded_comment_sheets = coded_sheets, code_type = code_type)
     blocks <-
       insert_coded_comments(
         blocks = blocks,
@@ -1079,7 +1079,8 @@ make_split_coded_comments <-
            output_dir,
            split_by,
            n_threshold = 15,
-           headerrows) {
+           headerrows,
+           code_type) {
     # This turns the split_by list into a name for the column
     # which will contain the concatenation of the entries of responses
     # which are being split over. That is if split_by = c('column1', 'column2', 'column3'),
@@ -1103,14 +1104,14 @@ make_split_coded_comments <-
     responses <-
       create_merged_response_column(split_by, split_string, blocks, responses)
 
-    coded_sheets <- directory_get_coded_comment_sheets(sheets_dir)
+    coded_sheets <- directory_get_coded_comment_sheets(sheets_dir, code_type = code_type)
 
     if (is.null(coded_sheets)) {
       stop("Please fix errors before attempting again")
     }
 
     split_comment_tables <-
-      format_and_split_comment_sheets(coded_sheets, responses, split_string)
+      format_and_split_comment_sheets(coded_sheets, responses, split_string, code_type = code_type)
 
     split_blocks <-
       split_respondents(
