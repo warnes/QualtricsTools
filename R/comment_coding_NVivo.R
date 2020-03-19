@@ -127,7 +127,7 @@ get_coded_comment_sheet_NVivo <- function(codedfile) {
   #filter data to keep only values with ResponseID starting with R_ (filter out blanks)
   coded_use <- dplyr::filter(coded_use, stringr::str_detect(ResponseID, "^R_"))
   #Convert all columns other than responseID to integer
-  coded_use <- dplyr::mutate_at(coded_use, dplyr::vars(-ResponseID), dplyr::funs(as.integer(.)))
+  coded_use <- dplyr::mutate_at(coded_use, dplyr::vars(-ResponseID), function(x) as.integer(x))
   #Now filter to keep only rows for respondents who answered the question
   #These are identified with 1 value in the qname column
   #Use the filter to keep anyone with >0, in case we later want multiple comments to tally
