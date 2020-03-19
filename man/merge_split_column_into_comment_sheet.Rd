@@ -11,10 +11,6 @@ merge_split_column_into_comment_sheet(
 )
 }
 \arguments{
-\item{coded_comment_sheet}{A single dataframe, imported from a
-file in the format as specified by the wiki.
-https://github.com/ctesta01/QualtricsTools/wiki/Comment-Coding}
-
 \item{responses}{A dataframe of Qualtrics responses to a survey.
 Use ask_for_csv() to create such a dataframe from a CSV file.}
 
