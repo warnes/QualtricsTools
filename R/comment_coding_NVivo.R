@@ -127,7 +127,7 @@ get_coded_comment_sheet_NVivo <- function(codedfile) {
   #filter data to keep only values with ResponseID starting with R_ (filter out blanks)
   coded_use <- dplyr::filter(coded_use, stringr::str_detect(ResponseID, "^R_"))
   #Convert all columns other than responseID to integer
-  coded_use <- dplyr::mutate_at(coded_use, dplyr::vars(-ResponseID), funs(as.integer(.)))
+  coded_use <- dplyr::mutate_at(coded_use, dplyr::vars(-ResponseID), dplyr::funs(as.integer(.)))
   #Now filter to keep only rows for respondents who answered the question
   #These are identified with 1 value in the qname column
   #Use the filter to keep anyone with >0, in case we later want multiple comments to tally
@@ -186,7 +186,7 @@ format_coded_comments_NVivo <- function(coded_comment_sheet) {
   #sort descending numeric with ascending alphabetical
   coded_table <- dplyr::arrange(coded_table, desc(N),Response)
   #add "Total with total number of comments to the bottom of the table
-  coded_table <- dplyr::bind_rows(coded_table, tibble("Response"="Total", "N" = total_comments))
+  coded_table <- dplyr::bind_rows(coded_table, tibble::tibble("Response"="Total", "N" = total_comments))
 
   # we return a pair, the varname and the coded table.
   return(list('varname'=varname, 'coded_table'=coded_table))
@@ -303,8 +303,8 @@ make_coded_comments_NVivo <-
 
     coded_sheets <- directory_get_coded_comment_sheets_NVivo(sheets_dir)
 
-    if (is.null(coded_sheets)) {
-      stop("Please fix errors before attempting again")
+    if (is.null(coded_sheets) | length(coded_sheets)==0) {
+      stop("Issue with coded comment sheets; Please fix errors before attempting again")
     }
 
     comment_tables <-
