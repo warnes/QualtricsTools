@@ -5,7 +5,7 @@ context("Generating text appendices with inserted coded comments")
 
 surveysdir = file.path(path.package('QualtricsTools'), 'data/Sample Surveys/')
 
-test_that("Test that make_coded_comments includes the categories defined in the coded comments.", {
+test_that("Test that make_coded_comments with fmp code_type creates a file and coded comment table.", {
 
   requireNamespace("XML")
 
@@ -14,7 +14,7 @@ test_that("Test that make_coded_comments includes the categories defined in the 
 
   qsf_path = file.path(surveysdir, "/Better Sample Survey/Better_Sample_Survey.qsf")
   csv_path = file.path(surveysdir, "/Better Sample Survey/Better_Sample_Survey.csv")
-  sheets_dir = file.path(surveysdir, "/Comment Coding/Coded Comments/")
+  sheets_dir_fmp = file.path(surveysdir, "/Comment Coding/Coded Comments/")
   # output_file <- make_coded_comments(
   #   qsf_path = qsf,
   #   csv_path = csv,
@@ -30,14 +30,14 @@ test_that("Test that make_coded_comments includes the categories defined in the 
     environment = environment()
   )
 
-  coded_sheets <- directory_get_coded_comment_sheets(sheets_dir)
+  coded_sheets <- directory_get_coded_comment_sheets(directory = sheets_dir_fmp, code_type = "fmp")
 
   if (is.null(coded_sheets)) {
     stop("Please fix errors before attempting again")
   }
 
   comment_tables <-
-    format_coded_comment_sheets(coded_comment_sheets = coded_sheets)
+    format_coded_comment_sheets(coded_comment_sheets = coded_sheets, code_type = "fmp")
   blocks <-
     insert_coded_comments(
       blocks = blocks,
@@ -76,7 +76,7 @@ test_that("Test that make_coded_comments includes the categories defined in the 
 
 
 
-test_that("Test that make_coded_comments_NVivo creates the coded comment Table and writes a file.", {
+test_that("Test that make_coded_comments with nvivo code_type creates a file and coded comment table.", {
 
   requireNamespace("XML")
 
@@ -85,7 +85,7 @@ test_that("Test that make_coded_comments_NVivo creates the coded comment Table a
 
   qsf_path = here::here("data","Sample Surveys","Better Sample Survey", "Better_Sample_Survey.qsf")
   csv_path = here::here("data","Sample Surveys","Better Sample survey", "Better_Sample_Survey.csv")
-  sheets_dir = here::here("data","Sample Surveys","Better Sample Survey", "Comment Coding NVivo")
+  sheets_dir_nvivo = here::here("data","Sample Surveys","Better Sample Survey", "Comment Coding NVivo")
   # output_file <- make_coded_comments(
   #   qsf_path = qsf,
   #   csv_path = csv,
@@ -101,14 +101,14 @@ test_that("Test that make_coded_comments_NVivo creates the coded comment Table a
     environment = environment()
   )
 
-  coded_sheets <- directory_get_coded_comment_sheets_NVivo(sheets_dir)
+  coded_sheets <- directory_get_coded_comment_sheets(directory = sheets_dir_nvivo, code_type = "nvivo")
 
   if (is.null(coded_sheets) | length(coded_sheets)==0) {
     stop("Please fix errors before attempting again")
   }
 
   comment_tables <-
-    format_coded_comment_sheets_NVivo(coded_comment_sheets = coded_sheets)
+    format_coded_comment_sheets(coded_comment_sheets = coded_sheets, code_type = "nvivo")
   blocks <-
     insert_coded_comments(
       blocks = blocks,
