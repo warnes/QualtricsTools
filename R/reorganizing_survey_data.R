@@ -432,7 +432,7 @@ clean_question_text <- function(questions) {
 #'
 #' This function uses regex extensively to clean HTML out of a given text block.
 #' The first regex used is "\\s+". It matches multiple characters of whitespace, and
-#' reduces them to a single space character. HTML tags and Entries are then cleaned.
+#' reduces them to a single space character. HTML tags and Entries are then cleaned
 #' with this regular expression: "<.*?>|&[# a-z 0-9]*". It matches a substring that
 #' starts with & and ends with ; with lower case letters between them, or a substring
 #' with < and > on each side, with any characters between. The third regex expression
