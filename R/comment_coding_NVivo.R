@@ -1,4 +1,4 @@
-requireNamespace("tidyverse")
+#requireNamespace("tidyverse")
 
 #' Turn a Directory into a list of Coded Comment Data Frames (unprocessed)
 #'

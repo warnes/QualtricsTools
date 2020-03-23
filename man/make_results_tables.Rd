@@ -4,8 +4,13 @@
 \alias{make_results_tables}
 \title{Export a file containing the results tables}
 \usage{
-make_results_tables(qsf_path, csv_path, headerrows, output_dir,
-  filename = "Results Tables.docx")
+make_results_tables(
+  qsf_path,
+  csv_path,
+  headerrows,
+  output_dir,
+  filename = "Results Tables.docx"
+)
 }
 \arguments{
 \item{qsf_path}{(optional) is the string path location of the .qsf file to be processed.}

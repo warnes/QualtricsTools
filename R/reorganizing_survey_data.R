@@ -35,13 +35,13 @@ get_reorganized_questions_and_blocks <- function(survey,
   questions <- valid_questions_blocks[["questions"]]
   blocks <- valid_questions_blocks[["blocks"]]
   #Now clean question text using clean_html
-  questions <- purrr::map(questions, ~ append(.x,list("QuestionTextClean" = clean_html(.x[["Payload"]][["QuestionText"]]))))
+  questions <- purrr::map(questions,~ clean_question_text(.x))
   #Add the Qualtrics question type; this is for reference and won't be used in results
   questions <- purrr::map(questions, ~append(.x, list("Qualtrics_qtype" = .x[["Payload"]][["QuestionType"]])))
   #Add human readable question type to each question; this can be edited if we want
   #We will want ot expand this as we keep going
   #We will need to reclassify the question type when we split side-by-side!!
-  questions <- purrr::map(questions, ~append(.x,list("QuestionTypeHuman" = qtype_human(.x))))
+  questions <- purrr::map(questions, ~ add_qtype_human(.x))
   #Insert user notes into questions as element "qtNotes"
   questions <- insert_notes_into_questions(questions, notes = qtNotesList)
   #Insert skip logic into the questions
@@ -114,7 +114,7 @@ valid_questions_blocks_from_survey <- function(survey) {
   questions <- purrr::keep(survey_elements, ~ .x[["Element"]]=="SQ")
   #Remove questions that are in the trash, as specified by "trash_questions
   questions <- purrr::discard(questions, ~ .x[["PrimaryAttribute"]] %in% trash_questions)
-  return(list("questions" = questions, "blocks"=blocks))
+  return(list("questions" = questions, "blocks"=blocks_notrash))
 }
 
 
@@ -144,6 +144,13 @@ qtype_human <- function(question) {
                                          TRUE ~ "Other question type")
   return(QuestionTypeHuman)
 
+}
+
+#' Add Human readable question type to the Payload of a question.
+#' @inheritParams qtype_human
+add_qtype_human <- function (question){
+  question[['Payload']][['QuestionTypeHuman']] <- qtype_human(question)
+  return(question)
 }
 
 
@@ -535,16 +542,14 @@ questions_into_blocks <- function(questions, blocks) {
 #' @param questions A list of questions extracted from a Qualtrics QSF file. Use
 #' questions_from_survey() to get them from an imported survey.
 #'
-#' @return A list of questions which now include in their Payload a QuestionTextClean
+#' @return A question which now includes in its Payload a QuestionTextClean
 #' element, a copy of the QuestionText but cleaned of any HTML tags and HTML entities.
-clean_question_text <- function(questions) {
+clean_question_text <- function(question) {
 
-  for (i in 1:length(questions)) {
-    questions[[i]][['Payload']][['QuestionTextClean']] <-
-      clean_html(questions[[i]][['Payload']][['QuestionText']])
-  }
+  question[['Payload']][['QuestionTextClean']] <-
+      clean_html(question[['Payload']][['QuestionText']])
 
-  return(questions)
+  return(question)
 }
 
 
@@ -1263,14 +1268,20 @@ split_respondents <-
 
       if (!exists("blocks", where = globalenv())) {
         # process the blocks and questions as per usual
-        blocks <- blocks_from_survey(survey)
-        questions <- questions_from_survey(survey)
-        questions <- remove_trash_questions(questions, blocks)
-        questions <- clean_question_text(questions)
-        questions <- human_readable_qtype(questions)
-        blocks <- remove_trash_blocks(blocks)
-        notes <- notes_from_survey(survey)
-        questions <- insert_notes_into_questions(questions, notes)
+        valid_questions_blocks <- valid_questions_blocks_from_survey(survey)
+        questions <- valid_questions_blocks[["questions"]]
+        blocks <- valid_questions_blocks[["blocks"]]
+        questions <- purrr::map(questions, ~ append(.x,list("QuestionTextClean" = clean_html(.x[["Payload"]][["QuestionText"]]))))
+        #Add the Qualtrics question type; this is for reference and won't be used in results
+        questions <- purrr::map(questions, ~append(.x, list("Qualtrics_qtype" = .x[["Payload"]][["QuestionType"]])))
+        #Add human readable question type to each question; this can be edited if we want
+        #We will want ot expand this as we keep going
+        #We will need to reclassify the question type when we split side-by-side!!
+        questions <- purrr::map(questions, ~append(.x,list("QuestionTypeHuman" = qtype_human(.x))))
+        #Insert user notes into questions as element "qtNotes"
+        questions <- insert_notes_into_questions(questions, notes = qtNotesList)
+        #Insert skip logic into the questions
+        questions <- insert_skiplogic_into_questions(questions, blocks=blocks)
       } else {
         blocks <- get(x = "blocks", envir = globalenv())
         questions <- get(x = "questions", envir = globalenv())
@@ -1515,16 +1526,45 @@ create_response_column_dictionary <-
 #'of whether you changed questions for a shell survey.
 create_question_dictionary_from_qsf <- function(qsf_path) {
   survey <- ask_for_qsf(qsf_path)
-  blocks <- blocks_from_survey(survey)
-  questions <- questions_from_survey(survey)
-  questions <- remove_trash_questions(questions, blocks)
-  blocks <- remove_trash_blocks(blocks)
-  questions_and_blocks <- split_side_by_sides(questions, blocks)
-  questions <- questions_and_blocks[[1]]
-  blocks <- questions_and_blocks[[2]]
-  questions <- clean_question_text(questions)
-  questions <- human_readable_qtype(questions)
-  blocks <- questions_into_blocks(questions, blocks)
+  valid_questions_blocks <- valid_questions_blocks_from_survey(survey)
+  questions <- valid_questions_blocks[["questions"]]
+  blocks <- valid_questions_blocks[["blocks"]]
+  #Now clean question text using clean_html
+  questions <- purrr::map(questions,~ clean_question_text(.x))
+  #Add the Qualtrics question type; this is for reference and won't be used in results
+  questions <- purrr::map(questions, ~append(.x, list("Qualtrics_qtype" = .x[["Payload"]][["QuestionType"]])))
+  #Add human readable question type to each question; this can be edited if we want
+  #We will want ot expand this as we keep going
+  #We will need to reclassify the question type when we split side-by-side!!
+  questions <- purrr::map(questions, ~append(.x,list("QuestionTypeHuman" = qtype_human(.x))))
+  #Insert user notes into questions as element "qtNotes"
+  #questions <- insert_notes_into_questions(questions, notes = qtNotesList)
+  #Insert skip logic into the questions
+  questions <- insert_skiplogic_into_questions(questions, blocks=blocks)
+  #Split side-by-side questions into their components
+  #first append side-by-side question components to the list,
+  #them remove the original side-by-side question elements
+  questions <- split_sbs_questions(questions)
+  #This is a named list where the name is the NEW split question ID and the element is the original QID
+  sbs_question_qids <- purrr::keep(questions,~"SBS_origQID" %in% names(.x))
+  sbs_question_qids <- purrr::map(sbs_question_qids, "SBS_origQID")
+  #Revise the blocks to create space for elements split from side-by-side questions
+  blocks <- purrr::map(blocks, ~ split_block_elements(.x,sbs_question_qids))
+  #Now insert questions into blocks
+  blocks <- purrr::map(blocks, ~ insert_questions_into_block(block = .x, questions = questions))
+
+
+  # survey <- ask_for_qsf(qsf_path)
+  # blocks <- blocks_from_survey(survey)
+  # questions <- questions_from_survey(survey)
+  # questions <- remove_trash_questions(questions, blocks)
+  # blocks <- remove_trash_blocks(blocks)
+  # questions_and_blocks <- split_side_by_sides(questions, blocks)
+  # questions <- questions_and_blocks[[1]]
+  # blocks <- questions_and_blocks[[2]]
+  # questions <- clean_question_text(questions)
+  # questions <- human_readable_qtype(questions)
+  # blocks <- questions_into_blocks(questions, blocks)
 
   flow <- flow_from_survey(survey)
   qdict <- create_question_dictionary(blocks,flow)

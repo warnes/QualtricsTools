@@ -4,8 +4,12 @@
 \alias{insert_split_survey_comments}
 \title{Split Survey and Insert Split Coded Comments}
 \usage{
-insert_split_survey_comments(split_blocks, split_coded_comment_sheets,
-  split_column, original_first_rows)
+insert_split_survey_comments(
+  split_blocks,
+  split_coded_comment_sheets,
+  split_column,
+  original_first_rows
+)
 }
 \arguments{
 \item{split_blocks}{A list of a list of blocks. The same question, but with different respondent groups,

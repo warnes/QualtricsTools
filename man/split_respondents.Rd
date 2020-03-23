@@ -4,8 +4,16 @@
 \alias{split_respondents}
 \title{Split Respondents by a Response Column}
 \usage{
-split_respondents(response_column, responses, survey, blocks, questions,
-  headerrows, already_loaded, original_first_rows)
+split_respondents(
+  response_column,
+  responses,
+  survey,
+  blocks,
+  questions,
+  headerrows,
+  already_loaded,
+  original_first_rows
+)
 }
 \arguments{
 \item{response_column}{The response column that will be used to split the respondents}

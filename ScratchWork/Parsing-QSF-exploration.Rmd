@@ -11,11 +11,11 @@ library(tidyverse)
 library(QualtricsTools)
 ```
 
-##Updating functions
+## Updating functions
 
 This is a space where anything we functionalize new can be added to our environment so that we can work wiht and use it in the later steps.
 
-###Revise extraction of user notes and inserting into questions.
+### Revise extraction of user notes and inserting into questions.
 
 Now we can functionalize how we are creating user notes. This should replace notes_from_survey. We will also want to update how we insert notes into questions above.
 
@@ -44,7 +44,7 @@ note_text_from_survey <- function(survey) {
 ```   
 
 
-###Notes into Questions
+### Notes into Questions
 
 Revise the function that appends a list of questions with the appropriate user notes
 
@@ -61,7 +61,7 @@ insert_notes_into_questions_rv <- function(questions, notes) {
 
 ```
 
-###Add a function for determining Qualtrics Type human readable from the Payload information. This is used intially with quesitons, then again when splitting side-by-side questions into their components. Functionalizing this will allow us to more easily add cases for other questino types as we move forward with development and enhancements.
+### Add a function for determining Qualtrics Type human readable from the Payload information. This is used intially with quesitons, then again when splitting side-by-side questions into their components. Functionalizing this will allow us to more easily add cases for other questino types as we move forward with development and enhancements.
 
 ```{r qtype_human}
 
@@ -81,7 +81,7 @@ qtype_human <- function(question) {
 
 ```
 
-###Revise splitting a single side-by-side question
+### Revise splitting a single side-by-side question
 
 This  function will be iterated over questions. A separate step of get_setup will split blocks based on the list of SBS questions.
 
@@ -150,7 +150,7 @@ split_side_by_side_q <- function(question) {
 ```
 
 
-###Splitting side by side questions as part of get_setup
+### Splitting side by side questions as part of get_setup
 
 ```{r split_sbs_questions}
 
@@ -172,7 +172,7 @@ split_sbs_questions <-  function(questions) {
 
 ```
 
-###Splitting block elements as part of get_setup
+### Splitting block elements as part of get_setup
 
 This function iterates through a block and, where appropriate, splits the block element for a side-by-side question into separate elements for each component of the side-by-side.
 
@@ -220,7 +220,7 @@ split_block_elements <- function(block,sbs_question_qids) {
 }
 ```
 
-###Skip logic into questions
+### Skip logic into questions
 ```{r insert_skiplogic_into_questions}
 #Add skip logic to questions
 insert_skiplogic_into_questions <- function(questions,blocks) {
@@ -242,7 +242,7 @@ insert_skiplogic_into_questions <- function(questions,blocks) {
 }
 ```
 
-###Insert questions into blocks
+### Insert questions into blocks
 
 ```{r insert_questions_into_block}
 
@@ -257,7 +257,7 @@ insert_questions_into_block <- function(block,questions) {
 
 ```
 
-###Get reorganized questions and blocks
+### Get reorganized questions and blocks
 
 This is a revised version of the function that is used as the workhorse in get_setup and does a LOT of what is required later on. It will still need to be documented VERY carefully and incorporated more fully into the package.
 
