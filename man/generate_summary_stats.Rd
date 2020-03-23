@@ -7,11 +7,16 @@
 generate_summary_stats(question)
 }
 \arguments{
-\item{question}{This is the question which has been checked to contain Text Entry data with Numerical verification. This TE question will now be processed to give a summary stats table and not an appendice.}
+\item{question}{This is the question which has been checked to contain
+Text Entry data with Numerical verification. This TE question will now
+be processed to give a summary stats table and not an appendice.}
 }
 \value{
 question with a ['Table'] appended to it where the summary stats are present
 }
 \description{
-The generate_summary_stats function uses the data frame of responses that have been linked to a question to generate summary statistics using basic R functions mean(), median(), min(), max(), sd(). Creates a new data frame with colnames and the stats and appends to question['Table'].
+This function uses the data frame of responses that
+have been linked to a question to generate summary statistics using
+basic R functions mean(), median(), min(), max(), sd(). Creates a
+new data frame with colnames and the stats and appends to question['Table'].
 }
