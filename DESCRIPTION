@@ -3,7 +3,7 @@ Type: Package
 Title: Automating Qualtrics Survey Processing
 Version: 0.1.0
 Author: Christian Testa
-Maintainer: Christian Testa <christian.testa@tufts.edu>
+Maintainer: Emma Morgan <emma.morgan@tufts.edu>
 Description: This package is for automating the processing of Qualtrics surveys.
     The Shiny app included serves as an easy-to-use interface for generating reports
     from survey data from Qualtrics. Further, other functions allow the user to
@@ -11,9 +11,6 @@ Description: This package is for automating the processing of Qualtrics surveys.
     format.
 License: BSD
 LazyData: true
-Depends:
-    dplyr,
-    tidyverse
 Imports:
     digest,
     dplyr,
@@ -30,7 +27,6 @@ Imports:
     shiny,
     shinydashboard,
     tidyr,
-    tidyverse,
     xtable,
     XML
 Suggests: 
@@ -39,4 +35,4 @@ Suggests:
     rmarkdown
 VignetteBuilder: knitr
 Remotes: talgalili/installr
-RoxygenNote: 6.0.1
+RoxygenNote: 7.0.2
