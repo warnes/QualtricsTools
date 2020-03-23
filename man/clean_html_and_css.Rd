@@ -7,7 +7,8 @@
 clean_html_and_css(text)
 }
 \arguments{
-\item{text}{any text string that might contain HTML or whitespace that needs to be stripped.}
+\item{text}{any text string that might contain HTML or whitespace that needs to be
+stripped.}
 }
 \value{
 text without any html or extraneous whitespace.
@@ -15,9 +16,14 @@ text without any html or extraneous whitespace.
 \description{
 This function uses regex extensively to clean HTML out of a given text block.
 The first regex used is "\\s+". It matches multiple characters of whitespace, and
-reduces them to a single space character. HTML tags and Entries are then clean
+reduces them to a single space character. HTML tags and Entries are then cleaned
 with this regular expression: "<.*?>|&[# a-z 0-9]*". It matches a substring that
 starts with & and ends with ; with lower case letters between them, or a substring
-with < and > on each side, with any characters between. Each matched substring is
-replaced with a space character.
+with < and > on each side, with any characters between. The third regex expression
+mathces all text within {} except for ones that have a preceeding $ - which is used
+to indicate piped text. Each matched substring is replaced with a space character.
+The 4th regex expression removes a specific type of CSS table formatting used by
+the office, starting with .Matrix and ending with .c\\d where\\d in regex represents
+a arbitrary digit.
+At the end, all extra whitespaces are removed.
 }
