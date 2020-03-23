@@ -1,5 +1,3 @@
-requireNamespace('gdata')
-
 #' Get Restructured Questions (with inserted Responses)
 #' and Blocks (with inserted Questions) from data
 #' provided by Qualtrics.
@@ -9,7 +7,6 @@ requireNamespace('gdata')
 #' and results-tables listed in them, and secondly
 #' the blocks of the survey, with questions listed in
 #' each block as BlockElements.
-#'
 #' @param survey A qualtrics survey list object,
 #' uploaded from a Qualtrics Survey File (QSF). Use
 #' ask_for_qsf() to create such a survey list object from a QSF file.
@@ -30,225 +27,346 @@ requireNamespace('gdata')
 #' by their DataExportTag. However, this is inconvenient
 #' because it adds an additional lookup step, and so they are
 #' replaced by the real objects here.
-get_reorganized_questions_and_blocks <-
-  function(survey, responses, original_first_rows) {
-    # select the block elements from the survey
-    blocks <- blocks_from_survey(survey)
+get_reorganized_questions_and_blocks <- function(survey,
+                                                 responses,
+                                                 original_first_rows) {
+  #The survey JSON was read in during an early block, so we can just work with this.
+  valid_questions_blocks <- valid_questions_blocks_from_survey(survey)
+  questions <- valid_questions_blocks[["questions"]]
+  blocks <- valid_questions_blocks[["blocks"]]
+  #Now clean question text using clean_html
+  questions <- purrr::map(questions, ~ append(.x,list("QuestionTextClean" = clean_html(.x[["Payload"]][["QuestionText"]]))))
+  #Add the Qualtrics question type; this is for reference and won't be used in results
+  questions <- purrr::map(questions, ~append(.x, list("Qualtrics_qtype" = .x[["Payload"]][["QuestionType"]])))
+  #Add human readable question type to each question; this can be edited if we want
+  #We will want ot expand this as we keep going
+  #We will need to reclassify the question type when we split side-by-side!!
+  questions <- purrr::map(questions, ~append(.x,list("QuestionTypeHuman" = qtype_human(.x))))
+  #Insert user notes into questions as element "qtNotes"
+  questions <- insert_notes_into_questions(questions, notes = qtNotesList)
+  #Insert skip logic into the questions
+  questions <- insert_skiplogic_into_questions(questions, blocks=blocks)
+  #Split side-by-side questions into their components
+  #first append side-by-side question components to the list,
+  #them remove the original side-by-side question elements
+  questions <- split_sbs_questions(questions)
+  #Link responses to questions
+  questions <- link_responses_to_questions(questions = questions,
+                                           responses = responses,
+                                           original_first_rows = original_first_rows)
+  #Generate a results table for each question
+  questions <- generate_results(questions, original_first_rows = original_first_rows)
+  #Now get a list of the side-by-side questions
+  #This is a named list where the name is the NEW split question ID and the element is the original QID
+  sbs_question_qids <- purrr::keep(questions,~"SBS_origQID" %in% names(.x))
+  sbs_question_qids <- purrr::map(sbs_question_qids, "SBS_origQID")
 
-    # select the questions from the survey
-    questions <- questions_from_survey(survey)
+  #Revise the blocks to create space for elements split from side-by-side questions
+  blocks <- purrr::map(blocks, ~ split_block_elements(.x,sbs_question_qids))
+  #Now insert questions into blocks
+  blocks <- purrr::map(blocks, ~ insert_questions_into_block(block = .x, questions = questions))
 
-    # remove the questions that were found in the trash block
-    questions <- remove_trash_questions(questions, blocks)
+  return(list("questions" = questions, "blocks" = blocks))
 
-    # remove the trash block from the blocks
-    blocks <- remove_trash_blocks(blocks)
+}
 
-    # split side by side questions into their component questions
-    questions_and_blocks <- split_side_by_sides(questions, blocks)
-    questions <- questions_and_blocks[[1]]
-    blocks <- questions_and_blocks[[2]]
-
-    # clean the question text of HTML and CSS tags
-    questions <- clean_question_text(questions)
-
-    # categorize each question's Response Type
-    # (Single Answer, Multiple Answer,
-    #  Text Entry, Rank Order)
-    questions <- human_readable_qtype(questions)
-
-    # insert the response columns into their corresponding
-    # question under question[['Responses']]
-    questions <-
-      link_responses_to_questions(questions, responses, original_first_rows)
-
-    # generate each question's results table and insert it
-    # in question[['Table']]
-    questions <- generate_results(questions, original_first_rows)
-
-    # insert notes into their corresponding questions
-    notes <- notes_from_survey(survey)
-    questions <- insert_notes_into_questions(questions, notes)
-
-    # insert the questions into the blocks
-    blocks <- questions_into_blocks(questions, blocks)
-
-    # insert the header into the blocks
-    blocks[['header']] <- c(paste0("Survey Name: ",
-                                   survey[['SurveyEntry']][['SurveyName']]),
-                            paste0("Number of Respondents: ",
-                                   nrow(responses)))
-
-    # return questions and blocks as a list of 2 elements
-    questions_and_blocks <- list()
-    questions_and_blocks[['questions']] <- questions
-    questions_and_blocks[['blocks']] <- blocks
-    return(questions_and_blocks)
-  }
-
-
-#' Generate a List of Survey Blocks
+#' Pull the valid questions and blocks from a Qualtrics Survey.
 #'
-#' This function takes the survey blocks out of the survey
-#' and turns them into their own list for later use.
-#' Additionally, the block element can be further reduced to include
-#' only the payload of the survey blocks.
+#' This pulls the questions and blocks from a QSF survey file.
+#' Trash questions are removed from the blocks and the list of questions.
+#' Side-by-side questions are split into their component question parts for ease
+#' of processing results.
+#' @inheritParams get_reorganized_questions_and_blocks
+#' @return List with named elements questions and blocks. this includes only valid
+#' questions. Trash questions have been removed from both questions and blocks.
+#' Side-by-side questions have been split into their component parts.
+valid_questions_blocks_from_survey <- function(survey) {
+  #Extract the survey elements from survey
+  survey_elements <- survey[["SurveyElements"]]
+  # Name each item of survey elements based on the primary attribute.
+  # This includes Survey Blocks, Survey Flow, Survey Options, and QIDs.
+  # These names should make it much easier for us to get the information we need to extract.
+  survey_elements <- purrr::set_names(survey_elements, purrr::map_chr(survey_elements, "PrimaryAttribute"))
+
+  #Extract QualtricsTools user notes so we can add these to questions.
+  qtNotesList <- note_text_from_survey(survey)
+
+  #Now extract the blocks; this is really the payload element of element "Survey Blocks"
+  #Replace blocks_from_survey
+  blocks_all <- purrr::pluck(survey_elements, "Survey Blocks", "Payload")
+  #Name the blocks with their descriptive value
+  blocks_all <- purrr::set_names(blocks_all, purrr::map_chr(blocks_all,"Description"))
+
+  #Now pluck just the trash blocktrash_questions
+  trash_questions <- purrr::pluck(blocks_all, "Trash / Unused Questions", "BlockElements")
+  #Pull a character vector of only the QIDs for questions that are in the trash
+  trash_questions <- purrr::map_chr(trash_questions,"QuestionID")
+
+  #Remove trash block based on the "Type" element of the block
+  blocks_notrash <- purrr::keep(blocks_all, ~ .x[["Type"]]!= "Trash")
+  #Name the BlockElements (quesiton items) within the blocks
+  blocks_notrash <- purrr::map(blocks_notrash,
+                               ~ purrr::modify_at(.x, "BlockElements",
+                                                  ~ purrr::set_names(.x, purrr::map_chr(.x, ~ stringr::str_c(.x[["QuestionID"]],
+                                                                                                             .x[["Type"]],sep="-")))))
+
+  #Extract a list of questions, SurveyElements that have Element "SQ"
+  questions <- purrr::keep(survey_elements, ~ .x[["Element"]]=="SQ")
+  #Remove questions that are in the trash, as specified by "trash_questions
+  questions <- purrr::discard(questions, ~ .x[["PrimaryAttribute"]] %in% trash_questions)
+  return(list("questions" = questions, "blocks"=blocks))
+}
+
+
+
+#' Determine the question type from the QSF
+#'
+#' Determine the question type from the question's Payload information and return this as human readable text.
+#'
+#' Determine the type of question based on user understanding and how the question results will be processed.
+#' This is in the QualtricsTools intially with questions, then again when splitting
+#' side-by-side questions into their components. The list of question types has been defined
+#' by Tufts OIR based on their reporting needs and will be expanded as needed with additional
+#' types of questions. Current options include Multiple Answer, Single Answer, Rank Order,
+#' Text Entry, Side-by-side, Descriptive Box, Other question type.
+#' @param question A survey question
+#' @return Human readable question type to assist with understanding how the quuestion is
+#' interpreted by QualtricsTools and how results are processed. Question types that are
+#' currently unspecified in this function with return value "Other question type."
+qtype_human <- function(question) {
+
+  QuestionTypeHuman <-  dplyr::case_when(is_multiple_answer(question) ~ "Multiple Answer",
+                                         is_single_answer(question) ~ "Single Answer",
+                                         is_rank_order(question) ~ "Rank Order",
+                                         is_text_entry(question) ~ "Text Entry",
+                                         question[["Payload"]][["QuestionType"]]=="SBS" ~ "Side-by-side",
+                                         question[["Payload"]][["QuestionType"]]=="DB" ~ "Descriptive Box",
+                                         TRUE ~ "Other question type")
+  return(QuestionTypeHuman)
+
+}
+
+
+#' Generate a list of user notes
+#'
+#' Each list element is named with the
+#' parent question export tag and contains the survey note text prepended with "User note: "
 #'
 #' @inheritParams get_reorganized_questions_and_blocks
 #'
-#' @return The blocks element returned is a list of blocks containing for
-#' each a type, description, ID, and BlockElements (which contains the
-#' list of questions included in a given block).
-blocks_from_survey <- function(survey) {
-  blocks <-
-    Filter(function(x)
-      x[['Element']] == "BL", survey[['SurveyElements']])
-  blocks <- blocks[[1]][['Payload']]
-  return(blocks)
+#' @return This returns a list of user notes named with the parent question export tag.
+note_text_from_survey <- function(survey) {
+  #From the survey, keep elements that have user notes; these are identified from the list of survey elements
+  #as those with Elements "NT"
+  user_notes_text <- purrr::keep(survey[["SurveyElements"]], ~.x[["Element"]]=="NT")
+  #Now rename the user notes with their QID based on parent ID instead of the primary attribute
+  user_notes_text <- purrr::set_names(user_notes_text, purrr::map_chr(user_notes_text, ~ .x[["Payload"]][["ParentID"]]))
+  #From the notes block payload, pluck "Notes" element
+  #Now we want to pull only the next for the user notes
+  #But only if the element "Removed" is false
+  #First keep only the "Notes" section within Payload, which has the information we need
+  user_notes_text <- purrr::map(user_notes_text, ~ purrr::pluck(.x, "Payload","Notes"))
+  #only keep notes for which the "Removed" status is FALSE; these are notes that have not been deleted
+  user_notes_text <- purrr::map(user_notes_text, ~ purrr::keep(.x, ~ !.x[["Removed"]]))
+  #Now we want to pluck only the messages, which is the text of the note
+  user_notes_text <- purrr::map(user_notes_text, ~ purrr::map(.x, ~ purrr::pluck(.x,"Message")))
+  user_notes_text <- purrr::map(user_notes_text, ~ purrr::flatten(.x))
+  #Prepend each note with the "User note: " text tag
+  user_notes_text <- purrr::map(user_notes_text, ~ purrr::map(.x,~stringr::str_c("User note: ",.x)))
+  return(user_notes_text)
 }
 
-#' #' Generate a List of Notes Blocks
-#' #'
-#' #' @inheritParams get_reorganized_questions_and_blocks
-#' #'
-#' #' @return This returns a list of blocks with element type "NT"
-#' notes_from_survey <- function(survey) {
-#'   blocks <-
-#'     Filter(function(x)
-#'       x[['Element']] == "NT", survey[['SurveyElements']])
-#'   return(blocks)
-#' }
-
-#' #' Insert the Notes for a question into its qtNotes
-#' #' @inheritParams link_responses_to_questions
-#' #' @param notes A list of blocks with type element "NT"
-#' insert_notes_into_questions <- function(questions, notes) {
-#'   for (note in notes) {
-#'     # Find and set up the corresponding question to insert
-#'     # the notes contents into the qtNotes list element of that question
-#'     qid = note[['Payload']][['ParentID']]
-#'     qid_index = find_question_index_by_qid(questions, qid)
-#'     if (length(qid_index) > 0) {
-#'       if (!"qtNotes" %in% names(questions[[qid_index]])) {
-#'         questions[[qid_index]][['qtNotes']] <- list()
-#'       }
-#'
-#'       # Don't include the 'Removed' notes
-#'       # And for the notes which aren't removed, prepend them with 'User Note: '
-#'       notes_list <-
-#'         sapply(note[['Payload']][['Notes']], function(x) {
-#'           if (x[['Removed']] != 'TRUE')
-#'             return(paste0('User Note: ', x[['Message']]))
-#'         })
-#'       # get only the non-NULL notes, because if the note was 'Removed'
-#'       # then it will appear in the sapply output as NULL
-#'       valid_notes <-
-#'         which(sapply(notes_list, function(x)
-#'           length(x) != 0))
-#'       notes_list <- notes_list[valid_notes]
-#'
-#'       # Append the formatted notes strings to the corresponding question's
-#'       # qtNotes
-#'       questions[[qid_index]][['qtNotes']] <-
-#'         c(questions[[qid_index]][['qtNotes']], notes_list)
-#'     }
-#'   }
-#'
-#'   return(questions)
-#' }
-
-#' Generate a List of Questions
-#'
-#' This function takes the questions out of the survey and
-#' turns them into their own list for later use.
-#' Each question is an element of the returned list, and
-#' each element has its own list as its content. Most questions
-#' include things like "SurveyID", "Element", "PrimaryAttribute",
-#' "SecondaryAttribute", and a "Payload" which contains
-#' most of the information about the question.
-#'
-#' @inheritParams blocks_from_survey
-#' @return A list of questions from the uploaded QSF file
-questions_from_survey <- function(survey) {
-  questions <- survey[['SurveyElements']]
-  for (i in length(questions):1) {
-    if (questions[[i]][['Element']] != "SQ") {
-      questions[[i]] <- NULL
-    }
-  }
-  return(questions)
+#' Insert the Notes for a question into its qtNotes element
+#' @inheritParams link_responses_to_questions
+#' @param notes A list of blocks with type element "NT"
+#' @return A list of questions with user notes from the Qualtrics Survey appended as
+#' named element "qtNotes"
+insert_notes_into_questions <- function(questions, notes) {
+  #For each question, first see if it has corresponding notes.
+  #If it does, append the question list with element "qtNotes"
+  questions_with_notes <- purrr::modify_if(questions, ~.x[["PrimaryAttribute"]] %in% names(notes),
+                                           ~ append(.x, list("qtNotes"= purrr::pluck(notes,.x[["PrimaryAttribute"]]))))
+  return(questions_with_notes)
 }
 
-#' Remove Questions from the Trash Block
-#'
-#' This function removes any questions from a list of questions
-#' that are listed in the Trash block.
-#'
+
+#' Insert skip logic into questions
 #' @param questions A list of questions from a Qualtrics survey
 #' @param blocks A list of blocks from a Qualtrics survey
-#' @return The list of questions returned is the list of questions
-#' provided except without any questions listed in the Trash
-#' block of the blocks list provided.
-remove_trash_questions <- function(questions, blocks) {
-  # select the trash block
-  trash <- Filter(function(x)
-    x[['Type']] == "Trash", blocks)
-
-  # retrieve the trash questions
-  trash_questions <- list()
-  for (i in trash[[1]][['BlockElements']]) {
-    trash_questions <- c(i[['QuestionID']], trash_questions)
-  }
-
-  # remove the questions that were found among the
-  # trash questions
-  delete_if_in_trash <- function(x) {
-    if (x[['Payload']][['QuestionID']] %in% trash_questions) {
-      return(NULL)
+#' @return A list of questions with skip logic added to questions where appropriate
+insert_skiplogic_into_questions <- function(questions,blocks) {
+  for (b in blocks) {
+    if (! "BlockElements" %in% names(b)) {
+      return(questions)
     } else {
-      return(x)
-    }
-  }
-  questions <- lapply(questions, delete_if_in_trash)
-  questions <-
-    Filter(Negate(function(x)
-      is.null(unlist(x))), questions)
-  return(questions)
-}
-
-#' Remove the Trash Block from the list of Blocks
-#'
-#' This function finds among the trash blocks which has its [['Type']] value
-#' set to "Trash" and then removes it from the blocks list. The iteration
-#' in this function is backwards because it assigns NULL to any list
-#' items which need to be removed. Therefore, if it assigns NULL
-#' to a value and then moves up, it will not only skip questions as the
-#' higher up questions move downward as questions are deleted, but
-#' the total length of the list will be changing as it gets closer to the
-#' end of the list.
-#'
-#' @inheritParams remove_trash_questions
-#' @return The list of blocks is returned without any Trash blocks
-remove_trash_blocks <- function(blocks) {
-  for (i in number_of_blocks(blocks):1) {
-    if ('Type' %in% names(blocks[[i]])) {
-      if (blocks[[i]][['Type']] == "Trash") {
-        blocks[[i]] <- NULL
-        next
-      }
-    }
-    if ('BlockElements' %in% names(blocks[[i]])) {
-      if (length(blocks[[i]][['BlockElements']]) != 0) {
-        for (j in length(blocks[[i]][['BlockElements']]):1) {
-          if (blocks[[i]][['BlockElements']][[j]][['Type']] != "Question") {
-            blocks[[i]][['BlockElements']][[j]] <- NULL
-          }
+      for (be in b[["BlockElements"]]) {
+        has_skip_logic <- "SkipLogic" %in% names(be)
+        if(has_skip_logic) {
+          skip_logic <- be[["SkipLogic"]]
+          #Add display logic to the question
+          questions <- purrr::modify_at(questions,be[["QuestionID"]], ~rlist::list.append(.x,SkipLogic = skip_logic))
         }
       }
+      return(questions)
     }
   }
-  return(blocks)
 }
+
+#' Split side by side question into their component question parts
+#'
+#' @param questions A list of questions pulled from Survey Elements of a Qualtrics QSF
+#' @return A list of questions with side-by-side questions split into their component question parts.
+split_sbs_questions <-  function(questions) {
+  #Iterate through the questions
+  for (q in questions) {
+    #For each side-by-side question
+    if(q[["Qualtrics_qtype"]]=="SBS") {
+      #Update the list of split questions
+      questions <- append(questions,
+                          split_side_by_side_q(question = q),
+                          after=match(q[["PrimaryAttribute"]],names(questions)))
+    }
+  }
+  #Now remove the original side-by-side questions since we no longer need these
+  questions <- purrr::discard(questions, ~ .x[["Qualtrics_qtype"]]=="SBS")
+}
+
+#' Split Side-by-Side Questions into Multiple Component Questions
+#'
+#' Given a side-by-side question, split this into separate questions list elements for each
+#' of the multiple question parts.
+#'
+#' This function is called within the QualtricsTools setup process and splits
+#' multiple questions into separate component questions so that results may be processsed.
+#' QualtricsTools is designed to process results to side-by-side questions a separate questions.
+#' When this is called as part of the setup process, there is an earlier check to
+#' ensure that questions passed to this function are actual side-by-side questions.
+#' @param question A question with additional question elements
+#' @return A list of with each component question split out of the side-by-side
+split_side_by_side_q <- function(question) {
+
+  #For a SBS question only
+  #As part of the setup process, there is an earlier  side-by-side actually has additional questions
+  #Assume additional questions here
+  split_q <- list()
+
+  #We may not actually need this
+  mainq <- purrr::modify_at(question, "AdditionalQuestions", ~NULL)
+
+  #Extract the question text from the main part of the question
+  #If we've already run the other parts of the question, this will be the clean question text
+  #If not, pull the original question text
+  mainq_text <- dplyr::if_else("QuestionTextClean" %in% names(question),
+                               question[["QuestionTextClean"]],
+                               question[["Payload"]][["QuestionText"]])
+
+  main_qid <- mainq[["PrimaryAttribute"]]
+
+  additional_questions <- question[["Payload"]][["AdditionalQuestions"]]
+  #Add names based on the QID; replace "#" symbol with underscore
+  additional_questions <- purrr::set_names(additional_questions ,
+                                           purrr::map_chr(additional_questions, ~ stringr::str_replace(.x[["QuestionID"]], "#","_")))
+  #Create a new element for with split questions. These have the information
+  #from additional questions supplemented with key information from the main question.
+  split_q <- additional_questions
+  #Assign the additional question information as Payload for the new question element
+  split_q <- purrr::map(split_q, ~ list("Payload" = .x))
+  #Pull qtNotes from the original question and append them to each item
+  #Add an additional note that this was split from a side-by-side question
+  split_q <- purrr::map(split_q,
+                        ~ rlist::list.append(.x,qt_notes = dplyr::if_else("qtNotes" %in% names(mainq),
+                                                                          list(append(mainq[["qtNotes"]],
+                                                                                      "This question was split from a side-by-side question.")),
+                                                                          list("This question was split from a side-by-side question."))))
+  #Add clean question text to the side-by-side question element
+  split_q <- purrr::map(split_q,
+                        ~ rlist::list.append(.x, QuestionTextClean = stringr::str_c(mainq_text, "---",
+                                                                                    .x[["Payload"]][["QuestionText"]])))
+  #Add QualtricsQtype for the side by side; prepend with "SBS" to indicate this came from a side-by-side question
+  split_q <- purrr::map(split_q,
+                        ~ rlist::list.append(.x, Qualtrics_qtype = paste0("SBS_",.x[["Payload"]][["QuestionType"]])))
+  #Add human readable question type
+  split_q <- purrr::map(split_q, ~ rlist::list.append(.x, QuestionTypeHuman = qtype_human(.x)))
+  #Add Primary Attribute that corresponds to the list element name
+  split_q <- purrr::map(split_q, ~ rlist::list.append(.x, PrimaryAttribute = stringr::str_replace(.x[["Payload"]][["QuestionID"]], "#","_")))
+  #Add a new element indicating that this was split from a side-by-side question
+  split_q <- purrr::map(split_q, ~ rlist::list.append(.x, SBS_origQID = main_qid))
+
+
+  return(split_q)
+}
+
+
+#' Split block elements for side-by-side questions into components for each additional question
+#'
+#' Iterate through a block and, where appropriate, split the block element
+#' for a side-by-side question into separate elements for each component of the side-by-side.
+#'
+#' This function will update the Block Elements item of a single block. A list of QIDs
+#' for side-by-side questions will be generated automatically as part of the
+#' setup process within QualtricsTools.
+#' @param block A Qualtrics block survey element
+#' @param sbs_question_ids A list of QIDs for side-by-side questions to be split
+#' @return A block with block elements revised to have split for side-by-side questions
+split_block_elements <- function(block,sbs_question_qids) {
+  if (! "BlockElements" %in% names(block)) {
+    return(block)
+  }
+  block_elements <- block[["BlockElements"]]
+
+  #Create the elements that we will want to split
+  sbs_questions <- list()
+  if (! length(sbs_question_qids)>=1) {return(block)}
+
+  for (i in 1:length(sbs_question_qids)) {
+    sbs_question_entry <- list(Type = "Question",
+                               QuestionID = names(sbs_question_qids)[[i]],
+                               ParentID = sbs_question_qids[[i]])
+    sbs_questions[[i]] <- sbs_question_entry
+  }
+
+  for (element in block_elements) {
+    #Check that the element has a question ID, then check whether it's in the list
+    if ("QuestionID" %in% names(element) &&
+        element[["QuestionID"]] %in% purrr::map_chr(sbs_questions,"ParentID")) {
+
+      qid_orig <- element[["QuestionID"]]
+      split_elements <- purrr::keep(sbs_questions, ~.x[["ParentID"]]==qid_orig)
+      #Now name them with the Question ID
+      split_elements <- purrr::set_names(split_elements, paste0(purrr::map_chr(split_elements, "QuestionID"),"-Question"))
+      #And now remove the parent ID element
+      split_elements <- purrr::map(split_elements, ~rlist::list.remove(.x,"ParentID"))
+
+      block_elements <- append(block_elements,
+                               split_elements,
+                               after = match(element[["QuestionID"]],stringr::str_replace(names(block_elements),"-Question$","")))
+    }
+  }
+
+  #And now we want to remove those original question elements
+  block_elements <- purrr::discard(block_elements, ~.x[["QuestionID"]] %in% sbs_question_qids)
+
+  block[["BlockElements"]] <- block_elements
+  return(block)
+
+}
+
+
+
+
+#' Insert questions into blocks
+#' @param questions A list of questions from a Qualtrics survey
+#' @param blocks A list of blocks from a Qualtrics survey
+#' @return The list of blocks with question elements updated to include the full question.
+insert_questions_into_block <- function(block,questions) {
+  if ("BlockElements" %in% names(block)) {
+    block[["BlockElements"]] <- purrr::modify_if(block[["BlockElements"]],
+                                                 ~.x[["Type"]]=="Question",
+                                                 ~ purrr::pluck(questions,.x[["QuestionID"]]))
+  }
+  return(block)
+}
+
 
 
 #' Link Responses to Questions
@@ -961,82 +1079,6 @@ answers_from_response_column <-
 
     return(selected_df)
   }
-
-
-#' #' Split Side-by-Side Questions into Multiple Questions
-#' #'
-#' #' This function updates both the list of questions and list of blocks from a survey
-#' #' to reflect a side-by-side question as multiple individual questions.
-#' #'
-#' #' @param questions A list of questions from a survey
-#' #' @param blocks A list of blocks from a survey
-#' #' @return A list of questions and a list of blocks with their SBS questions split
-#' #' into multiple questions
-#' split_side_by_sides <- function(questions, blocks) {
-#'   # loop through every question
-#'   for (i in length(questions):1) {
-#'     # if a question is a side-by-side question,
-#'     # use the 'NumberOfQuestions' element from its payload
-#'     # to determine how many questions to turn it into, and then
-#'     # fill those questions with the payload of the 'AdditionalQuestions'
-#'     # from the SBS question.
-#'     if (questions[[i]][['Payload']][['QuestionType']] == 'SBS') {
-#'       split_questions <- list()
-#'       for (j in 1:questions[[i]][['Payload']][['NumberOfQuestions']]) {
-#'         split_questions[[j]] <- list()
-#'         split_questions[[j]][['Payload']] <-
-#'           questions[[i]][['Payload']][['AdditionalQuestions']][[as.character(j)]]
-#'
-#'         # question text will include the SBS question's original question text and the
-#'         # specific question component's question text.
-#'         split_questions[[j]][['Payload']][['QuestionText']] <-
-#'           paste0(clean_html(questions[[i]][['Payload']][['QuestionText']]),
-#'                  "-",
-#'                  clean_html(questions[[i]][['Payload']][['AdditionalQuestions']][[as.character(j)]][['QuestionText']]))
-#'
-#'         # append a qtNote to split side-by-side questions
-#'         split_questions[[j]][['qtNotes']] <- list()
-#'         if ('qtNotes' %in% names(questions[[i]]))
-#'           split_questions[[j]][['qtNotes']] <- questions[[i]][['qtNotes']]
-#'         split_questions[[j]][['qtNotes']] <-
-#'           c(split_questions[[j]][['qtNotes']],
-#'             'This question was split from a side-by-side question.')
-#'       }
-#'
-#'       # use the SBS question's QuestionID to look up the question in the blocks
-#'       # and replace the original with the split question's QuestionIDs
-#'       orig_question_id <-
-#'         questions[[i]][['Payload']][['QuestionID']]
-#'       split_question_ids <-
-#'         lapply(split_questions, function(x)
-#'           x[['Payload']][['QuestionID']])
-#'       split_block_elements <-
-#'         lapply(split_question_ids, function(x)
-#'           list("Type" = "Question", "QuestionID" = x))
-#'       for (k in 1:length(blocks)) {
-#'         if ('BlockElements' %in% names(blocks[[k]])) {
-#'           for (j in 1:length(blocks[[k]][['BlockElements']])) {
-#'             block_elmt_question_id <-
-#'               blocks[[k]][['BlockElements']][[j]][['QuestionID']]
-#'             if (block_elmt_question_id == orig_question_id) {
-#'               blocks[[k]][['BlockElements']][[j]] <- NULL
-#'               blocks[[k]][['BlockElements']] <-
-#'                 append(blocks[[k]][['BlockElements']], split_block_elements, after = (j -
-#'                                                                                         1))
-#'               break
-#'             }
-#'           }
-#'         }
-#'       }
-#'
-#'       questions[[i]] <- NULL
-#'       questions <-
-#'         append(questions, value = split_questions, after = (i - 1))
-#'     }
-#'   }
-#'
-#'   return(list(questions, blocks))
-#' }
 
 
 #' Return a list of a Question's Display Logic Components
