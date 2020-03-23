@@ -107,55 +107,55 @@ blocks_from_survey <- function(survey) {
   return(blocks)
 }
 
-#' Generate a List of Notes Blocks
+#' #' Generate a List of Notes Blocks
+#' #'
+#' #' @inheritParams get_reorganized_questions_and_blocks
+#' #'
+#' #' @return This returns a list of blocks with element type "NT"
+#' notes_from_survey <- function(survey) {
+#'   blocks <-
+#'     Filter(function(x)
+#'       x[['Element']] == "NT", survey[['SurveyElements']])
+#'   return(blocks)
+#' }
+
+#' #' Insert the Notes for a question into its qtNotes
+#' #' @inheritParams link_responses_to_questions
+#' #' @param notes A list of blocks with type element "NT"
+#' insert_notes_into_questions <- function(questions, notes) {
+#'   for (note in notes) {
+#'     # Find and set up the corresponding question to insert
+#'     # the notes contents into the qtNotes list element of that question
+#'     qid = note[['Payload']][['ParentID']]
+#'     qid_index = find_question_index_by_qid(questions, qid)
+#'     if (length(qid_index) > 0) {
+#'       if (!"qtNotes" %in% names(questions[[qid_index]])) {
+#'         questions[[qid_index]][['qtNotes']] <- list()
+#'       }
 #'
-#' @inheritParams get_reorganized_questions_and_blocks
+#'       # Don't include the 'Removed' notes
+#'       # And for the notes which aren't removed, prepend them with 'User Note: '
+#'       notes_list <-
+#'         sapply(note[['Payload']][['Notes']], function(x) {
+#'           if (x[['Removed']] != 'TRUE')
+#'             return(paste0('User Note: ', x[['Message']]))
+#'         })
+#'       # get only the non-NULL notes, because if the note was 'Removed'
+#'       # then it will appear in the sapply output as NULL
+#'       valid_notes <-
+#'         which(sapply(notes_list, function(x)
+#'           length(x) != 0))
+#'       notes_list <- notes_list[valid_notes]
 #'
-#' @return This returns a list of blocks with element type "NT"
-notes_from_survey <- function(survey) {
-  blocks <-
-    Filter(function(x)
-      x[['Element']] == "NT", survey[['SurveyElements']])
-  return(blocks)
-}
-
-#' Insert the Notes for a question into its qtNotes
-#' @inheritParams link_responses_to_questions
-#' @param notes A list of blocks with type element "NT"
-insert_notes_into_questions <- function(questions, notes) {
-  for (note in notes) {
-    # Find and set up the corresponding question to insert
-    # the notes contents into the qtNotes list element of that question
-    qid = note[['Payload']][['ParentID']]
-    qid_index = find_question_index_by_qid(questions, qid)
-    if (length(qid_index) > 0) {
-      if (!"qtNotes" %in% names(questions[[qid_index]])) {
-        questions[[qid_index]][['qtNotes']] <- list()
-      }
-
-      # Don't include the 'Removed' notes
-      # And for the notes which aren't removed, prepend them with 'User Note: '
-      notes_list <-
-        sapply(note[['Payload']][['Notes']], function(x) {
-          if (x[['Removed']] != 'TRUE')
-            return(paste0('User Note: ', x[['Message']]))
-        })
-      # get only the non-NULL notes, because if the note was 'Removed'
-      # then it will appear in the sapply output as NULL
-      valid_notes <-
-        which(sapply(notes_list, function(x)
-          length(x) != 0))
-      notes_list <- notes_list[valid_notes]
-
-      # Append the formatted notes strings to the corresponding question's
-      # qtNotes
-      questions[[qid_index]][['qtNotes']] <-
-        c(questions[[qid_index]][['qtNotes']], notes_list)
-    }
-  }
-
-  return(questions)
-}
+#'       # Append the formatted notes strings to the corresponding question's
+#'       # qtNotes
+#'       questions[[qid_index]][['qtNotes']] <-
+#'         c(questions[[qid_index]][['qtNotes']], notes_list)
+#'     }
+#'   }
+#'
+#'   return(questions)
+#' }
 
 #' Generate a List of Questions
 #'
@@ -963,80 +963,80 @@ answers_from_response_column <-
   }
 
 
-#' Split Side-by-Side Questions into Multiple Questions
+#' #' Split Side-by-Side Questions into Multiple Questions
+#' #'
+#' #' This function updates both the list of questions and list of blocks from a survey
+#' #' to reflect a side-by-side question as multiple individual questions.
+#' #'
+#' #' @param questions A list of questions from a survey
+#' #' @param blocks A list of blocks from a survey
+#' #' @return A list of questions and a list of blocks with their SBS questions split
+#' #' into multiple questions
+#' split_side_by_sides <- function(questions, blocks) {
+#'   # loop through every question
+#'   for (i in length(questions):1) {
+#'     # if a question is a side-by-side question,
+#'     # use the 'NumberOfQuestions' element from its payload
+#'     # to determine how many questions to turn it into, and then
+#'     # fill those questions with the payload of the 'AdditionalQuestions'
+#'     # from the SBS question.
+#'     if (questions[[i]][['Payload']][['QuestionType']] == 'SBS') {
+#'       split_questions <- list()
+#'       for (j in 1:questions[[i]][['Payload']][['NumberOfQuestions']]) {
+#'         split_questions[[j]] <- list()
+#'         split_questions[[j]][['Payload']] <-
+#'           questions[[i]][['Payload']][['AdditionalQuestions']][[as.character(j)]]
 #'
-#' This function updates both the list of questions and list of blocks from a survey
-#' to reflect a side-by-side question as multiple individual questions.
+#'         # question text will include the SBS question's original question text and the
+#'         # specific question component's question text.
+#'         split_questions[[j]][['Payload']][['QuestionText']] <-
+#'           paste0(clean_html(questions[[i]][['Payload']][['QuestionText']]),
+#'                  "-",
+#'                  clean_html(questions[[i]][['Payload']][['AdditionalQuestions']][[as.character(j)]][['QuestionText']]))
 #'
-#' @param questions A list of questions from a survey
-#' @param blocks A list of blocks from a survey
-#' @return A list of questions and a list of blocks with their SBS questions split
-#' into multiple questions
-split_side_by_sides <- function(questions, blocks) {
-  # loop through every question
-  for (i in length(questions):1) {
-    # if a question is a side-by-side question,
-    # use the 'NumberOfQuestions' element from its payload
-    # to determine how many questions to turn it into, and then
-    # fill those questions with the payload of the 'AdditionalQuestions'
-    # from the SBS question.
-    if (questions[[i]][['Payload']][['QuestionType']] == 'SBS') {
-      split_questions <- list()
-      for (j in 1:questions[[i]][['Payload']][['NumberOfQuestions']]) {
-        split_questions[[j]] <- list()
-        split_questions[[j]][['Payload']] <-
-          questions[[i]][['Payload']][['AdditionalQuestions']][[as.character(j)]]
-
-        # question text will include the SBS question's original question text and the
-        # specific question component's question text.
-        split_questions[[j]][['Payload']][['QuestionText']] <-
-          paste0(clean_html(questions[[i]][['Payload']][['QuestionText']]),
-                 "-",
-                 clean_html(questions[[i]][['Payload']][['AdditionalQuestions']][[as.character(j)]][['QuestionText']]))
-
-        # append a qtNote to split side-by-side questions
-        split_questions[[j]][['qtNotes']] <- list()
-        if ('qtNotes' %in% names(questions[[i]]))
-          split_questions[[j]][['qtNotes']] <- questions[[i]][['qtNotes']]
-        split_questions[[j]][['qtNotes']] <-
-          c(split_questions[[j]][['qtNotes']],
-            'This question was split from a side-by-side question.')
-      }
-
-      # use the SBS question's QuestionID to look up the question in the blocks
-      # and replace the original with the split question's QuestionIDs
-      orig_question_id <-
-        questions[[i]][['Payload']][['QuestionID']]
-      split_question_ids <-
-        lapply(split_questions, function(x)
-          x[['Payload']][['QuestionID']])
-      split_block_elements <-
-        lapply(split_question_ids, function(x)
-          list("Type" = "Question", "QuestionID" = x))
-      for (k in 1:length(blocks)) {
-        if ('BlockElements' %in% names(blocks[[k]])) {
-          for (j in 1:length(blocks[[k]][['BlockElements']])) {
-            block_elmt_question_id <-
-              blocks[[k]][['BlockElements']][[j]][['QuestionID']]
-            if (block_elmt_question_id == orig_question_id) {
-              blocks[[k]][['BlockElements']][[j]] <- NULL
-              blocks[[k]][['BlockElements']] <-
-                append(blocks[[k]][['BlockElements']], split_block_elements, after = (j -
-                                                                                        1))
-              break
-            }
-          }
-        }
-      }
-
-      questions[[i]] <- NULL
-      questions <-
-        append(questions, value = split_questions, after = (i - 1))
-    }
-  }
-
-  return(list(questions, blocks))
-}
+#'         # append a qtNote to split side-by-side questions
+#'         split_questions[[j]][['qtNotes']] <- list()
+#'         if ('qtNotes' %in% names(questions[[i]]))
+#'           split_questions[[j]][['qtNotes']] <- questions[[i]][['qtNotes']]
+#'         split_questions[[j]][['qtNotes']] <-
+#'           c(split_questions[[j]][['qtNotes']],
+#'             'This question was split from a side-by-side question.')
+#'       }
+#'
+#'       # use the SBS question's QuestionID to look up the question in the blocks
+#'       # and replace the original with the split question's QuestionIDs
+#'       orig_question_id <-
+#'         questions[[i]][['Payload']][['QuestionID']]
+#'       split_question_ids <-
+#'         lapply(split_questions, function(x)
+#'           x[['Payload']][['QuestionID']])
+#'       split_block_elements <-
+#'         lapply(split_question_ids, function(x)
+#'           list("Type" = "Question", "QuestionID" = x))
+#'       for (k in 1:length(blocks)) {
+#'         if ('BlockElements' %in% names(blocks[[k]])) {
+#'           for (j in 1:length(blocks[[k]][['BlockElements']])) {
+#'             block_elmt_question_id <-
+#'               blocks[[k]][['BlockElements']][[j]][['QuestionID']]
+#'             if (block_elmt_question_id == orig_question_id) {
+#'               blocks[[k]][['BlockElements']][[j]] <- NULL
+#'               blocks[[k]][['BlockElements']] <-
+#'                 append(blocks[[k]][['BlockElements']], split_block_elements, after = (j -
+#'                                                                                         1))
+#'               break
+#'             }
+#'           }
+#'         }
+#'       }
+#'
+#'       questions[[i]] <- NULL
+#'       questions <-
+#'         append(questions, value = split_questions, after = (i - 1))
+#'     }
+#'   }
+#'
+#'   return(list(questions, blocks))
+#' }
 
 
 #' Return a list of a Question's Display Logic Components
