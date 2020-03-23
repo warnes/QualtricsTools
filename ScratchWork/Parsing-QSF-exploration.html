@@ -377,14 +377,16 @@ summary {
 
 <h1 class="title toc-ignore">QSF Parsing Exercise</h1>
 <h4 class="author">Emma Morgan</h4>
-<h4 class="date">2/24/2020</h4>
+<h4 class="date">3/6/2020</h4>
 
 </div>
 
 
-<p>##Updating functions</p>
+<div id="updating-functions" class="section level2">
+<h2>Updating functions</h2>
 <p>This is a space where anything we functionalize new can be added to our environment so that we can work wiht and use it in the later steps.</p>
-<p>###Revise extraction of user notes and inserting into questions.</p>
+<div id="revise-extraction-of-user-notes-and-inserting-into-questions." class="section level3">
+<h3>Revise extraction of user notes and inserting into questions.</h3>
 <p>Now we can functionalize how we are creating user notes. This should replace notes_from_survey. We will also want to update how we insert notes into questions above.</p>
 <pre class="r"><code>note_text_from_survey &lt;- function(survey) {
   #From the survey, keep elements that have user notes; these are identified from the list of survey elements
@@ -406,7 +408,9 @@ summary {
     map(~map(.x,~stringr::str_c(&quot;User note: &quot;,.x)))
   return(user_notes_text)
 }</code></pre>
-<p>###Notes into Questions</p>
+</div>
+<div id="notes-into-questions" class="section level3">
+<h3>Notes into Questions</h3>
 <p>Revise the function that appends a list of questions with the appropriate user notes</p>
 <pre class="r"><code>insert_notes_into_questions_rv &lt;- function(questions, notes) {
   #For each question, first see if it has corresponding notes.
@@ -416,7 +420,9 @@ summary {
                      ~ append(.x, list(&quot;qtNotes&quot;= pluck(notes,.x[[&quot;PrimaryAttribute&quot;]]))))
   return(questions_with_notes)
 }</code></pre>
-<p>###Add a function for determining Qualtrics Type human readable from the Payload information. This is used intially with quesitons, then again when splitting side-by-side questions into their components. Functionalizing this will allow us to more easily add cases for other questino types as we move forward with development and enhancements.</p>
+</div>
+<div id="add-a-function-for-determining-qualtrics-type-human-readable-from-the-payload-information.-this-is-used-intially-with-quesitons-then-again-when-splitting-side-by-side-questions-into-their-components.-functionalizing-this-will-allow-us-to-more-easily-add-cases-for-other-questino-types-as-we-move-forward-with-development-and-enhancements." class="section level3">
+<h3>Add a function for determining Qualtrics Type human readable from the Payload information. This is used intially with quesitons, then again when splitting side-by-side questions into their components. Functionalizing this will allow us to more easily add cases for other questino types as we move forward with development and enhancements.</h3>
 <pre class="r"><code>qtype_human &lt;- function(question) {
   
   QuestionTypeHuman &lt;-  dplyr::case_when(is_multiple_answer(question) ~ &quot;Multiple Answer&quot;,
@@ -429,7 +435,9 @@ summary {
   return(QuestionTypeHuman)
   
 }</code></pre>
-<p>###Revise splitting a single side-by-side question</p>
+</div>
+<div id="revise-splitting-a-single-side-by-side-question" class="section level3">
+<h3>Revise splitting a single side-by-side question</h3>
 <p>This function will be iterated over questions. A separate step of get_setup will split blocks based on the list of SBS questions.</p>
 <pre class="r"><code>#This applies to a single side-by-side question
 split_side_by_side_q &lt;- function(question) {
@@ -490,7 +498,9 @@ split_side_by_side_q &lt;- function(question) {
   return(split_q)
 
 }</code></pre>
-<p>###Splitting side by side questions as part of get_setup</p>
+</div>
+<div id="splitting-side-by-side-questions-as-part-of-get_setup" class="section level3">
+<h3>Splitting side by side questions as part of get_setup</h3>
 <pre class="r"><code>split_sbs_questions &lt;-  function(questions) {
   #Iterate through the questions
   for (q in questions) {
@@ -506,7 +516,9 @@ split_side_by_side_q &lt;- function(question) {
   questions &lt;- questions %&gt;%
     discard(~ .x[[&quot;Qualtrics_qtype&quot;]]==&quot;SBS&quot;)
 }</code></pre>
-<p>###Splitting block elements as part of get_setup</p>
+</div>
+<div id="splitting-block-elements-as-part-of-get_setup" class="section level3">
+<h3>Splitting block elements as part of get_setup</h3>
 <p>This function iterates through a block and, where appropriate, splits the block element for a side-by-side question into separate elements for each component of the side-by-side.</p>
 <pre class="r"><code>split_block_elements &lt;- function(block,sbs_question_qids) {
   if (! &quot;BlockElements&quot; %in% names(block)) {
@@ -549,7 +561,9 @@ split_side_by_side_q &lt;- function(question) {
   return(block)
   
 }</code></pre>
-<p>###Skip logic into questions</p>
+</div>
+<div id="skip-logic-into-questions" class="section level3">
+<h3>Skip logic into questions</h3>
 <pre class="r"><code>#Add skip logic to questions
 insert_skiplogic_into_questions &lt;- function(questions,blocks) {
   for (b in blocks) {
@@ -568,7 +582,9 @@ insert_skiplogic_into_questions &lt;- function(questions,blocks) {
     }
   }
 }</code></pre>
-<p>###Insert questions into blocks</p>
+</div>
+<div id="insert-questions-into-blocks" class="section level3">
+<h3>Insert questions into blocks</h3>
 <pre class="r"><code>insert_questions_into_block &lt;- function(block,questions) {
   if (&quot;BlockElements&quot; %in% names(block)) {
     block[[&quot;BlockElements&quot;]] &lt;- modify_if(block[[&quot;BlockElements&quot;]],
@@ -577,6 +593,92 @@ insert_skiplogic_into_questions &lt;- function(questions,blocks) {
   }
   return(block)
 }</code></pre>
+</div>
+<div id="get-reorganized-questions-and-blocks" class="section level3">
+<h3>Get reorganized questions and blocks</h3>
+<p>This is a revised version of the function that is used as the workhorse in get_setup and does a LOT of what is required later on. It will still need to be documented VERY carefully and incorporated more fully into the package.</p>
+<pre class="r"><code>#This is called by get_setup to pull what we need from survey and responses 
+
+get_reorganized_questions_and_blocks_rv &lt;- function(survey,
+                                                 responses,
+                                                 original_first_rows) {
+  #The survey JSON was read in during an early block, so we can just work with this.
+  #Extract the survey elements from survey
+  survey_elements &lt;- survey_json[[&quot;SurveyElements&quot;]] %&gt;%
+    # Name each item of survey elements based on the primary attribute.
+    # This includes Survey Blocks, Survey Flow, Survey Options, and QIDs.
+    # These names should make it much easier for us to get the information we need to extract.
+    purrr::set_names(map_chr(., &quot;PrimaryAttribute&quot;))
+  
+  qtNotesList &lt;- note_text_from_survey(survey_json)
+  
+  #Now extract the blocks; this is really the payload element of element &quot;Survey Blocks&quot;
+  #Replace blocks_from_survey
+  blocks_all &lt;- purrr::pluck(survey_elements, &quot;Survey Blocks&quot;, &quot;Payload&quot;) %&gt;%
+    #Name the blocks with their descriptive value; this will be more user-friendly
+    #Use &quot;.&quot; to refer to the piped value within the map_chr function
+    purrr::set_names(map_chr(.,&quot;Description&quot;))
+  
+  trash_questions &lt;- blocks_all %&gt;%
+    #Now pluck just the trash block
+    pluck(&quot;Trash / Unused Questions&quot;, &quot;BlockElements&quot;) %&gt;%
+    #Pull a character vector of only the QIDs for questions that are in the trash
+    map_chr(.,&quot;QuestionID&quot;)
+  
+  
+  blocks_notrash &lt;- blocks_all %&gt;%
+    #Remove trash block based on the &quot;Type&quot; element of the block
+    purrr::keep(~ .x[[&quot;Type&quot;]]!= &quot;Trash&quot;) %&gt;%
+    #Name the BlockElements (quesiton items) within the blocks
+    map(~ modify_at(.x, &quot;BlockElements&quot;, ~set_names(.x, map_chr(.x, ~ str_c(.x[[&quot;QuestionID&quot;]],.x[[&quot;Type&quot;]],sep=&quot;-&quot;)))))
+  
+  
+  #Now we want to extract the list of questions. These can be identified as SurveyElements that have Element &quot;SQ&quot;
+  #Replaces questions_from_survey
+  questions &lt;- purrr::keep(survey_elements, ~ .x[[&quot;Element&quot;]]==&quot;SQ&quot;) %&gt;%
+    #Remove questions that are in the trash, as specified by &quot;trash_questions
+    discard( ~ .x[[&quot;PrimaryAttribute&quot;]] %in% trash_questions) %&gt;%
+    #Now clean question text using clean_html
+    map(~ append(.x,list(&quot;QuestionTextClean&quot; = clean_html(.x[[&quot;Payload&quot;]][[&quot;QuestionText&quot;]])))) %&gt;%
+    #Add the Qualtrics question type; this is for reference and won&#39;t be used in results
+    map(~append(.x, list(&quot;Qualtrics_qtype&quot; = .x[[&quot;Payload&quot;]][[&quot;QuestionType&quot;]]))) %&gt;%
+    #Add human readable question type to each question; this can be edited if we want 
+    #We will want ot expand this as we keep going
+    #We will need to reclassify the question type when we split side-by-side!!
+    map(~append(.x,list(&quot;QuestionTypeHuman&quot; = qtype_human(.x)))) %&gt;%
+    #Now we want to insert notes into questions.
+    #Previously side-by-side questions were not getting their notes. 
+    #This is now happening before the split to ensure that notes are included
+    insert_notes_into_questions_rv(notes = qtNotesList) %&gt;%
+    
+    #Insert skip logic into the questions
+    insert_skiplogic_into_questions(blocks=blocks_notrash) %&gt;%
+    
+    #Split side-by-side questions into their components
+    #We can do this by first appending split side-by-side questions to the list, then removing the originals
+    split_sbs_questions() %&gt;%
+    
+    #Link responses to questions
+    link_responses_to_questions(responses = responses,original_first_rows = original_first_rows) %&gt;%
+    
+    #Generate a results table for each question
+    generate_results(original_first_rows = original_first_rows)
+  
+  #Now get a list of the side-by-side questions 
+  #This is a named list where the name is the NEW split question ID and the element is the original QID
+  sbs_question_qids&lt;- keep(questions,~&quot;SBS_origQID&quot; %in% names(.x)) %&gt;%
+    map(&quot;SBS_origQID&quot;)
+  
+  #Revise the blocks to create space for elements split from side-by-side questions
+  blocks &lt;- map(blocks_notrash, ~ split_block_elements(.x,sbs_question_qids)) %&gt;%
+    #Now insert questions into blocks
+    map(~ insert_questions_into_block(block = .x, questions = questions))
+  
+  return(list(&quot;questions&quot; = questions, &quot;blocks&quot; = blocks))
+  
+}</code></pre>
+</div>
+</div>
 <div id="parsing-the-qsf" class="section level2">
 <h2>Parsing the QSF</h2>
 <p>This is an exploration of trying to improve the ways in which we parse the QSF for the QualtricsTools project. Emma will work on this as she is able. This is being done with a markdown document to try and get a little more familiar with markdown and make notes as I go along.</p>
@@ -594,79 +696,6 @@ original_first_rows &lt;- ask_for_csv(csv_sample,headerrows = 3)[[2]]</code></pr
 <p>The steps are not going to use pipes for now so everything is explicit, but this can be made much easier at a later time.</p>
 <div id="revise-setup-process-using-purrr-and" class="section level3">
 <h3>Revise setup process using purrr and %&gt;%</h3>
-<pre class="r"><code>#goal to revise get_setup
-#This is going to use the sample survey, but this could change.
-#The survey JSON was read in during an early block, so we can just work with this.
-#Extract the survey elements from survey
-survey_elements &lt;- survey_json[[&quot;SurveyElements&quot;]] %&gt;%
-  # Name each item of survey elements based on the primary attribute.
-  # This includes Survey Blocks, Survey Flow, Survey Options, and QIDs.
-  # These names should make it much easier for us to get the information we need to extract.
-  purrr::set_names(map_chr(., &quot;PrimaryAttribute&quot;))
-
-qtNotesList &lt;- note_text_from_survey(survey_json)
-
-#Now extract the blocks; this is really the payload element of element &quot;Survey Blocks&quot;
-#Replace blocks_from_survey
-blocks_all &lt;- purrr::pluck(survey_elements, &quot;Survey Blocks&quot;, &quot;Payload&quot;) %&gt;%
-  #Name the blocks with their descriptive value; this will be more user-friendly
-  #Use &quot;.&quot; to refer to the piped value within the map_chr function
-  purrr::set_names(map_chr(.,&quot;Description&quot;))
-
-trash_questions &lt;- blocks_all %&gt;%
-  #Now pluck just the trash block
-  pluck(&quot;Trash / Unused Questions&quot;, &quot;BlockElements&quot;) %&gt;%
-  #Pull a character vector of only the QIDs for questions that are in the trash
-  map_chr(.,&quot;QuestionID&quot;)
-  
-
-blocks_notrash &lt;- blocks_all %&gt;%
-  #Remove trash block based on the &quot;Type&quot; element of the block
-  purrr::keep(~ .x[[&quot;Type&quot;]]!= &quot;Trash&quot;) %&gt;%
-  #Name the BlockElements (quesiton items) within the blocks
-  map(~ modify_at(.x, &quot;BlockElements&quot;, ~set_names(.x, map_chr(.x, ~ str_c(.x[[&quot;QuestionID&quot;]],.x[[&quot;Type&quot;]],sep=&quot;-&quot;)))))
-
-
-#Now we want to extract the list of questions. These can be identified as SurveyElements that have Element &quot;SQ&quot;
-#Replaces questions_from_survey
-questions &lt;- purrr::keep(survey_elements, ~ .x[[&quot;Element&quot;]]==&quot;SQ&quot;) %&gt;%
-  #Remove questions that are in the trash, as specified by &quot;trash_questions
-  discard( ~ .x[[&quot;PrimaryAttribute&quot;]] %in% trash_questions) %&gt;%
-  #Now clean question text using clean_html
-  map(~ append(.x,list(&quot;QuestionTextClean&quot; = clean_html(.x[[&quot;Payload&quot;]][[&quot;QuestionText&quot;]])))) %&gt;%
-  #Add the Qualtrics question type; this is for reference and won&#39;t be used in results
-  map(~append(.x, list(&quot;Qualtrics_qtype&quot; = .x[[&quot;Payload&quot;]][[&quot;QuestionType&quot;]]))) %&gt;%
-  #Add human readable question type to each question; this can be edited if we want 
-  #We will want ot expand this as we keep going
-  #We will need to reclassify the question type when we split side-by-side!!
-  map(~append(.x,list(&quot;QuestionTypeHuman&quot; = qtype_human(.x)))) %&gt;%
-  #Now we want to insert notes into questions.
-  #Previously side-by-side questions were not getting their notes. 
-  #This is now happening before the split to ensure that notes are included
-  insert_notes_into_questions_rv(notes = qtNotesList) %&gt;%
-  
-  #Insert skip logic into the questions
-  insert_skiplogic_into_questions(blocks=blocks_notrash) %&gt;%
-  
-  #Split side-by-side questions into their components
-  #We can do this by first appending split side-by-side questions to the list, then removing the originals
-  split_sbs_questions() %&gt;%
-  
-  #Link responses to questions
-  link_responses_to_questions(responses = responses,original_first_rows = original_first_rows) %&gt;%
-  
-  #Generate a results table for each question
-  generate_results(original_first_rows = original_first_rows)
-
-#Now get a list of the side-by-side questions 
-#This is a named list where the name is the NEW split question ID and the element is the original QID
-sbs_question_qids&lt;- keep(questions,~&quot;SBS_origQID&quot; %in% names(.x)) %&gt;%
-  map(&quot;SBS_origQID&quot;)
-
-#Revise the blocks to create space for elements split from side-by-side questions
-blocks &lt;- map(blocks_notrash, ~ split_block_elements(.x,sbs_question_qids)) %&gt;%
-  #Now insert questions into blocks
-  map(~ insert_questions_into_block(block = .x, questions = questions))</code></pre>
 <p>This is my working version of inserting questions to blocks.</p>
 </div>
 <div id="creating-response-column-dictionary-from-qsf" class="section level3">
