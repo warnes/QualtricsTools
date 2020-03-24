@@ -371,7 +371,7 @@ sample_survey=TRUE parameter."
   }
 
   questions_and_blocks <-
-    get_reorganized_questions_and_blocks_rv(survey, responses, original_first_rows)
+    get_reorganized_questions_and_blocks(survey, responses, original_first_rows)
   questions <- questions_and_blocks[[1]]
   blocks <- questions_and_blocks[[2]]
 
