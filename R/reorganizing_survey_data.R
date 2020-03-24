@@ -393,14 +393,19 @@ split_block_elements <- function(block,sbs_question_qids) {
 
 
 #' Insert questions into blocks
+#'
+#' This inserts questions into a single block. It should be iterated over all blocks
+#' to fully update the survey.
 #' @param questions A list of questions from a Qualtrics survey
-#' @param blocks A list of blocks from a Qualtrics survey
-#' @return The list of blocks with question elements updated to include the full question.
+#' @param block A single block from a Qualtrics survey
+#' @return The single survey block with question elements updated to include the full question.
 insert_questions_into_block <- function(block,questions) {
   if ("BlockElements" %in% names(block)) {
     block[["BlockElements"]] <- purrr::modify_if(block[["BlockElements"]],
                                                  ~.x[["Type"]]=="Question",
-                                                 ~ purrr::pluck(questions,.x[["QuestionID"]]))
+                                                 ~ append(purrr::pluck(questions,.x[["QuestionID"]]),
+                                                          values = c("Type" = "Question",
+                                                                     "QuestionID" = .x[["QuestionID"]])))
   }
   return(block)
 }
