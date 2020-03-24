@@ -33,9 +33,9 @@ shinyServer(function(input, output) {
     }
 
     # Check that the uploaded survey contains no duplicate questions.
-    questions <- questions_from_survey(survey)
-    blocks <- blocks_from_survey(survey)
-    questions <- remove_trash_questions(questions, blocks)
+    valid_questions_blocks <- valid_questions_blocks_from_survey(survey)
+    questions <- valid_questions_blocks[["questions"]]
+    blocks <- valid_questions_blocks[["blocks"]]
     duplicates <-
       questions[which(duplicated(sapply(questions, function(x)
         x$Payload$DataExportTag)))]
@@ -316,12 +316,12 @@ shinyServer(function(input, output) {
     if (length(survey_and_responses()) >= 1) {
       survey <- survey_and_responses()[[1]]
       flow <- flow_from_survey(survey)
-      blocks <- blocks_from_survey(survey)
-      questions <- questions_from_survey(survey)
-      questions <- remove_trash_questions(questions, blocks)
-      questions <- clean_question_text(questions)
-      blocks <- remove_trash_blocks(blocks)
-      blocks <- questions_into_blocks(questions, blocks)
+      valid_questions_blocks <- valid_questions_blocks_from_survey(survey)
+      questions <- valid_questions_blocks[["questions"]]
+      blocks <- valid_questions_blocks[["blocks"]]
+      questions <- add_question_detail(questions = questions, blocks = blocks,
+                                       qtNotesList = note_text_from_survey(survey))
+      blocks <- purrr::map(blocks, ~ insert_questions_into_block(block = .x, questions = questions))
       tabelize_display_logic(blocks, flow)
     }
   })
