@@ -565,46 +565,6 @@ clean_html <- function(text) {
 }
 
 
-#' Create Human Readable Question Types
-#'
-#' This function saves, admittedly reductionist, more friendly question type
-#' descriptions. It doesn't have human human readable versions for every question type,
-#' but for some it is useful to reduce the question type to something more simple.
-#' This has a nested function (create_qtype) that determines a question's human question type,
-#' and then it loops through the questions and saves to each the QuestionTypeHuman
-#' field with the output of create_qtype.
-#'
-#' @inheritParams clean_question_text
-#' @return A list of questions which include in their Payload a QuestionTypeHuman field.
-DELETE_human_readable_qtype <- function(questions) {
-  create_qtype <- function(q) {
-    qtype <- which(c(
-      is_multiple_answer(q),
-      is_single_answer(q),
-      is_rank_order(q),
-      is_text_entry(q)
-    ))
-    if (length(qtype) == 0)
-      qtype <- 0
-    human_qtype <- switch(qtype,
-                          "Multiple Answer",
-                          "Single Answer",
-                          "Rank Order",
-                          "Text Entry")
-    if (is.null(human_qtype))
-      human_qtype <- ""
-    return(human_qtype)
-  }
-
-  for (i in 1:length(questions)) {
-    questions[[i]][['Payload']][['QuestionTypeHuman']] <-
-      create_qtype(questions[[i]])
-  }
-
-  return(questions)
-}
-
-
 #' Create a Question Dictionary
 #'
 #' @param blocks The blocks provided to this function must include questions inserted into
