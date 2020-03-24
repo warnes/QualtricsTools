@@ -392,7 +392,7 @@ insert_coded_comments <-
       }
     }
 
-    blocks <- questions_into_blocks(questions, blocks)
+    blocks <- purrr::map(blocks, ~ insert_questions_into_block(block = .x, questions = questions))
     return(blocks)
   }
 
