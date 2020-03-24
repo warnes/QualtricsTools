@@ -727,7 +727,8 @@ uncodeable_question_dictionary <- function(blocks) {
   # move the next question to our current iterator, and then
   # skip it.
   for (i in 1:number_of_blocks(blocks)) {
-    if (length(blocks[[i]][['BlockElements']]) != 0) {
+    if ('BlockElements' %in% names(blocks[[i]]) &&
+        length(blocks[[i]][['BlockElements']]) != 0) {
       for (j in length(blocks[[i]][['BlockElements']]):1) {
         if (!("Element" %in% names(blocks[[i]][['BlockElements']][[j]]))) {
           blocks[[i]][['BlockElements']][[j]] <- NULL
@@ -1481,7 +1482,7 @@ create_response_column_dictionary <-
             # Question Response Column:
             names(question[['Responses']])[[response_column]],
             # Question Stem:
-            question[['Payload']][['QuestionTextClean']],
+            question[['QuestionTextClean']],
             # Question Choice:
             choice_text,
             # Question Type 1:
@@ -1491,7 +1492,7 @@ create_response_column_dictionary <-
             # Question Type 3:
             question[['Payload']][['SubSelector']],
             # Response Type:
-            question[['Payload']][['QuestionTypeHuman']]
+            question[['QuestionTypeHuman']]
           )
         )
       }
