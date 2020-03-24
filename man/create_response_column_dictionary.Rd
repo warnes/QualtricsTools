@@ -14,7 +14,7 @@ the survey's questions inserted appropriately into them.}
 automatically provided to you when you use get_setup() or in the shiny application.}
 
 \item{flow}{A list of strings identifying the blocks in the order that they appear
-within the survey.}
+within the survey. Extract this form the survey QSF with `flow_from_survey`.}
 }
 \value{
 a dataframe detailing in each row the response columns and their description.
