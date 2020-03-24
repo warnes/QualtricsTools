@@ -2,7 +2,7 @@
 % Please edit documentation in R/reorganizing_survey_data.R
 \name{insert_notes_into_questions}
 \alias{insert_notes_into_questions}
-\title{Insert the Notes for a question into its qtNotes}
+\title{Insert the Notes for a question into its qtNotes element}
 \usage{
 insert_notes_into_questions(questions, notes)
 }
@@ -11,6 +11,10 @@ insert_notes_into_questions(questions, notes)
 
 \item{notes}{A list of blocks with type element "NT"}
 }
+\value{
+A list of questions with user notes from the Qualtrics Survey appended as
+named element "qtNotes"
+}
 \description{
-Insert the Notes for a question into its qtNotes
+Insert the Notes for a question into its qtNotes element
 }
