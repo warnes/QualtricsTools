@@ -521,48 +521,6 @@ link_responses_to_questions <-
   }
 
 
-#' Organize the Questions into their Survey Blocks
-#'
-#' This function takes a blocks list (create this with blocks_from_survey and
-#' then remove_trash_blocks), inserts the questions from a survey
-#' appropriately into the blocks element, and then returns the
-#' blocks list including the questions as elements in the blocks[[i]][['BlockElements']].
-#'
-#' @inheritParams remove_trash_questions
-#' @return a list of blocks including questions under blocks[[i]][['BlockElements']]
-#' for each index i.
-DELETE_questions_into_blocks <- function(questions, blocks) {
-  for (i in 1:number_of_blocks(blocks)) {
-    # loop through each block, and in each block, loop through the BlockElements
-    # Check that the block includes BlockElements; a header block or other information will not.
-    if ("BlockElements" %in% names(blocks[[i]]) &&
-        length(blocks[[i]][['BlockElements']]) != 0) {
-      for (j in 1:length(blocks[[i]][['BlockElements']])) {
-        # create matching_question as a list of indices of questions which
-        # have the corresponding QuestionID
-        matching_question <- which(sapply(questions,
-                                          function(x)
-                                            isTRUE(x[['Payload']][['QuestionID']] ==
-                                                     blocks[[i]][['BlockElements']][[j]][['QuestionID']]) ||
-                                            isTRUE(x[['Payload']][['QuestionID']] ==
-                                                     blocks[[i]][['BlockElements']][[j]][['Payload']][['QuestionID']])))
-        # if matching_question is a list of length 1 then we've matched the
-        # question uniquely and can replace the BlockElement with the actual question
-        if (length(matching_question) == 1) {
-          if ("SkipLogic" %in% names(blocks[[i]][['BlockElements']][[j]])) {
-            questions[[matching_question]][['Payload']][['SkipLogic']] <-
-              blocks[[i]][['BlockElements']][[j]][['SkipLogic']]
-          }
-          blocks[[i]][['BlockElements']][[j]] <-
-            questions[[matching_question]]
-        }
-      }
-    }
-  }
-  return(blocks)
-}
-
-
 #' Create Cleaned Question Text
 #'
 #' This function loops through every question and applies the clean_html function to
