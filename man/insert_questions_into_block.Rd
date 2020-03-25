@@ -7,13 +7,14 @@
 insert_questions_into_block(block, questions)
 }
 \arguments{
-\item{questions}{A list of questions from a Qualtrics survey}
+\item{block}{A single block from a Qualtrics survey}
 
-\item{blocks}{A list of blocks from a Qualtrics survey}
+\item{questions}{A list of questions from a Qualtrics survey}
 }
 \value{
-The list of blocks with question elements updated to include the full question.
+The single survey block with question elements updated to include the full question.
 }
 \description{
-Insert questions into blocks
+This inserts questions into a single block. It should be iterated over all blocks
+to fully update the survey.
 }
