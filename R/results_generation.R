@@ -181,11 +181,14 @@ question_variable_to_choice_text <- function(question, choice, use_recode_values
 #' @param question This is the question which has been checked to contain
 #' Text Entry data with Numerical verification. This TE question will now
 #' be processed to give a summary stats table and not an appendice.
-#' @inheritParams process_question_results
-#' @return A question with a ['Table'] appended to it where the summary stats are present
+#' @param horizontal_table This variable indicated whether the summary statistics
+#' table should be presented with each statistic in a separate column. By default it
+#' is set to FALSE.
+#' @return A question with a ['Table'] appended to it where the summary stats are
+#' present
 
 generate_summary_stats <-
-  function(question) {
+  function(question, horizontal_table = FALSE) {
     # Extracting the datatexport tag from question
     exp <- question[['Payload']][['DataExportTag']]
 
@@ -197,45 +200,39 @@ generate_summary_stats <-
     entries <- as.integer(entries)
 
     # Calcuate the stats
-    N <- length(entries)
-    a <- round(mean(entries), digits=2)
-    b<-  round(median(entries), digits=2)
-    c <- round(sd(entries), digits = 2)
-    d <- min(entries)
-    e <- max(entries)
+    NumberOfEntries <- length(entries)
+    Mean <- round(mean(entries), digits=2)
+    Median <-  round(median(entries), digits=2)
+    StandardDev <- round(sd(entries), digits = 2)
+    Minimum <- min(entries)
+    Maximum <- max(entries)
 
-    # # Use this code if horizontal representation is preffered
-    # # currently= OFF
-    # # Start here
-    # results_table <- data.frame("",N,a,b,c,d,e, row.names=NULL)
-    # # setting up column names in new data frame
-    # colnames(results_table)[1] <- ""
-    # colnames(results_table)[2] <- "N"
-    # colnames(results_table)[3] <- "Mean"
-    # colnames(results_table)[4] <- "Median"
-    # colnames(results_table)[5] <- "Standard Deviation"
-    # colnames(results_table)[6] <- "Minimum"
-    # colnames(results_table)[7] <- "Maximum"
-    # # End here
-    #
-    #
-    # # Use this code if vertical representation is preffered
-    # # currently= ON
-    # # Start here
-    # #
-    # initialising data data frame with 2 columns
-    results_table <- data.frame("N", N, row.names=NULL , check.names = FALSE)
-    # setting up column names
-    colnames(results_table)[1]<-"Summary Statistics"
-    colnames(results_table)[2]<-""
-    # Adding rest of statistics
-    results_table <- rbind(results_table, c("Mean", a))
-    results_table <- rbind(results_table, c("Median", b))
-    results_table <- rbind(results_table, c("Standard Deviation", c))
-    results_table <- rbind(results_table, c("Minimum", d))
-    results_table <- rbind(results_table, c("Maximum", e))
-    # End here
-    # #
+    # Use this code if horizontal representation is preffered
+    if (horizontal_table == TRUE){
+      results_table <- data.frame("",NumberOfEntries,Mean,Median,StandardDev,Minimum,Maximum, row.names=NULL)
+      # setting up column names in new data frame
+      colnames(results_table)[1] <- ""
+      colnames(results_table)[2] <- "N"
+      colnames(results_table)[3] <- "Mean"
+      colnames(results_table)[4] <- "Median"
+      colnames(results_table)[5] <- "Standard Deviation"
+      colnames(results_table)[6] <- "Minimum"
+      colnames(results_table)[7] <- "Maximum"
+    }
+    else{
+      # initialising data data frame with 2 columns
+      results_table <- data.frame("N", NumberOfEntries, row.names=NULL , check.names = FALSE)
+      # setting up column names
+      colnames(results_table)[1]<-"Summary Statistics"
+      colnames(results_table)[2]<-""
+      # Adding rest of statistics
+      results_table <- rbind(results_table, c("Mean", Mean))
+      results_table <- rbind(results_table, c("Median", Median))
+      results_table <- rbind(results_table, c("Standard Deviation", StandardDev))
+      results_table <- rbind(results_table, c("Minimum", Minimum))
+      results_table <- rbind(results_table, c("Maximum", Maximum))
+    }
+
     # appending dataframe with all stats to question
     question[['Table']] <- results_table
     question[['qtNotes']] <- "Note: Data must be cleaned before processing summary statistics."
