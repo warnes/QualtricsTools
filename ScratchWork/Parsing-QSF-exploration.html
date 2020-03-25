@@ -12,7 +12,7 @@
 <meta name="author" content="Emma Morgan" />
 
 
-<title>QSF Parsing Exercise</title>
+<title>Parsing the Qualtrics QSF</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -375,151 +375,165 @@ summary {
 
 
 
-<h1 class="title toc-ignore">QSF Parsing Exercise</h1>
+<h1 class="title toc-ignore">Parsing the Qualtrics QSF</h1>
 <h4 class="author">Emma Morgan</h4>
-<h4 class="date">3/6/2020</h4>
+<h4 class="date">3/25/2020</h4>
 
 </div>
 
 
-<div id="updating-functions" class="section level2">
-<h2>Updating functions</h2>
-<p>This is a space where anything we functionalize new can be added to our environment so that we can work wiht and use it in the later steps.</p>
-<div id="revise-extraction-of-user-notes-and-inserting-into-questions." class="section level3">
-<h3>Revise extraction of user notes and inserting into questions.</h3>
-<p>Now we can functionalize how we are creating user notes. This should replace notes_from_survey. We will also want to update how we insert notes into questions above.</p>
-<pre class="r"><code>note_text_from_survey &lt;- function(survey) {
-  #From the survey, keep elements that have user notes; these are identified from the list of survey elements
-  #as those with Elements &quot;NT&quot;
-  user_notes_text &lt;- keep(survey[[&quot;SurveyElements&quot;]], ~.x[[&quot;Element&quot;]]==&quot;NT&quot;) %&gt;%
-    #Now rename the user notes with their QID based on parent ID instead of the primary attribute
-    set_names(map_chr(., ~ .x[[&quot;Payload&quot;]][[&quot;ParentID&quot;]])) %&gt;%
-    #From the notes block payload, pluck &quot;Notes&quot; element
-    #Now we want to pull only the next for the user notes
-    #But only if the element &quot;Removed&quot; is false
-    #First keep only the &quot;Notes&quot; section within Payload, which has the information we need
-    map(~ pluck(.x, &quot;Payload&quot;,&quot;Notes&quot;)) %&gt;%
-    #only keep notes for which the &quot;Removed&quot; status is FALSE; these are notes that have not been deleted
-    map(~ keep(.x, ~ !.x[[&quot;Removed&quot;]])) %&gt;%
-    #Now we want to pluck only the messages, which is the text of the note
-    map(~map(.x, ~pluck(.x,&quot;Message&quot;))) %&gt;%
-    map(~ flatten(.x)) %&gt;%
-    #Prepend each note with the &quot;User note: &quot; text tag
-    map(~map(.x,~stringr::str_c(&quot;User note: &quot;,.x)))
-  return(user_notes_text)
-}</code></pre>
+<div id="spring-2020-updates-to-parsing-the-qsf-to-set-up-qualtricstools-work" class="section level2">
+<h2>Spring 2020 Updates to parsing the QSF to set up QualtricsTools work</h2>
+<p>Part of the QualtricsTools enhancement project has been to update the method of parsing the QSF. This involved changing the workhorse function get_reorganized_questions_and_blocks that is used in the setup process to pull questions from the QSF, clean text, add necessary information including question type, link responses to questions, generate results tables, and insert questions into blocks in preparation for creating summary reports results tables and appendices. This document does the following:</p>
+<ul>
+<li>Outline the functions that have been added or revised as part of this project.</li>
+<li>Walk through an example of get_reorganized_questions_and_blocks</li>
+</ul>
 </div>
-<div id="notes-into-questions" class="section level3">
-<h3>Notes into Questions</h3>
-<p>Revise the function that appends a list of questions with the appropriate user notes</p>
-<pre class="r"><code>insert_notes_into_questions_rv &lt;- function(questions, notes) {
-  #For each question, first see if it has corresponding notes.
-  #If it does, append the question list with element &quot;qtNotes&quot;
-  questions_with_notes &lt;- questions %&gt;%
-    purrr::modify_if(~.x[[&quot;PrimaryAttribute&quot;]] %in% names(notes),
-                     ~ append(.x, list(&quot;qtNotes&quot;= pluck(notes,.x[[&quot;PrimaryAttribute&quot;]]))))
-  return(questions_with_notes)
-}</code></pre>
+<div id="updated-or-added-functions" class="section level2">
+<h2>Updated or Added Functions</h2>
+<div id="qtype_human" class="section level3">
+<h3>qtype_human</h3>
+<p>This function returns a human readable question type based on a question’s Payload information. In the setup and reogranization process, this is used intially with quesitons, then again when splitting side-by-side questions into their components. As a function, this allows us to expand easily to other questions types as QualtricsTools enhancements continue and we potentially add functionality for other question types (e.g. numeric text entry).</p>
+<p>Previously the function human_readable_qtype iterated through the list of questions and added an element “QuestionTypeHuman”. This function takes a single question and returns the question type. It can be used with a for loop or mapper function as needed to append information.</p>
+<pre class="r"><code>qtype_human</code></pre>
+<pre><code>## function (question) 
+## {
+##     QuestionTypeHuman &lt;- dplyr::case_when(is_multiple_answer(question) ~ 
+##         &quot;Multiple Answer&quot;, is_single_answer(question) ~ &quot;Single Answer&quot;, 
+##         is_rank_order(question) ~ &quot;Rank Order&quot;, is_text_entry(question) ~ 
+##             &quot;Text Entry&quot;, question[[&quot;Payload&quot;]][[&quot;QuestionType&quot;]] == 
+##             &quot;SBS&quot; ~ &quot;Side-by-side&quot;, question[[&quot;Payload&quot;]][[&quot;QuestionType&quot;]] == 
+##             &quot;DB&quot; ~ &quot;Descriptive Box&quot;, TRUE ~ &quot;Other question type&quot;)
+##     return(QuestionTypeHuman)
+## }
+## &lt;bytecode: 0x00000000246fc660&gt;
+## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
 </div>
-<div id="add-a-function-for-determining-qualtrics-type-human-readable-from-the-payload-information.-this-is-used-intially-with-quesitons-then-again-when-splitting-side-by-side-questions-into-their-components.-functionalizing-this-will-allow-us-to-more-easily-add-cases-for-other-questino-types-as-we-move-forward-with-development-and-enhancements." class="section level3">
-<h3>Add a function for determining Qualtrics Type human readable from the Payload information. This is used intially with quesitons, then again when splitting side-by-side questions into their components. Functionalizing this will allow us to more easily add cases for other questino types as we move forward with development and enhancements.</h3>
-<pre class="r"><code>qtype_human &lt;- function(question) {
-  
-  QuestionTypeHuman &lt;-  dplyr::case_when(is_multiple_answer(question) ~ &quot;Multiple Answer&quot;,
-                                         is_single_answer(question) ~ &quot;Single Answer&quot;,
-                                         is_rank_order(question) ~ &quot;Rank Order&quot;,
-                                         is_text_entry(question) ~ &quot;Text Entry&quot;,
-                                         question[[&quot;Payload&quot;]][[&quot;QuestionType&quot;]]==&quot;SBS&quot; ~ &quot;Side-by-side&quot;,
-                                         question[[&quot;Payload&quot;]][[&quot;QuestionType&quot;]]==&quot;DB&quot; ~ &quot;Descriptive Box&quot;,
-                                         TRUE ~ &quot;Other question type&quot;)
-  return(QuestionTypeHuman)
-  
-}</code></pre>
+<div id="note_text_from_survey" class="section level3">
+<h3>note_text_from_survey</h3>
+<p>Give a Qualtrics survey read in from JSON .qsf using ask_for_qsf, extract the User Note survey elements. these are identified as survey elements with Element “NT”. The function creates a named list of these user notes in which each element is named with the parent QID. Each list element is a list of user notes. If multiple user notes exist in the survey, the list element for that question will have multiple elements. Each user note has been prepended with text “User note:”</p>
+<p>This replaces the function <em>notes_from_survey</em>.</p>
+<pre class="r"><code>note_text_from_survey</code></pre>
+<pre><code>## function (survey) 
+## {
+##     user_notes_text &lt;- purrr::keep(survey[[&quot;SurveyElements&quot;]], 
+##         ~.x[[&quot;Element&quot;]] == &quot;NT&quot;)
+##     user_notes_text &lt;- purrr::set_names(user_notes_text, purrr::map_chr(user_notes_text, 
+##         ~.x[[&quot;Payload&quot;]][[&quot;ParentID&quot;]]))
+##     user_notes_text &lt;- purrr::map(user_notes_text, ~purrr::pluck(.x, 
+##         &quot;Payload&quot;, &quot;Notes&quot;))
+##     user_notes_text &lt;- purrr::map(user_notes_text, ~purrr::keep(.x, 
+##         ~!.x[[&quot;Removed&quot;]]))
+##     user_notes_text &lt;- purrr::map(user_notes_text, ~purrr::map(.x, 
+##         ~purrr::pluck(.x, &quot;Message&quot;)))
+##     user_notes_text &lt;- purrr::map(user_notes_text, ~purrr::flatten(.x))
+##     user_notes_text &lt;- purrr::map(user_notes_text, ~purrr::map(.x, 
+##         ~stringr::str_c(&quot;User note: &quot;, .x)))
+##     return(user_notes_text)
+## }
+## &lt;bytecode: 0x0000000024887778&gt;
+## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
 </div>
-<div id="revise-splitting-a-single-side-by-side-question" class="section level3">
-<h3>Revise splitting a single side-by-side question</h3>
-<p>This function will be iterated over questions. A separate step of get_setup will split blocks based on the list of SBS questions.</p>
-<pre class="r"><code>#This applies to a single side-by-side question
-split_side_by_side_q &lt;- function(question) {
-  
-  #For a SBS question only
-  #There should be a chekc earlier that the side-by-side actually has additional questions
-  #Assume additional questions here
-  split_q &lt;- list()
-  
-  #We may not actually need this
-  mainq &lt;- modify_at(question, &quot;AdditionalQuestions&quot;, ~NULL)
-  
-  #Extract the question text from the main part of the question
-  #If we&#39;ve already run the other parts of the question, this will be the clean question text
-    #If not, pull the original question text
-  mainq_text &lt;- if_else(&quot;QuestionTextClean&quot; %in% names(question),
-                        question[[&quot;QuestionTextClean&quot;]],
-                        question[[&quot;Payload&quot;]][[&quot;QuestionText&quot;]]) 
-  
-  main_qid &lt;- mainq[[&quot;PrimaryAttribute&quot;]]
-  
-  
-  additional_questions &lt;- question[[&quot;Payload&quot;]][[&quot;AdditionalQuestions&quot;]] %&gt;%
-  #Add names based on the QID
-  #There&#39;s an issue with the &quot;#&quot; symbol, so replace with underscore in the question name; may need to change this later
-    set_names(map_chr(.,~ str_replace(.x[[&quot;QuestionID&quot;]], &quot;#&quot;,&quot;_&quot;))) 
-  
-  #Now we want to edit the split questions. In the original QualtricsTools, split quesitons ONLY have Payload and qtNotes
-    #We will have to decide at a later date if anything else should be included
-  
-  
-  split_q &lt;- additional_questions %&gt;%
-    
-    #Assign the additional question information as Payload for the new question element
-    map(~ list(&quot;Payload&quot; = .x)) %&gt;%
-    #Pull qtNotes from the original question and append them to each item
-    #Add an additional note that this was split from a side-by-side question
-    map(~ rlist::list.append(.x,qt_notes = if_else(&quot;qtNotes&quot; %in% names(mainq),
-                                                   list(append(mainq[[&quot;qtNotes&quot;]],
-                                                               &quot;This question was split from a side-by-side question.&quot;)),
-                                                   list(&quot;This question was split from a side-by-side question.&quot;)))) %&gt;%
-    #Add clean question text to the side-by-side question element
-    map(~ rlist::list.append(.x, QuestionTextClean = str_c(mainq_text,&quot;---&quot;,.x[[&quot;Payload&quot;]][[&quot;QuestionText&quot;]]))) %&gt;%
-    
-    #Add QualtricsQtype for the side by side; prepend with &quot;SBS&quot; to indicate this came from a side-by-side question
-    map( ~ rlist::list.append(.x, Qualtrics_qtype = paste0(&quot;SBS_&quot;,.x[[&quot;Payload&quot;]][[&quot;QuestionType&quot;]]))) %&gt;%
-    
-    #Add human readable question type
-    map(~ rlist::list.append(.x, QuestionTypeHuman = qtype_human(.x))) %&gt;%
-    
-    #Add Primary Attribute that corresponds to the list element name
-    map(~ rlist::list.append(.x, PrimaryAttribute = str_replace(.x[[&quot;Payload&quot;]][[&quot;QuestionID&quot;]], &quot;#&quot;,&quot;_&quot;))) %&gt;%
-    
-    #Add a new element indicating that this was split from a side-by-side question
-    map( ~ rlist::list.append(.x, SBS_origQID = main_qid))
-    
-    
-  return(split_q)
-
-}</code></pre>
+<div id="insert_notes_into_questions" class="section level3">
+<h3>insert_notes_into_questions</h3>
+<p>Given a list of questions and the list of user notes created by <em>note_text_from_survey</em>, append the element “qtNotes” to questions that have a matching user note element in the list of notes. This is a revised version of an existing function.</p>
+<pre class="r"><code>insert_notes_into_questions</code></pre>
+<pre><code>## function (questions, notes) 
+## {
+##     questions_with_notes &lt;- purrr::modify_if(questions, ~.x[[&quot;PrimaryAttribute&quot;]] %in% 
+##         names(notes), ~append(.x, list(qtNotes = purrr::pluck(notes, 
+##         .x[[&quot;PrimaryAttribute&quot;]]))))
+##     return(questions_with_notes)
+## }
+## &lt;bytecode: 0x0000000024a03c58&gt;
+## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
 </div>
-<div id="splitting-side-by-side-questions-as-part-of-get_setup" class="section level3">
-<h3>Splitting side by side questions as part of get_setup</h3>
-<pre class="r"><code>split_sbs_questions &lt;-  function(questions) {
-  #Iterate through the questions
-  for (q in questions) {
-    #For each side-by-side question
-    if(q[[&quot;Qualtrics_qtype&quot;]]==&quot;SBS&quot;) {
-      #Update the list of split questions
-      questions &lt;- append(questions,
-                          split_side_by_side_q(q), 
-                          after=match(q[[&quot;PrimaryAttribute&quot;]],names(questions)))
-    }
-  }
-  #Now remove the original side-by-side questions since we no longer need these
-  questions &lt;- questions %&gt;%
-    discard(~ .x[[&quot;Qualtrics_qtype&quot;]]==&quot;SBS&quot;)
-}</code></pre>
+<div id="insert_skip_logic_into_questions" class="section level3">
+<h3>insert_skip_logic_into_questions</h3>
+<p>Insert skip logic into questions. Skip logic is stored within a block’s block elements. This function iterates through the blocks. For each BlockElement within the block, it will determine whether skip logic exists. If the BlockElement has skip logic, it adds a SkipLogic element to the correspodning question in the list of questions.</p>
+<p>This function is new as part of the revised setup process.</p>
+<pre class="r"><code>insert_skiplogic_into_questions</code></pre>
+<pre><code>## function (questions, blocks) 
+## {
+##     for (b in blocks) {
+##         if (!&quot;BlockElements&quot; %in% names(b)) {
+##             return(questions)
+##         }
+##         else {
+##             for (be in b[[&quot;BlockElements&quot;]]) {
+##                 has_skip_logic &lt;- &quot;SkipLogic&quot; %in% names(be)
+##                 if (has_skip_logic) {
+##                   skip_logic &lt;- be[[&quot;SkipLogic&quot;]]
+##                   questions &lt;- purrr::modify_at(questions, be[[&quot;QuestionID&quot;]], 
+##                     ~rlist::list.append(.x, SkipLogic = skip_logic))
+##                 }
+##             }
+##             return(questions)
+##         }
+##     }
+## }
+## &lt;bytecode: 0x0000000024b7f280&gt;
+## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
 </div>
-<div id="splitting-block-elements-as-part-of-get_setup" class="section level3">
-<h3>Splitting block elements as part of get_setup</h3>
-<p>This function iterates through a block and, where appropriate, splits the block element for a side-by-side question into separate elements for each component of the side-by-side.</p>
+<div id="split_sbs_questions" class="section level3">
+<h3>split_sbs_questions</h3>
+<p>Given a list of questions, split side-by-side questions into their component questions. These are stored in the initial payload under the element “Additional Questions.” This iterates over the list of survey questions and calls the function <em>split_side_by_side_q</em> for each side-by-side in the question list.</p>
+<p>This function is new. Previously this step was accomplished within <em>split_side_by_sides</em> along with splitting block elements. The revised version functionalizes splitting questions and blocks separately, then calls them with the wrapper function <em>split_sbs_questions_blocks</em>.</p>
+<pre class="r"><code>split_sbs_questions</code></pre>
+<pre><code>## function (questions) 
+## {
+##     for (q in questions) {
+##         if (q[[&quot;Qualtrics_qtype&quot;]] == &quot;SBS&quot;) {
+##             questions &lt;- append(questions, split_side_by_side_q(question = q), 
+##                 after = match(q[[&quot;PrimaryAttribute&quot;]], names(questions)))
+##         }
+##     }
+##     questions &lt;- purrr::discard(questions, ~.x[[&quot;Qualtrics_qtype&quot;]] == 
+##         &quot;SBS&quot;)
+## }
+## &lt;bytecode: 0x0000000024cfee58&gt;
+## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
+</div>
+<div id="split_side_by_side_q" class="section level3">
+<h3>split_side_by_side_q</h3>
+<p>This function takes a single side by side question and splits it into its component questions. Each of the component questions is updated to have structure similar to initial Qualtrics questions. For this reason, the component questions have elements for Payload, QuestionTextClean, QuestionTypeHuman, Qualtrics_qtype, PrimaryAtribute. QuestionIDs are pulled from the additional question elements and “#” replaced with &quot;_&quot; character.</p>
+<p>This function is new. Previously this was done within a for loop of questions in the old <em>split_side_by_sides</em> function.</p>
+<pre class="r"><code>split_side_by_side_q</code></pre>
+<pre><code>## function (question) 
+## {
+##     split_q &lt;- list()
+##     mainq &lt;- purrr::modify_at(question, &quot;AdditionalQuestions&quot;, 
+##         ~NULL)
+##     mainq_text &lt;- dplyr::if_else(&quot;QuestionTextClean&quot; %in% names(question), 
+##         question[[&quot;QuestionTextClean&quot;]], question[[&quot;Payload&quot;]][[&quot;QuestionText&quot;]])
+##     main_qid &lt;- mainq[[&quot;PrimaryAttribute&quot;]]
+##     additional_questions &lt;- question[[&quot;Payload&quot;]][[&quot;AdditionalQuestions&quot;]]
+##     additional_questions &lt;- purrr::set_names(additional_questions, 
+##         purrr::map_chr(additional_questions, ~stringr::str_replace(.x[[&quot;QuestionID&quot;]], 
+##             &quot;#&quot;, &quot;_&quot;)))
+##     split_q &lt;- additional_questions
+##     split_q &lt;- purrr::map(split_q, ~list(Payload = .x))
+##     split_q &lt;- purrr::map(split_q, ~rlist::list.append(.x, qt_notes = dplyr::if_else(&quot;qtNotes&quot; %in% 
+##         names(mainq), list(append(mainq[[&quot;qtNotes&quot;]], &quot;This question was split from a side-by-side question.&quot;)), 
+##         list(&quot;This question was split from a side-by-side question.&quot;))))
+##     split_q &lt;- purrr::map(split_q, ~rlist::list.append(.x, QuestionTextClean = stringr::str_c(mainq_text, 
+##         &quot;---&quot;, .x[[&quot;Payload&quot;]][[&quot;QuestionText&quot;]])))
+##     split_q &lt;- purrr::map(split_q, ~rlist::list.append(.x, Qualtrics_qtype = paste0(&quot;SBS_&quot;, 
+##         .x[[&quot;Payload&quot;]][[&quot;QuestionType&quot;]])))
+##     split_q &lt;- purrr::map(split_q, ~rlist::list.append(.x, QuestionTypeHuman = qtype_human(.x)))
+##     split_q &lt;- purrr::map(split_q, ~rlist::list.append(.x, PrimaryAttribute = stringr::str_replace(.x[[&quot;Payload&quot;]][[&quot;QuestionID&quot;]], 
+##         &quot;#&quot;, &quot;_&quot;)))
+##     split_q &lt;- purrr::map(split_q, ~rlist::list.append(.x, SBS_origQID = main_qid))
+##     return(split_q)
+## }
+## &lt;bytecode: 0x0000000024e79b48&gt;
+## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
+</div>
+<div id="split_block_elements" class="section level3">
+<h3>split_block_elements</h3>
+<p>This function iterates through a block and, where appropriate, splits the block element for a side-by-side question into separate elements for each component of the side-by-side. It takes as argument a list of blocks and the QIDs of side-by-side questions. This is called within the wrapper function split_sbs_questions_blocks, In this process, a list of side-by-side QIDs is derived using the list of questions. If used indpendently, QIDs will need to be passed to the function.</p>
+<p>This function is new. Previously this step was accomplished as part of the <em>split_side_by_sides</em> function.</p>
 <pre class="r"><code>split_block_elements &lt;- function(block,sbs_question_qids) {
   if (! &quot;BlockElements&quot; %in% names(block)) {
     return(block)
@@ -562,383 +576,303 @@ split_side_by_side_q &lt;- function(question) {
   
 }</code></pre>
 </div>
-<div id="skip-logic-into-questions" class="section level3">
-<h3>Skip logic into questions</h3>
-<pre class="r"><code>#Add skip logic to questions
-insert_skiplogic_into_questions &lt;- function(questions,blocks) {
-  for (b in blocks) {
-    if (! &quot;BlockElements&quot; %in% names(b)) {
-      return(questions)
-    } else {
-      for (be in b[[&quot;BlockElements&quot;]]) {
-        has_skip_logic &lt;- &quot;SkipLogic&quot; %in% names(be)
-        if(has_skip_logic) {
-          skip_logic &lt;- be[[&quot;SkipLogic&quot;]]
-          #Add display logic to the question
-          questions &lt;- modify_at(questions,be[[&quot;QuestionID&quot;]], ~rlist::list.append(.x,SkipLogic = skip_logic))
-        }
-      }
-      return(questions)
-    }
-  }
-}</code></pre>
+<div id="insert_questions_into_blocks" class="section level3">
+<h3>insert_questions_into_blocks</h3>
+<p>Given a single block and a list of questions, iterate through the BlockElements and insert questions into their appropriate place within the blocks. when we need to do this for all blocks, this should be called with a for loop or mapper function to iterate over blocks.</p>
+<p>This replaces the functionality of <em>insert_questios_into_blocks</em>. However, this revised version iterates over a single block and must be used with a mapper or for loop to insert questions into all blocks.</p>
+<pre class="r"><code>insert_questions_into_block</code></pre>
+<pre><code>## function (block, questions) 
+## {
+##     if (&quot;BlockElements&quot; %in% names(block)) {
+##         block[[&quot;BlockElements&quot;]] &lt;- purrr::modify_if(block[[&quot;BlockElements&quot;]], 
+##             ~.x[[&quot;Type&quot;]] == &quot;Question&quot;, ~append(purrr::pluck(questions, 
+##                 .x[[&quot;QuestionID&quot;]]), values = c(Type = &quot;Question&quot;, 
+##                 QuestionID = .x[[&quot;QuestionID&quot;]])))
+##     }
+##     return(block)
+## }
+## &lt;bytecode: 0x000000002517c730&gt;
+## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
 </div>
-<div id="insert-questions-into-blocks" class="section level3">
-<h3>Insert questions into blocks</h3>
-<pre class="r"><code>insert_questions_into_block &lt;- function(block,questions) {
-  if (&quot;BlockElements&quot; %in% names(block)) {
-    block[[&quot;BlockElements&quot;]] &lt;- modify_if(block[[&quot;BlockElements&quot;]],
-                                           ~.x[[&quot;Type&quot;]]==&quot;Question&quot;,
-                                           ~pluck(questions,.x[[&quot;QuestionID&quot;]]))
-  }
-  return(block)
-}</code></pre>
+<div id="get_reorganized_surveys_and_blocks" class="section level3">
+<h3>get_reorganized_surveys_and_blocks</h3>
+<p>This is a revised version of the function get_reorganized_quesitons_and_blocks. This takes as an arment the survey, responses, and original first row. It returns a list with two named elements, questions and blokcs. The list of questions has been have been pulled out of the survey. Trash questions are removed, HTML and CSS are cleaned from the question text, and the question information from the survey QSF has been augmented with human readable question type, responses, and notes. The list of blocks from the survey has been updated to have the qeustions inserted into block elements. The list of questions is named with the Question IDs for each element. In addition, the questions in the BlockElements are named with the Question ID (Data Export Tag).</p>
+<pre class="r"><code>get_reorganized_questions_and_blocks</code></pre>
+<pre><code>## function (survey, responses, original_first_rows) 
+## {
+##     valid_questions_blocks &lt;- valid_questions_blocks_from_survey(survey)
+##     questions &lt;- valid_questions_blocks[[&quot;questions&quot;]]
+##     blocks &lt;- valid_questions_blocks[[&quot;blocks&quot;]]
+##     qtNotesList &lt;- note_text_from_survey(survey)
+##     questions &lt;- add_question_detail(questions = questions, blocks = blocks, 
+##         qtNotesList = qtNotesList)
+##     split_questions_blocks &lt;- split_sbs_questions_blocks(questions = questions, 
+##         blocks = blocks)
+##     questions &lt;- split_questions_blocks[[&quot;questions&quot;]]
+##     blocks &lt;- split_questions_blocks[[&quot;blocks&quot;]]
+##     questions &lt;- link_responses_to_questions(questions = questions, 
+##         responses = responses, original_first_rows = original_first_rows)
+##     questions &lt;- generate_results(questions, original_first_rows = original_first_rows)
+##     blocks &lt;- purrr::map(blocks, ~insert_questions_into_block(block = .x, 
+##         questions = questions))
+##     return(list(questions = questions, blocks = blocks))
+## }
+## &lt;bytecode: 0x00000000252f6de8&gt;
+## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
+<p>###valid_questions_blocks_from_survey</p>
+<p>This is a new function that is called as a section of get_reorganized_surveys_and_blocks. The main reorganization function has been separated into three parts to more easily call these sections in other locations. This is the first of three sections. This takes as an arguement the Qualtrics survey parsed from the QSF. This survey arguement can be prepared using ask_for_qsf with the filepath to the QSF. The function return a named lists of questions and blocks extracted from the survey. Trash questions have been removed from both questions and blocks. Side-by-side questions have been split into their component parts. The next stage will be to add additional information to the question, then to link responses to quesitons and process results.</p>
+<pre class="r"><code>valid_questions_blocks_from_survey</code></pre>
+<pre><code>## function (survey) 
+## {
+##     survey_elements &lt;- survey[[&quot;SurveyElements&quot;]]
+##     survey_elements &lt;- purrr::set_names(survey_elements, purrr::map_chr(survey_elements, 
+##         &quot;PrimaryAttribute&quot;))
+##     blocks_all &lt;- purrr::pluck(survey_elements, &quot;Survey Blocks&quot;, 
+##         &quot;Payload&quot;)
+##     blocks_all &lt;- purrr::set_names(blocks_all, purrr::map_chr(blocks_all, 
+##         &quot;Description&quot;))
+##     trash_questions &lt;- purrr::pluck(blocks_all, &quot;Trash / Unused Questions&quot;, 
+##         &quot;BlockElements&quot;)
+##     trash_questions &lt;- purrr::map_chr(trash_questions, &quot;QuestionID&quot;)
+##     blocks_notrash &lt;- purrr::keep(blocks_all, ~.x[[&quot;Type&quot;]] != 
+##         &quot;Trash&quot;)
+##     blocks_notrash &lt;- purrr::map(blocks_notrash, ~purrr::modify_at(.x, 
+##         &quot;BlockElements&quot;, ~purrr::set_names(.x, purrr::map_chr(.x, 
+##             ~stringr::str_c(.x[[&quot;QuestionID&quot;]], .x[[&quot;Type&quot;]], 
+##                 sep = &quot;-&quot;)))))
+##     questions &lt;- purrr::keep(survey_elements, ~.x[[&quot;Element&quot;]] == 
+##         &quot;SQ&quot;)
+##     questions &lt;- purrr::discard(questions, ~.x[[&quot;PrimaryAttribute&quot;]] %in% 
+##         trash_questions)
+##     return(list(questions = questions, blocks = blocks_notrash))
+## }
+## &lt;bytecode: 0x000000002547a950&gt;
+## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
 </div>
-<div id="get-reorganized-questions-and-blocks" class="section level3">
-<h3>Get reorganized questions and blocks</h3>
-<p>This is a revised version of the function that is used as the workhorse in get_setup and does a LOT of what is required later on. It will still need to be documented VERY carefully and incorporated more fully into the package.</p>
-<pre class="r"><code>#This is called by get_setup to pull what we need from survey and responses 
-
-get_reorganized_questions_and_blocks_rv &lt;- function(survey,
-                                                 responses,
-                                                 original_first_rows) {
-  #The survey JSON was read in during an early block, so we can just work with this.
-  #Extract the survey elements from survey
-  survey_elements &lt;- survey_json[[&quot;SurveyElements&quot;]] %&gt;%
-    # Name each item of survey elements based on the primary attribute.
-    # This includes Survey Blocks, Survey Flow, Survey Options, and QIDs.
-    # These names should make it much easier for us to get the information we need to extract.
-    purrr::set_names(map_chr(., &quot;PrimaryAttribute&quot;))
-  
-  qtNotesList &lt;- note_text_from_survey(survey_json)
-  
-  #Now extract the blocks; this is really the payload element of element &quot;Survey Blocks&quot;
-  #Replace blocks_from_survey
-  blocks_all &lt;- purrr::pluck(survey_elements, &quot;Survey Blocks&quot;, &quot;Payload&quot;) %&gt;%
-    #Name the blocks with their descriptive value; this will be more user-friendly
-    #Use &quot;.&quot; to refer to the piped value within the map_chr function
-    purrr::set_names(map_chr(.,&quot;Description&quot;))
-  
-  trash_questions &lt;- blocks_all %&gt;%
-    #Now pluck just the trash block
-    pluck(&quot;Trash / Unused Questions&quot;, &quot;BlockElements&quot;) %&gt;%
-    #Pull a character vector of only the QIDs for questions that are in the trash
-    map_chr(.,&quot;QuestionID&quot;)
-  
-  
-  blocks_notrash &lt;- blocks_all %&gt;%
-    #Remove trash block based on the &quot;Type&quot; element of the block
-    purrr::keep(~ .x[[&quot;Type&quot;]]!= &quot;Trash&quot;) %&gt;%
-    #Name the BlockElements (quesiton items) within the blocks
-    map(~ modify_at(.x, &quot;BlockElements&quot;, ~set_names(.x, map_chr(.x, ~ str_c(.x[[&quot;QuestionID&quot;]],.x[[&quot;Type&quot;]],sep=&quot;-&quot;)))))
-  
-  
-  #Now we want to extract the list of questions. These can be identified as SurveyElements that have Element &quot;SQ&quot;
-  #Replaces questions_from_survey
-  questions &lt;- purrr::keep(survey_elements, ~ .x[[&quot;Element&quot;]]==&quot;SQ&quot;) %&gt;%
-    #Remove questions that are in the trash, as specified by &quot;trash_questions
-    discard( ~ .x[[&quot;PrimaryAttribute&quot;]] %in% trash_questions) %&gt;%
-    #Now clean question text using clean_html
-    map(~ append(.x,list(&quot;QuestionTextClean&quot; = clean_html(.x[[&quot;Payload&quot;]][[&quot;QuestionText&quot;]])))) %&gt;%
-    #Add the Qualtrics question type; this is for reference and won&#39;t be used in results
-    map(~append(.x, list(&quot;Qualtrics_qtype&quot; = .x[[&quot;Payload&quot;]][[&quot;QuestionType&quot;]]))) %&gt;%
-    #Add human readable question type to each question; this can be edited if we want 
-    #We will want ot expand this as we keep going
-    #We will need to reclassify the question type when we split side-by-side!!
-    map(~append(.x,list(&quot;QuestionTypeHuman&quot; = qtype_human(.x)))) %&gt;%
-    #Now we want to insert notes into questions.
-    #Previously side-by-side questions were not getting their notes. 
-    #This is now happening before the split to ensure that notes are included
-    insert_notes_into_questions_rv(notes = qtNotesList) %&gt;%
-    
-    #Insert skip logic into the questions
-    insert_skiplogic_into_questions(blocks=blocks_notrash) %&gt;%
-    
-    #Split side-by-side questions into their components
-    #We can do this by first appending split side-by-side questions to the list, then removing the originals
-    split_sbs_questions() %&gt;%
-    
-    #Link responses to questions
-    link_responses_to_questions(responses = responses,original_first_rows = original_first_rows) %&gt;%
-    
-    #Generate a results table for each question
-    generate_results(original_first_rows = original_first_rows)
-  
-  #Now get a list of the side-by-side questions 
-  #This is a named list where the name is the NEW split question ID and the element is the original QID
-  sbs_question_qids&lt;- keep(questions,~&quot;SBS_origQID&quot; %in% names(.x)) %&gt;%
-    map(&quot;SBS_origQID&quot;)
-  
-  #Revise the blocks to create space for elements split from side-by-side questions
-  blocks &lt;- map(blocks_notrash, ~ split_block_elements(.x,sbs_question_qids)) %&gt;%
-    #Now insert questions into blocks
-    map(~ insert_questions_into_block(block = .x, questions = questions))
-  
-  return(list(&quot;questions&quot; = questions, &quot;blocks&quot; = blocks))
-  
-}</code></pre>
+<div id="add_question_detail" class="section level3">
+<h3>add_question_detail</h3>
+<p>This is a new function. It serves as Part 2 of the get_reorganized_questions_and_blocks. After extracting the valid questions and blocks from the survey with split side-by-side questions, this stage adds needed information to the Questions. It takes as argumenets the valid questions, valid blocks, and list of Qualtrics Notes. This cleans the question text and adds supplemental information regarding humanreadable question type, user notes, and skip logic.</p>
+<pre class="r"><code>add_question_detail</code></pre>
+<pre><code>## function (questions, blocks, qtNotesList) 
+## {
+##     questions &lt;- purrr::map(questions, ~append(.x, list(QuestionTextClean = clean_html(.x[[&quot;Payload&quot;]][[&quot;QuestionText&quot;]]))))
+##     questions &lt;- purrr::map(questions, ~append(.x, list(Qualtrics_qtype = .x[[&quot;Payload&quot;]][[&quot;QuestionType&quot;]])))
+##     questions &lt;- purrr::map(questions, ~append(.x, list(QuestionTypeHuman = qtype_human(.x))))
+##     questions &lt;- insert_notes_into_questions(questions, notes = qtNotesList)
+##     questions &lt;- insert_skiplogic_into_questions(questions, blocks = blocks)
+##     return(questions)
+## }
+## &lt;bytecode: 0x0000000025601520&gt;
+## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
+</div>
+<div id="split_sbs_questions_blocks" class="section level3">
+<h3>split_sbs_questions_blocks</h3>
+<p>This is the third part of the revised survey reorganization function. It splits side-by-side questions into their componenet questions for processing with QualtricsTools. It also splits the survey question block elements into component parts to make space for questions to be inserted after results are processed.</p>
+<pre class="r"><code>split_sbs_questions_blocks</code></pre>
+<pre><code>## function (questions, blocks) 
+## {
+##     questions &lt;- split_sbs_questions(questions)
+##     sbs_question_qids &lt;- purrr::keep(questions, ~&quot;SBS_origQID&quot; %in% 
+##         names(.x))
+##     sbs_question_qids &lt;- purrr::map(sbs_question_qids, &quot;SBS_origQID&quot;)
+##     blocks &lt;- purrr::map(blocks, ~split_block_elements(.x, sbs_question_qids))
+##     return(list(questions = questions, blocks = blocks))
+## }
+## &lt;bytecode: 0x00000000257844c8&gt;
+## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
+</div>
+<div id="create_question_dictionary" class="section level3">
+<h3>create_question_dictionary</h3>
+<p>This is updated from the former function of the same name. The revised question reorganization function has been adjusted to insert QuestionTextClean and QuestionTypeHuman has elements of the question rather than elements of the question payload. Because the structure of questions has been updated, it was necessary to pull question informtion from the revised question elements rather than the payload.</p>
+<pre class="r"><code>create_question_dictionary</code></pre>
+<pre><code>## function (blocks, flow) 
+## {
+##     if (!missing(flow)) {
+##         block_ordering &lt;- list()
+##         for (h in flow) {
+##             matched_block &lt;- sapply(blocks, function(x) {
+##                 if (&quot;ID&quot; %in% names(x)) {
+##                   return(x[[&quot;ID&quot;]] == h)
+##                 }
+##                 else return(FALSE)
+##             })
+##             if (table(matched_block)[&quot;TRUE&quot;] == 1) {
+##                 block_ordering &lt;- c(block_ordering, which(matched_block))
+##             }
+##         }
+##     }
+##     else {
+##         block_ordering &lt;- 1:length(blocks)
+##     }
+##     create_entry &lt;- function(i, j) {
+##         if (!&quot;SubSelector&quot; %in% names(blocks[[i]][[&quot;BlockElements&quot;]][[j]][[&quot;Payload&quot;]])) {
+##             blocks[[i]][[&quot;BlockElements&quot;]][[j]][[&quot;Payload&quot;]][[&quot;SubSelector&quot;]] &lt;- &quot;&quot;
+##         }
+##         if (!&quot;QuestionTextClean&quot; %in% names(blocks[[i]][[&quot;BlockElements&quot;]][[j]]) &amp; 
+##             &quot;QuestiontypeHuman&quot; %in% names(blocks[[i]][[&quot;BlockElements&quot;]][[j]])) {
+##             stop(&quot;Questions do not contain clean question text and human readable question type.\n           Please reprocess your questions and try again.&quot;)
+##         }
+##         return(c(blocks[[i]][[&quot;BlockElements&quot;]][[j]][[&quot;Payload&quot;]][[&quot;DataExportTag&quot;]], 
+##             blocks[[i]][[&quot;BlockElements&quot;]][[j]][[&quot;QuestionTextClean&quot;]], 
+##             blocks[[i]][[&quot;BlockElements&quot;]][[j]][[&quot;Payload&quot;]][[&quot;QuestionType&quot;]], 
+##             blocks[[i]][[&quot;BlockElements&quot;]][[j]][[&quot;Payload&quot;]][[&quot;Selector&quot;]], 
+##             blocks[[i]][[&quot;BlockElements&quot;]][[j]][[&quot;Payload&quot;]][[&quot;SubSelector&quot;]], 
+##             blocks[[i]][[&quot;BlockElements&quot;]][[j]][[&quot;QuestionTypeHuman&quot;]]))
+##     }
+##     entries &lt;- list()
+##     e &lt;- 0
+##     for (i in block_ordering) {
+##         if (&quot;BlockElements&quot; %in% names(blocks[[i]]) &amp;&amp; length(blocks[[i]][[&quot;BlockElements&quot;]]) != 
+##             0) {
+##             for (j in 1:length(blocks[[i]][[&quot;BlockElements&quot;]])) {
+##                 e &lt;- e + 1
+##                 entries[[e]] &lt;- create_entry(i, j)
+##             }
+##         }
+##     }
+##     list_of_rows_to_df &lt;- function(data) {
+##         nCol &lt;- max(vapply(data, length, 0))
+##         data &lt;- lapply(data, function(row) c(row, rep(NA, nCol - 
+##             length(row))))
+##         data &lt;- matrix(unlist(data), nrow = length(data), ncol = nCol, 
+##             byrow = TRUE)
+##         data.frame(data)
+##     }
+##     if (length(entries) &gt; 0) {
+##         question_dictionary &lt;- list_of_rows_to_df(entries)
+##         colnames(question_dictionary) &lt;- c(&quot;Question Export Tag&quot;, 
+##             &quot;Question Text&quot;, &quot;Question Type 1&quot;, &quot;Question Type 2&quot;, 
+##             &quot;Question Type 3&quot;, &quot;Response Type&quot;)
+##     }
+##     else {
+##         question_dictionary &lt;- NULL
+##     }
+##     return(question_dictionary)
+## }
+## &lt;bytecode: 0x0000000025912018&gt;
+## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
+</div>
+<div id="uncodeable_question_dictionary" class="section level3">
+<h3>uncodeable_question_dictionary</h3>
+<p>Similar to the question dictionary above, the revised question and block organization process changed the structure of the question elements. For this reason, the uncodable question dictionary needs to be created in a revised format.</p>
+<pre class="r"><code>uncodeable_question_dictionary</code></pre>
+<pre><code>## function (blocks) 
+## {
+##     for (i in 1:number_of_blocks(blocks)) {
+##         if (&quot;BlockElements&quot; %in% names(blocks[[i]]) &amp;&amp; length(blocks[[i]][[&quot;BlockElements&quot;]]) != 
+##             0) {
+##             for (j in length(blocks[[i]][[&quot;BlockElements&quot;]]):1) {
+##                 if (!(&quot;Element&quot; %in% names(blocks[[i]][[&quot;BlockElements&quot;]][[j]]))) {
+##                   blocks[[i]][[&quot;BlockElements&quot;]][[j]] &lt;- NULL
+##                 }
+##                 else if (&quot;Element&quot; %in% names(blocks[[i]][[&quot;BlockElements&quot;]][[j]])) {
+##                   if (&quot;Table&quot; %in% names(blocks[[i]][[&quot;BlockElements&quot;]][[j]]) || 
+##                     blocks[[i]][[&quot;BlockElements&quot;]][[j]][[&quot;Payload&quot;]][[&quot;QuestionType&quot;]] == 
+##                       &quot;TE&quot; || blocks[[i]][[&quot;BlockElements&quot;]][[j]][[&quot;Payload&quot;]][[&quot;QuestionType&quot;]] == 
+##                     &quot;DB&quot; || all(grepl(&quot;TEXT&quot;, colnames(blocks[[i]][[&quot;BlockElements&quot;]][[j]][[&quot;Responses&quot;]])))) {
+##                     blocks[[i]][[&quot;BlockElements&quot;]][[j]] &lt;- NULL
+##                   }
+##                 }
+##             }
+##         }
+##     }
+##     return(create_question_dictionary(blocks))
+## }
+## &lt;bytecode: 0x0000000025ad4320&gt;
+## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
 </div>
 </div>
-<div id="parsing-the-qsf" class="section level2">
-<h2>Parsing the QSF</h2>
-<p>This is an exploration of trying to improve the ways in which we parse the QSF for the QualtricsTools project. Emma will work on this as she is able. This is being done with a markdown document to try and get a little more familiar with markdown and make notes as I go along.</p>
-<p>Start by loading the QSF and CSV from the sample survey as a test</p>
-<pre class="r"><code>qsf_sample &lt;- here::here(&quot;ScratchWork&quot;,&quot;Sample_survey_edits&quot;, &quot;Long_Exhaustive_Sample_Survey.qsf&quot;)
-csv_sample &lt;- here::here(&quot;data&quot;,&quot;Sample Surveys&quot;, &quot;Long Exhaustive Sample Survey&quot;,&quot;Long_Exhaustive_Sample_Survey.csv&quot;)</code></pre>
-<pre class="r"><code>qsf_sample &lt;- here::here(&quot;data&quot;,&quot;Sample Surveys&quot;, &quot;Better Sample Survey&quot;, &quot;Better_Sample_Survey.qsf&quot;)
-csv_sample &lt;- here::here(&quot;data&quot;,&quot;Sample Surveys&quot;, &quot;Better Sample Survey&quot;,&quot;Better_Sample_Survey.csv&quot;)</code></pre>
-<p>The csv should not be necessary at this time and the goal is to do most things without it. To start, read in the QSF JSON and assign to variable “survey”.</p>
-<pre class="r"><code>survey_json &lt;- rjson::fromJSON(file=qsf_sample)
-responses &lt;- ask_for_csv(csv_sample,headerrows = 3)[[1]]
-original_first_rows &lt;- ask_for_csv(csv_sample,headerrows = 3)[[2]]</code></pre>
-<p>The function blocks_from_survey pulls the “Survey Blocks” element from the json file. This creates placeholders for all of the survey elements. This could be done using purrr instead of the Filter function.</p>
-<p>First step should be to go through and name each list item of survey elements based on the primary attribute. This will be much cleaner and easier to use since currently the items are unnamed. This should give us the QIDs for questions that we need, the information we need for Survey Blocks, Survey Flow, Survey Options, and the default response set.</p>
-<p>The steps are not going to use pipes for now so everything is explicit, but this can be made much easier at a later time.</p>
-<div id="revise-setup-process-using-purrr-and" class="section level3">
-<h3>Revise setup process using purrr and %&gt;%</h3>
-<p>This is my working version of inserting questions to blocks.</p>
-</div>
-<div id="creating-response-column-dictionary-from-qsf" class="section level3">
-<h3>Creating response column dictionary from QSF</h3>
-<p>Now I want to try and create a response column dictionary. I’m going to go back to do this using the sample survey</p>
-<pre class="r"><code>qsf_sample &lt;- here::here(&quot;data&quot;,&quot;Sample Surveys&quot;, &quot;Better Sample Survey&quot;,&quot;Better_Sample_Survey.qsf&quot;)
-csv_sample &lt;- here::here(&quot;data&quot;,&quot;Sample Surveys&quot;, &quot;Better Sample Survey&quot;,&quot;Better_Sample_Survey.csv&quot;)
-
-survey_json &lt;- rjson::fromJSON(file=qsf_sample)
-#Extract the survey elements from survey
-survey_elements_unnamed &lt;- survey_json[[&quot;SurveyElements&quot;]]
-
-survey_elements &lt;-purrr::set_names(survey_elements_unnamed, map_chr(survey_elements_unnamed, &quot;PrimaryAttribute&quot;))
-#Now I want to set up something from the Blocks with the list of questions and their corresponding Block
-
-blocks_use &lt;- survey_elements %&gt;%
-  pluck(&quot;Survey Blocks&quot;, &quot;Payload&quot;) %&gt;%
-  set_names(map_chr(., &quot;Description&quot;))
-
-#Now trying to make a data frame
-qdict &lt;- enframe(blocks_use, name = &quot;Block Name&quot;, value = &quot;BlockList&quot;) %&gt;%
-  #Now we want to expand the BlockList column
-  unnest_wider(BlockList) %&gt;%
-  unnest_longer(BlockElements) %&gt;%
-  
-  mutate(ElementType = map_chr(BlockElements, &quot;Type&quot;),
-         QID = map_chr(BlockElements, &quot;QuestionID&quot;))
-
-#Now we want to get the question information separately
-
-question_dict &lt;- survey_elements %&gt;%
-  keep(~ .x[[&quot;Element&quot;]] == &quot;SQ&quot;) %&gt;%
-  enframe(name = &quot;QID&quot;, value = &quot;QuestionList&quot;) %&gt;%
-  unnest_wider(QuestionList) %&gt;%
-  unnest_wider(Payload)
-
-#At this point we have most of the information in a table. There are still lists for choices and recode values and 
-#we will need to worry about check all that apply and such, but it is getting closer.</code></pre>
-</div>
-<div id="get_setup" class="section level3">
-<h3>get_setup</h3>
-<p>The get_setup function is our starting point for QualtricsTools. Understanding and simplifying this will help us to make a better tool and allow more flexibility moving forward.</p>
-<pre class="r"><code>get_setup &lt;-
-  function (qsf_path,
-            csv_path,
-            headerrows,
-            already_loaded,
-            return_data_as_list = FALSE,
-            sample_data = FALSE)
-  {
-    if (missing(already_loaded)) {
-      already_loaded &lt;- FALSE
-    }
-    if (already_loaded == FALSE &amp;&amp; sample_data == FALSE) {
-      if (missing(headerrows)) {
-        headerrows &lt;-
-          readline(prompt = &quot;Enter the number of response data header rows [Default: 3]: &quot;)
-        if (!grepl(&quot;^[0-9]+$&quot;, headerrows)) {
-          cat(&quot;Defaulting to headerrows = 3\n&quot;)
-          headerrows = 3
-        }
-        else
-          headerrows &lt;- as.integer(headerrows)
-      }
-      if (missing(qsf_path)) {
-        survey &lt;- ask_for_qsf()
-      }
-      else {
-        survey &lt;- ask_for_qsf(qsf_path)
-      }
-      if (missing(csv_path)) {
-        capture.output(responses &lt;- ask_for_csv(headerrows = headerrows))
-      }
-      else {
-        capture.output(responses &lt;- ask_for_csv(csv_path,
-                                                headerrows = headerrows))
-      }
-      original_first_rows &lt;- as.data.frame(responses[[2]])
-      responses &lt;- as.data.frame(responses[[1]])
-    }
-    if (already_loaded == TRUE &amp;&amp; sample_data == FALSE) {
-      if (exists(&quot;survey&quot;, where = globalenv()) &amp;&amp; exists(&quot;responses&quot;,
-                                                          where = globalenv()) &amp;&amp; exists(&quot;original_first_rows&quot;,
-                                                                                         where = globalenv())) {
-        survey &lt;- get(&quot;survey&quot;, envir = globalenv())
-        responses &lt;- get(&quot;responses&quot;, envir = globalenv())
-        original_first_rows &lt;- get(&quot;original_first_rows&quot;,
-                                   envir = globalenv())
-      }
-      else
-        stop(
-          &quot;\nThe necessary objects do not exist in the global scope. Each of survey,\nresponses, and original_first_rows should be in the global scope when\nusing the global scope when using the already_loaded=TRUE parameter.\nUse ask_for_qsf() and ask_for_csv() to get a survey object list from a\nQualtrics Survey File and a pair of dataframes (responses,\noriginal_first_rows) from a survey&#39;s CSV response data. Alternatively,\npass the parameters for qsf_path, csv_path, and headerrows, or use the\nsample_survey=TRUE parameter.&quot;
-        )
-    }
-    if (sample_data == TRUE) {
-      survey &lt;- sample_survey
-      responses &lt;- sample_responses
-      original_first_rows &lt;- sample_original_first_rows
-    }
-    questions_and_blocks &lt;-
-      get_reorganized_questions_and_blocks(survey,
-                                           responses, original_first_rows)
-    questions &lt;- questions_and_blocks[[1]]
-    blocks &lt;- questions_and_blocks[[2]]
-    blocks[[&quot;header&quot;]] &lt;- c(paste0(&quot;Survey Name: &quot;,
-                                   survey[[&quot;SurveyEntry&quot;]][[&quot;SurveyName&quot;]]),
-                            paste0(&quot;Number of Respondents: &quot;, nrow(responses)))
-    flow &lt;- flow_from_survey(survey)
-    if (return_data_as_list) {
-      return_vals = list(
-        survey = survey,
-        responses = responses,
-        questions = questions,
-        blocks = blocks,
-        original_first_rows = original_first_rows,
-        flow = flow
-      )
-      return(return_vals)
-    }
-    else {
-      survey &lt;&lt;- survey
-      responses &lt;&lt;- responses
-      questions &lt;&lt;- questions
-      blocks &lt;&lt;- blocks
-      original_first_rows &lt;&lt;- original_first_rows
-      flow &lt;&lt;- flow_from_survey(survey)
-      if (exists(&quot;survey&quot;, 1) &amp;&amp; exists(&quot;responses&quot;,
-                                        1) &amp;&amp; exists(&quot;questions&quot;, 1) &amp;&amp; exists(&quot;blocks&quot;,
-                                                                               1) &amp;&amp; exists(&quot;original_first_rows&quot;)) {
-        cat(
-          &quot;survey, responses, questions, blocks, original_first_rows,\n        and flow have now been made global objects.\n&quot;
-        )
-      }
-    }
-  }</code></pre>
-</div>
-<div id="get_reorganized_questions_and_blocks" class="section level3">
-<h3>get_reorganized_questions_and_blocks</h3>
-<p>This is the function we are trying to simplify. In many ways, get_reorganized_questions_and_blocks is the starting workhorse upon which get_setup functions and orients a user to working with QualtricsTools.</p>
-<pre class="r"><code>get_reorganized_questions_and_blocks &lt;-
-  function(survey, responses, original_first_rows) {
-    # select the block elements from the survey
-    blocks &lt;- blocks_from_survey(survey)
-
-    # select the questions from the survey
-    questions &lt;- questions_from_survey(survey)
-
-    # remove the questions that were found in the trash block
-    questions &lt;- remove_trash_questions(questions, blocks)
-
-    # remove the trash block from the blocks
-    blocks &lt;- remove_trash_blocks(blocks)
-
-    # split side by side questions into their component questions
-    questions_and_blocks &lt;- split_side_by_sides(questions, blocks)
-    questions &lt;- questions_and_blocks[[1]]
-    blocks &lt;- questions_and_blocks[[2]]
-
-    # clean the question text of HTML and CSS tags
-    questions &lt;- clean_question_text(questions)
-
-    # categorize each question&#39;s Response Type
-    # (Single Answer, Multiple Answer,
-    #  Text Entry, Rank Order)
-    questions &lt;- human_readable_qtype(questions)
-
-    # insert the response columns into their corresponding
-    # question under question[[&#39;Responses&#39;]]
-    questions &lt;-
-      link_responses_to_questions(questions, responses, original_first_rows)
-
-    # generate each question&#39;s results table and insert it
-    # in question[[&#39;Table&#39;]]
-    questions &lt;- generate_results(questions, original_first_rows)
-
-    # insert notes into their corresponding questions
-    notes &lt;- notes_from_survey(survey)
-    questions &lt;- insert_notes_into_questions(questions, notes)
-
-    # insert the questions into the blocks
-    blocks &lt;- questions_into_blocks(questions, blocks)
-
-    # insert the header into the blocks
-    blocks[[&#39;header&#39;]] &lt;- c(paste0(&quot;Survey Name: &quot;,
-                                   survey[[&#39;SurveyEntry&#39;]][[&#39;SurveyName&#39;]]),
-                            paste0(&quot;Number of Respondents: &quot;,
-                                   nrow(responses)))
-
-    # return questions and blocks as a list of 2 elements
-    questions_and_blocks &lt;- list()
-    questions_and_blocks[[&#39;questions&#39;]] &lt;- questions
-    questions_and_blocks[[&#39;blocks&#39;]] &lt;- blocks
-    return(questions_and_blocks)
-  }</code></pre>
-<p>Existing function for splitting side_by_side questions. This is for reference currently and should not be run as actual R script.</p>
-</div>
-<div id="split_side_by_sides" class="section level3">
-<h3>split_side_by_sides</h3>
-<pre class="r"><code>#This is the existing code to create the function splitting side-by-side questions.
-#It is included here for reference during the development/revision process.
-
-split_side_by_sides &lt;- function(questions, blocks)
-{
-  for (i in length(questions):1) {
-    if (questions[[i]][[&quot;Payload&quot;]][[&quot;QuestionType&quot;]] == 
-        &quot;SBS&quot;) {
-      split_questions &lt;- list()
-      for (j in 1:questions[[i]][[&quot;Payload&quot;]][[&quot;NumberOfQuestions&quot;]]) {
-        split_questions[[j]] &lt;- list()
-        split_questions[[j]][[&quot;Payload&quot;]] &lt;- questions[[i]][[&quot;Payload&quot;]][[&quot;AdditionalQuestions&quot;]][[as.character(j)]]
-        split_questions[[j]][[&quot;Payload&quot;]][[&quot;QuestionText&quot;]] &lt;- paste0(clean_html(questions[[i]][[&quot;Payload&quot;]][[&quot;QuestionText&quot;]]), 
-                                                                      &quot;-&quot;, clean_html(questions[[i]][[&quot;Payload&quot;]][[&quot;AdditionalQuestions&quot;]][[as.character(j)]][[&quot;QuestionText&quot;]]))
-        split_questions[[j]][[&quot;qtNotes&quot;]] &lt;- list()
-        if (&quot;qtNotes&quot; %in% names(questions[[i]])) 
-          split_questions[[j]][[&quot;qtNotes&quot;]] &lt;- questions[[i]][[&quot;qtNotes&quot;]]
-        split_questions[[j]][[&quot;qtNotes&quot;]] &lt;- c(split_questions[[j]][[&quot;qtNotes&quot;]], 
-                                               &quot;This question was split from a side-by-side question.&quot;)
-      }
-      orig_question_id &lt;- questions[[i]][[&quot;Payload&quot;]][[&quot;QuestionID&quot;]]
-      split_question_ids &lt;- lapply(split_questions, function(x) x[[&quot;Payload&quot;]][[&quot;QuestionID&quot;]])
-      split_block_elements &lt;- lapply(split_question_ids, 
-                                     function(x) list(Type = &quot;Question&quot;, QuestionID = x))
-      for (k in 1:length(blocks)) {
-        if (&quot;BlockElements&quot; %in% names(blocks[[k]])) {
-          for (j in 1:length(blocks[[k]][[&quot;BlockElements&quot;]])) {
-            block_elmt_question_id &lt;- blocks[[k]][[&quot;BlockElements&quot;]][[j]][[&quot;QuestionID&quot;]]
-            if (block_elmt_question_id == orig_question_id) {
-              blocks[[k]][[&quot;BlockElements&quot;]][[j]] &lt;- NULL
-              blocks[[k]][[&quot;BlockElements&quot;]] &lt;- append(blocks[[k]][[&quot;BlockElements&quot;]], 
-                                                       split_block_elements, after = (j - 1))
-              break
-            }
-          }
-        }
-      }
-      questions[[i]] &lt;- NULL
-      questions &lt;- append(questions, value = split_questions, 
-                          after = (i - 1))
-    }
-  }
-  return(list(questions, blocks))
-}</code></pre>
-</div>
+<div id="sample-get-reorganized-questions-and-blocks" class="section level2">
+<h2>Sample: Get Reorganized Questions and Blocks</h2>
+<p>This is a walk through of the process for getting reorganized questions and blocks. This uses the Better Sample Survey. The first part of get_setup reads in the qsf and csv to provide the necessary survey, original_first_rows, and responses.</p>
+<p>Once these have been loaded, we enter get_reorganized_questions_and_blocks. This step will extract valid questions (those functions that are not trash questions) from the survye. It also pulls the blocks and removes the trash question elements. Below we illustrate how the question elements are named, how blocks elements are named, and what the question looks like that this point.</p>
+<pre class="r"><code>valid_q_b &lt;- valid_questions_blocks_from_survey(survey)
+valid_questions &lt;- valid_q_b[[&quot;questions&quot;]]
+valid_blocks &lt;- valid_q_b[[&quot;blocks&quot;]]</code></pre>
+<p>Print names of valid_questions. Previous version of question organization did not name these elements, but now we can see that they are named.</p>
+<pre class="r"><code>names(valid_questions)</code></pre>
+<pre><code>##  [1] &quot;QID10&quot; &quot;QID11&quot; &quot;QID12&quot; &quot;QID3&quot;  &quot;QID4&quot;  &quot;QID6&quot;  &quot;QID2&quot;  &quot;QID5&quot;  &quot;QID1&quot; 
+## [10] &quot;QID9&quot;  &quot;QID8&quot;</code></pre>
+<p>Print names of elements of the first question. This will allow us to see what changes in the next step.</p>
+<pre class="r"><code>names(valid_questions[[1]])</code></pre>
+<pre><code>## [1] &quot;SurveyID&quot;           &quot;Element&quot;            &quot;PrimaryAttribute&quot;  
+## [4] &quot;SecondaryAttribute&quot; &quot;TertiaryAttribute&quot;  &quot;Payload&quot;</code></pre>
+<p>Print names of BlockElements from the first (and only) block in this survey. as we can see, these elements have now been named with QID and appended “-Question”, but this could easily be updated or adjusted if desired.</p>
+<pre class="r"><code>names(valid_blocks$`First Question Block`$BlockElements)</code></pre>
+<pre><code>##  [1] &quot;QID4-Question&quot;  &quot;QID1-Question&quot;  &quot;QID5-Question&quot;  &quot;QID2-Question&quot; 
+##  [5] &quot;QID6-Question&quot;  &quot;QID3-Question&quot;  &quot;QID8-Question&quot;  &quot;QID9-Question&quot; 
+##  [9] &quot;QID10-Question&quot; &quot;QID11-Question&quot; &quot;QID12-Question&quot;</code></pre>
+<p>The next step in the revision process is to add_question_detail. This takes the Qualtrics User Notes list as an arguement, so we must first extract the notes from the survey. Printing the names of the first question element after this step shows that the function has added elements to the quesiton: QuestionTextClean, Qualtrics_qtype, QuestionTypeHuman.</p>
+<pre class="r"><code>qtNotesList &lt;- note_text_from_survey(survey)
+questions_added &lt;- add_question_detail(valid_questions, valid_blocks, qtNotesList)
+names(questions_added[[1]])</code></pre>
+<pre><code>## [1] &quot;SurveyID&quot;           &quot;Element&quot;            &quot;PrimaryAttribute&quot;  
+## [4] &quot;SecondaryAttribute&quot; &quot;TertiaryAttribute&quot;  &quot;Payload&quot;           
+## [7] &quot;QuestionTextClean&quot;  &quot;Qualtrics_qtype&quot;    &quot;QuestionTypeHuman&quot;</code></pre>
+<p>The first question in the list does not include Qualtrics user notes or skip logic. However, we can see that these have been added in questions QID1 (skip logic) and QID4 (user note).</p>
+<pre class="r"><code>names(questions_added$QID1)</code></pre>
+<pre><code>##  [1] &quot;SurveyID&quot;           &quot;Element&quot;            &quot;PrimaryAttribute&quot;  
+##  [4] &quot;SecondaryAttribute&quot; &quot;TertiaryAttribute&quot;  &quot;Payload&quot;           
+##  [7] &quot;QuestionTextClean&quot;  &quot;Qualtrics_qtype&quot;    &quot;QuestionTypeHuman&quot; 
+## [10] &quot;SkipLogic&quot;</code></pre>
+<pre class="r"><code>questions_added$QID1[[&quot;SkipLogic&quot;]]</code></pre>
+<pre><code>## [[1]]
+## [[1]]$SkipLogicID
+## [1] 1
+## 
+## [[1]]$ChoiceLocator
+## [1] &quot;q://QID1/SelectableChoice/1&quot;
+## 
+## [[1]]$Condition
+## [1] &quot;Selected&quot;
+## 
+## [[1]]$SkipToDestination
+## [1] &quot;ENDOFBLOCK&quot;
+## 
+## [[1]]$Locator
+## [1] &quot;q://QID1/SelectableChoice/1&quot;
+## 
+## [[1]]$SkipToDescription
+## [1] &quot;Please select your favorite... &lt;strong&gt;Canteloupe&lt;/strong&gt; Is &lt;strong&gt;Selected&lt;/strong&gt;&quot;
+## 
+## [[1]]$Description
+## [1] &quot;If &lt;strong title=\&quot;Canteloupe\&quot;&gt;Canteloupe&lt;/strong&gt; Is &lt;strong&gt;Selected&lt;/strong&gt;, Then Skip To &lt;strong&gt;End of Block&lt;/strong&gt;&quot;
+## 
+## [[1]]$QuestionID
+## [1] &quot;QID1&quot;</code></pre>
+<pre class="r"><code>names(questions_added$QID4)</code></pre>
+<pre><code>##  [1] &quot;SurveyID&quot;           &quot;Element&quot;            &quot;PrimaryAttribute&quot;  
+##  [4] &quot;SecondaryAttribute&quot; &quot;TertiaryAttribute&quot;  &quot;Payload&quot;           
+##  [7] &quot;QuestionTextClean&quot;  &quot;Qualtrics_qtype&quot;    &quot;QuestionTypeHuman&quot; 
+## [10] &quot;qtNotes&quot;</code></pre>
+<pre class="r"><code>questions_added$QID4[[&quot;qtNotes&quot;]]</code></pre>
+<pre><code>## [[1]]
+## [1] &quot;User note: This is a note, and it belongs here.&quot;</code></pre>
+<p>After adding this extra information to the questions, the next step of the function is to split side-by-side questions. We can see that there are many side-by-side questions in this survey. This can be seen by mapping over the questions and pulling the Question Type Human</p>
+<pre class="r"><code>purrr::map_chr(questions_added, &quot;QuestionTypeHuman&quot;)</code></pre>
+<pre><code>##             QID10             QID11             QID12              QID3 
+##    &quot;Side-by-side&quot;    &quot;Side-by-side&quot;    &quot;Side-by-side&quot;      &quot;Text Entry&quot; 
+##              QID4              QID6              QID2              QID5 
+## &quot;Multiple Answer&quot;    &quot;Side-by-side&quot;   &quot;Single Answer&quot; &quot;Multiple Answer&quot; 
+##              QID1              QID9              QID8 
+##   &quot;Single Answer&quot; &quot;Multiple Answer&quot;   &quot;Single Answer&quot;</code></pre>
+<p>From this mapping it is clear that there are multiple side-by-side questions. After splitting side-by-sides, the side-by-side quesiton elements should be removed from the list and replaced with the split componenet questions.</p>
+<pre class="r"><code>split_questions_blocks &lt;- split_sbs_questions_blocks(questions_added, valid_blocks)
+split_questions &lt;- split_questions_blocks[[&quot;questions&quot;]]
+split_blocks &lt;- split_questions_blocks[[&quot;blocks&quot;]]
+names(split_questions)</code></pre>
+<pre><code>##  [1] &quot;QID10_1&quot; &quot;QID10_2&quot; &quot;QID11_1&quot; &quot;QID11_2&quot; &quot;QID11_3&quot; &quot;QID12_1&quot; &quot;QID12_2&quot;
+##  [8] &quot;QID3&quot;    &quot;QID4&quot;    &quot;QID6_1&quot;  &quot;QID6_2&quot;  &quot;QID2&quot;    &quot;QID5&quot;    &quot;QID1&quot;   
+## [15] &quot;QID9&quot;    &quot;QID8&quot;</code></pre>
+<p>The named elements of the quesiton list above show that the first three questions (Q10, Q11, Q12), which were all side-by-side, are now split inot their component questions. It can be shown that the blocks had something similar.</p>
+<pre class="r"><code>names(split_blocks$`First Question Block`$BlockElements)</code></pre>
+<pre><code>##  [1] &quot;QID4-Question&quot;    &quot;QID1-Question&quot;    &quot;QID5-Question&quot;    &quot;QID2-Question&quot;   
+##  [5] &quot;QID6_1-Question&quot;  &quot;QID6_2-Question&quot;  &quot;QID3-Question&quot;    &quot;QID8-Question&quot;   
+##  [9] &quot;QID9-Question&quot;    &quot;QID10_1-Question&quot; &quot;QID10_2-Question&quot; &quot;QID11_1-Question&quot;
+## [13] &quot;QID11_2-Question&quot; &quot;QID11_3-Question&quot; &quot;QID12_1-Question&quot; &quot;QID12_2-Question&quot;</code></pre>
+<p>One could explore further to see that these split questions contain relevant information for future processing.</p>
+<p>The next steps of the funciton proceed as normal. Changes have not yet been made to linking responses or processing results.</p>
+<p>It may be more useful to name the quesitons and blocks with varialbe names instead of QIDs. However, it would be important to establish that the questions are named UNIQUELY if these are to be used. The benefit of this would be easily pulling a question from the list since users often know the variale name (or Data Export Tag), but do not know the quesiton position or QID.</p>
 </div>
 
 
