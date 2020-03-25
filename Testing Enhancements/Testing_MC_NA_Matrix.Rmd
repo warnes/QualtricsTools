@@ -125,7 +125,6 @@ get_setup(
 
 question <- questions[[34]]
 
-
 ```
 
 
