@@ -62,6 +62,7 @@ get_setup(
   headerrows = 3
 )
 
+
 ```
 
 
@@ -93,5 +94,35 @@ question
 
 
 ```
+
+
+
+
+## Lets figure out the test stuff
+
+
+```{r}
+
+devtools::load_all(".")
+library(tidyverse)
+
+
+get_setup(
+  qsf_path = here::here("data", "Sample Surveys", "Long Exhaustive Sample Survey", "Long_Exhaustive_Sample_Survey.qsf"),
+  csv_path = here::here("data", "Sample Surveys", "Long Exhaustive Sample Survey", "Long_Exhaustive_Sample_Survey.csv"),
+  headerrows = 3
+)
+
+make_text_appendices(output_dir = here::here("Testing Enhancements"))
+
+
+get_setup(
+  qsf_path = here::here("Testing Enhancements", "Long_Exhaustive_Sample_Survey.qsf"),
+  csv_path = here::here("Testing Enhancements", "Long_Exhaustive_Sample_Survey.csv"),
+  headerrows = 3
+)
+
+```
+
 
 

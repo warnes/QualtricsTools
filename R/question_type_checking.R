@@ -80,17 +80,21 @@ is_mc_single_answer <- function(question) {
       has_na <- FALSE
 
 
-
-    # If it has any NA-type choices tell us...
-    if(is_Multiple_Choice && has_SingleAnswer_selector) {
-      if(has_na){
-        is_MC_Single_answer <- "Turn_Matrix"
+    if(!is.na(is_Multiple_Choice) && !is.na(has_SingleAnswer_selector)){
+      # If it has any NA-type choices tell us...
+      if(is_Multiple_Choice && has_SingleAnswer_selector) {
+        if(has_na){
+          is_MC_Single_answer <- "Turn_Matrix"
+        } else {
+          is_MC_Single_answer <- "Regular"
+        }
       } else {
-        is_MC_Single_answer <- "Regular"
+        is_MC_Single_answer <- "Nope"
       }
     } else {
       is_MC_Single_answer <- "Nope"
     }
+
 
     return(is_MC_Single_answer)
 }
