@@ -392,7 +392,7 @@ shinyServer(function(input, output) {
     renderUI(div(HTML(results_tables()), class = "shiny-html-output"))
 
   output[['question_dictionary']] <-
-    renderDataTable(question_dictionary(),
+    DT::renderDataTable(question_dictionary(),
                     options = list(
                       scrollX = TRUE,
                       pageLength = 10,
@@ -405,7 +405,7 @@ shinyServer(function(input, output) {
   output[['display_logic']] <-
     renderUI(div(HTML(display_logic()), class = "shiny-html-output"))
 
-  output[['select_qdict']] = renderDataTable({
+  output[['select_qdict']] = DT::renderDataTable({
     include_exclude_dict()
   }, options =
     list(
