@@ -253,7 +253,7 @@ insert_skiplogic_into_questions <- function(questions,blocks) {
         if(has_skip_logic) {
           skip_logic <- be[["SkipLogic"]]
           #Add display logic to the question
-          questions <- purrr::modify_at(questions,be[["QuestionID"]], ~rlist::list.append(.x,SkipLogic = skip_logic))
+          questions <- purrr::modify_at(questions,which(be[["QuestionID"]]==purrr::map_chr(questions,"PrimaryAttribute")), ~rlist::list.append(.x,SkipLogic = skip_logic))
         }
       }
       return(questions)
