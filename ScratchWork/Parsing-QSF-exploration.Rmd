@@ -142,7 +142,7 @@ split_block_elements <- function(block,sbs_question_qids) {
 
 Given a single block and a list of questions, iterate through the BlockElements and insert questions into their appropriate place within the blocks. when we need to do this for all blocks, this should be called with a for loop or mapper function to iterate over blocks.
 
-This replaces the functionality of *insert_questios_into_blocks*. However, this revised version iterates over a single block and must be used with a mapper or for loop to insert questions into all blocks.
+This replaces the functionality of *insert_questions_into_blocks*. However, this revised version iterates over a single block and must be used with a mapper or for loop to insert questions into all blocks.
 
 
 
@@ -212,7 +212,7 @@ responses <- ask_for_csv(csv_sample,headerrows = 3)[[1]]
 original_first_rows <- ask_for_csv(csv_sample,headerrows = 3)[[2]]
 ```
 
-Once these have been loaded, we enter get_reorganized_questions_and_blocks. This step will extract valid questions (those functions that are not trash questions) from the survye. It also pulls the blocks and removes the trash question elements. Below we illustrate how the question elements are named, how blocks elements are named, and what the question looks like that this point.
+Once these have been loaded, we enter get_reorganized_questions_and_blocks. This step will extract valid questions (those functions that are not trash questions) from the survey. It also pulls the blocks and removes the trash question elements. Below we illustrate how the question elements are named, how blocks elements are named, and what the question looks like that this point. Questions are named with their Data Export Tags (variable name roots). Blocks are named with descriptive text. Within blocks, the Block Elements for survey questions are named with QIDs.
 
 ```{r sample_valid_questions_blocks}
 valid_q_b <- valid_questions_blocks_from_survey(survey)
@@ -242,14 +242,15 @@ qtNotesList <- note_text_from_survey(survey)
 questions_added <- add_question_detail(valid_questions, valid_blocks, qtNotesList)
 names(questions_added[[1]])
 
+
 ```
 
-The first question in the list does not include Qualtrics user notes or skip logic. However, we can see that these have been added in questions QID1 (skip logic) and QID4 (user note).
+The first question in the list does not include Qualtrics user notes or skip logic. However, we can see that these have been added in questions q2_favorite (skip logic) and q1_recent (user note).
 
 ```{r}
-names(questions_added$QID1)
+names(questions_added$q2_favorite)
 questions_added$QID1[["SkipLogic"]]
-names(questions_added$QID4)
+names(questions_added$q1_recent)
 questions_added$QID4[["qtNotes"]]
 ```
 
@@ -268,7 +269,7 @@ split_blocks <- split_questions_blocks[["blocks"]]
 names(split_questions)
 ```
 
-The named elements of the quesiton list above show that the first three questions (Q10, Q11, Q12), which were all side-by-side, are now split inot their component questions. It can be shown that the blocks had something similar.
+The named elements of the quesiton list above show that the first three questions (Q10, Q11, Q12), which were all side-by-side, are now split inot their component questions. It can be shown that the blocks had something similar. At this point the block elements are still named with QIDs. These will be replaced with Data Export Tags in the last step of reorganizing_questions_and_blocks.
 
 ```{r}
 names(split_blocks$`First Question Block`$BlockElements)
@@ -276,6 +277,27 @@ names(split_blocks$`First Question Block`$BlockElements)
 
 One could explore further to see that these split questions contain relevant information for future processing.
 
-The next steps of the funciton proceed as normal. Changes have not yet been made to linking responses or processing results. 
+The next steps of the function proceed as normal. Changes have not yet been made to linking responses or processing results. 
 
-It may be more useful to name the quesitons and blocks with varialbe names instead of QIDs. However, it would be important to establish that the questions are named UNIQUELY if these are to be used. The benefit of this would be easily pulling a question from the list since users often know the variale name (or Data Export Tag), but do not know the question position or QID.
+```{r get-setup-long-exhaustive}
+#Clear the environment
+rm(list = ls())
+
+get_setup(qsf_path = here::here("data/Sample Surveys/Long Exhaustive Sample Survey/Long_Exhaustive_Sample_Survey.qsf"),
+          csv_path = here::here("data/Sample Surveys/Long Exhaustive Sample Survey/Long_Exhaustive_Sample_Survey.csv"),
+          headerrows = 3)
+
+```
+
+Here are the elements of our blocks with questions inserted and labeled by name.
+```{r}
+purrr::map(blocks, ~ if ('BlockElements' %in% names(.x)) {names(.x[['BlockElements']])})
+```
+
+
+We can similarly see that the question names exist as expected.
+
+```{r}
+names(questions)
+```
+

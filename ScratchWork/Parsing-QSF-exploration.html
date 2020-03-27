@@ -407,7 +407,7 @@ summary {
 ##             &quot;DB&quot; ~ &quot;Descriptive Box&quot;, TRUE ~ &quot;Other question type&quot;)
 ##     return(QuestionTypeHuman)
 ## }
-## &lt;bytecode: 0x00000000246fc660&gt;
+## &lt;bytecode: 0x0000000019586af8&gt;
 ## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
 </div>
 <div id="note_text_from_survey" class="section level3">
@@ -432,7 +432,7 @@ summary {
 ##         ~stringr::str_c(&quot;User note: &quot;, .x)))
 ##     return(user_notes_text)
 ## }
-## &lt;bytecode: 0x0000000024887778&gt;
+## &lt;bytecode: 0x000000001917f0b0&gt;
 ## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
 </div>
 <div id="insert_notes_into_questions" class="section level3">
@@ -446,7 +446,7 @@ summary {
 ##         .x[[&quot;PrimaryAttribute&quot;]]))))
 ##     return(questions_with_notes)
 ## }
-## &lt;bytecode: 0x0000000024a03c58&gt;
+## &lt;bytecode: 0x0000000018d23900&gt;
 ## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
 </div>
 <div id="insert_skip_logic_into_questions" class="section level3">
@@ -465,7 +465,8 @@ summary {
 ##                 has_skip_logic &lt;- &quot;SkipLogic&quot; %in% names(be)
 ##                 if (has_skip_logic) {
 ##                   skip_logic &lt;- be[[&quot;SkipLogic&quot;]]
-##                   questions &lt;- purrr::modify_at(questions, be[[&quot;QuestionID&quot;]], 
+##                   questions &lt;- purrr::modify_at(questions, which(be[[&quot;QuestionID&quot;]] == 
+##                     purrr::map_chr(questions, &quot;PrimaryAttribute&quot;)), 
 ##                     ~rlist::list.append(.x, SkipLogic = skip_logic))
 ##                 }
 ##             }
@@ -473,7 +474,7 @@ summary {
 ##         }
 ##     }
 ## }
-## &lt;bytecode: 0x0000000024b7f280&gt;
+## &lt;bytecode: 0x00000000189ee6f8&gt;
 ## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
 </div>
 <div id="split_sbs_questions" class="section level3">
@@ -486,13 +487,14 @@ summary {
 ##     for (q in questions) {
 ##         if (q[[&quot;Qualtrics_qtype&quot;]] == &quot;SBS&quot;) {
 ##             questions &lt;- append(questions, split_side_by_side_q(question = q), 
-##                 after = match(q[[&quot;PrimaryAttribute&quot;]], names(questions)))
+##                 after = match(q[[&quot;Payload&quot;]][[&quot;DataExportTag&quot;]], 
+##                   names(questions)))
 ##         }
 ##     }
 ##     questions &lt;- purrr::discard(questions, ~.x[[&quot;Qualtrics_qtype&quot;]] == 
 ##         &quot;SBS&quot;)
 ## }
-## &lt;bytecode: 0x0000000024cfee58&gt;
+## &lt;bytecode: 0x0000000018838f58&gt;
 ## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
 </div>
 <div id="split_side_by_side_q" class="section level3">
@@ -507,10 +509,11 @@ summary {
 ##         ~NULL)
 ##     mainq_text &lt;- dplyr::if_else(&quot;QuestionTextClean&quot; %in% names(question), 
 ##         question[[&quot;QuestionTextClean&quot;]], question[[&quot;Payload&quot;]][[&quot;QuestionText&quot;]])
-##     main_qid &lt;- mainq[[&quot;PrimaryAttribute&quot;]]
+##     mainq_exporttag &lt;- mainq[[&quot;Payload&quot;]][[&quot;DataExportTag&quot;]]
+##     mainq_QID &lt;- mainq[[&quot;PrimaryAttribute&quot;]]
 ##     additional_questions &lt;- question[[&quot;Payload&quot;]][[&quot;AdditionalQuestions&quot;]]
 ##     additional_questions &lt;- purrr::set_names(additional_questions, 
-##         purrr::map_chr(additional_questions, ~stringr::str_replace(.x[[&quot;QuestionID&quot;]], 
+##         purrr::map_chr(additional_questions, ~stringr::str_replace(.x[[&quot;DataExportTag&quot;]], 
 ##             &quot;#&quot;, &quot;_&quot;)))
 ##     split_q &lt;- additional_questions
 ##     split_q &lt;- purrr::map(split_q, ~list(Payload = .x))
@@ -524,10 +527,11 @@ summary {
 ##     split_q &lt;- purrr::map(split_q, ~rlist::list.append(.x, QuestionTypeHuman = qtype_human(.x)))
 ##     split_q &lt;- purrr::map(split_q, ~rlist::list.append(.x, PrimaryAttribute = stringr::str_replace(.x[[&quot;Payload&quot;]][[&quot;QuestionID&quot;]], 
 ##         &quot;#&quot;, &quot;_&quot;)))
-##     split_q &lt;- purrr::map(split_q, ~rlist::list.append(.x, SBS_origQID = main_qid))
+##     split_q &lt;- purrr::map(split_q, ~rlist::list.append(.x, SBS_DataExportTag = mainq_exporttag))
+##     split_q &lt;- purrr::map(split_q, ~rlist::list.append(.x, SBS_origQID = mainq_QID))
 ##     return(split_q)
 ## }
-## &lt;bytecode: 0x0000000024e79b48&gt;
+## &lt;bytecode: 0x00000000186f3288&gt;
 ## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
 </div>
 <div id="split_block_elements" class="section level3">
@@ -579,19 +583,25 @@ summary {
 <div id="insert_questions_into_blocks" class="section level3">
 <h3>insert_questions_into_blocks</h3>
 <p>Given a single block and a list of questions, iterate through the BlockElements and insert questions into their appropriate place within the blocks. when we need to do this for all blocks, this should be called with a for loop or mapper function to iterate over blocks.</p>
-<p>This replaces the functionality of <em>insert_questios_into_blocks</em>. However, this revised version iterates over a single block and must be used with a mapper or for loop to insert questions into all blocks.</p>
+<p>This replaces the functionality of <em>insert_questions_into_blocks</em>. However, this revised version iterates over a single block and must be used with a mapper or for loop to insert questions into all blocks.</p>
 <pre class="r"><code>insert_questions_into_block</code></pre>
 <pre><code>## function (block, questions) 
 ## {
 ##     if (&quot;BlockElements&quot; %in% names(block)) {
 ##         block[[&quot;BlockElements&quot;]] &lt;- purrr::modify_if(block[[&quot;BlockElements&quot;]], 
-##             ~.x[[&quot;Type&quot;]] == &quot;Question&quot;, ~append(purrr::pluck(questions, 
-##                 .x[[&quot;QuestionID&quot;]]), values = c(Type = &quot;Question&quot;, 
-##                 QuestionID = .x[[&quot;QuestionID&quot;]])))
+##             ~.x[[&quot;Type&quot;]] == &quot;Question&quot;, ~append(questions[[which(.x[[&quot;QuestionID&quot;]] == 
+##                 purrr::map_chr(questions, &quot;PrimaryAttribute&quot;))]], 
+##                 values = c(Type = &quot;Question&quot;, QuestionID = .x[[&quot;QuestionID&quot;]])))
 ##     }
+##     blockelement_names &lt;- purrr::map_chr(block[[&quot;BlockElements&quot;]], 
+##         ~dplyr::if_else(.x[[&quot;Type&quot;]] == &quot;Question&quot;, stringr::str_replace(.x[[&quot;Payload&quot;]][[&quot;DataExportTag&quot;]], 
+##             &quot;#&quot;, &quot;_&quot;), stringr::str_c(.x[[&quot;QuestionID&quot;]], .x[[&quot;Type&quot;]], 
+##             sep = &quot;-&quot;)))
+##     block &lt;- purrr::modify_at(block, &quot;BlockElements&quot;, ~purrr::set_names(.x, 
+##         blockelement_names))
 ##     return(block)
 ## }
-## &lt;bytecode: 0x000000002517c730&gt;
+## &lt;bytecode: 0x0000000012da80d8&gt;
 ## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
 </div>
 <div id="get_reorganized_surveys_and_blocks" class="section level3">
@@ -617,7 +627,7 @@ summary {
 ##         questions = questions))
 ##     return(list(questions = questions, blocks = blocks))
 ## }
-## &lt;bytecode: 0x00000000252f6de8&gt;
+## &lt;bytecode: 0x0000000012bc6928&gt;
 ## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
 <p>###valid_questions_blocks_from_survey</p>
 <p>This is a new function that is called as a section of get_reorganized_surveys_and_blocks. The main reorganization function has been separated into three parts to more easily call these sections in other locations. This is the first of three sections. This takes as an arguement the Qualtrics survey parsed from the QSF. This survey arguement can be prepared using ask_for_qsf with the filepath to the QSF. The function return a named lists of questions and blocks extracted from the survey. Trash questions have been removed from both questions and blocks. Side-by-side questions have been split into their component parts. The next stage will be to add additional information to the question, then to link responses to quesitons and process results.</p>
@@ -644,9 +654,11 @@ summary {
 ##         &quot;SQ&quot;)
 ##     questions &lt;- purrr::discard(questions, ~.x[[&quot;PrimaryAttribute&quot;]] %in% 
 ##         trash_questions)
+##     questions &lt;- purrr::set_names(questions, purrr::map_chr(questions, 
+##         ~.x[[&quot;Payload&quot;]][[&quot;DataExportTag&quot;]]))
 ##     return(list(questions = questions, blocks = blocks_notrash))
 ## }
-## &lt;bytecode: 0x000000002547a950&gt;
+## &lt;bytecode: 0x00000000128c4a80&gt;
 ## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
 </div>
 <div id="add_question_detail" class="section level3">
@@ -662,7 +674,7 @@ summary {
 ##     questions &lt;- insert_skiplogic_into_questions(questions, blocks = blocks)
 ##     return(questions)
 ## }
-## &lt;bytecode: 0x0000000025601520&gt;
+## &lt;bytecode: 0x00000000125bdee0&gt;
 ## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
 </div>
 <div id="split_sbs_questions_blocks" class="section level3">
@@ -674,11 +686,13 @@ summary {
 ##     questions &lt;- split_sbs_questions(questions)
 ##     sbs_question_qids &lt;- purrr::keep(questions, ~&quot;SBS_origQID&quot; %in% 
 ##         names(.x))
+##     sbs_question_qids &lt;- purrr::set_names(sbs_question_qids, 
+##         purrr::map_chr(sbs_question_qids, &quot;PrimaryAttribute&quot;))
 ##     sbs_question_qids &lt;- purrr::map(sbs_question_qids, &quot;SBS_origQID&quot;)
 ##     blocks &lt;- purrr::map(blocks, ~split_block_elements(.x, sbs_question_qids))
 ##     return(list(questions = questions, blocks = blocks))
 ## }
-## &lt;bytecode: 0x00000000257844c8&gt;
+## &lt;bytecode: 0x00000000122d3a18&gt;
 ## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
 </div>
 <div id="create_question_dictionary" class="section level3">
@@ -749,7 +763,7 @@ summary {
 ##     }
 ##     return(question_dictionary)
 ## }
-## &lt;bytecode: 0x0000000025912018&gt;
+## &lt;bytecode: 0x00000000165f8b38&gt;
 ## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
 </div>
 <div id="uncodeable_question_dictionary" class="section level3">
@@ -778,21 +792,22 @@ summary {
 ##     }
 ##     return(create_question_dictionary(blocks))
 ## }
-## &lt;bytecode: 0x0000000025ad4320&gt;
+## &lt;bytecode: 0x000000001446fd30&gt;
 ## &lt;environment: namespace:QualtricsTools&gt;</code></pre>
 </div>
 </div>
 <div id="sample-get-reorganized-questions-and-blocks" class="section level2">
 <h2>Sample: Get Reorganized Questions and Blocks</h2>
 <p>This is a walk through of the process for getting reorganized questions and blocks. This uses the Better Sample Survey. The first part of get_setup reads in the qsf and csv to provide the necessary survey, original_first_rows, and responses.</p>
-<p>Once these have been loaded, we enter get_reorganized_questions_and_blocks. This step will extract valid questions (those functions that are not trash questions) from the survye. It also pulls the blocks and removes the trash question elements. Below we illustrate how the question elements are named, how blocks elements are named, and what the question looks like that this point.</p>
+<p>Once these have been loaded, we enter get_reorganized_questions_and_blocks. This step will extract valid questions (those functions that are not trash questions) from the survey. It also pulls the blocks and removes the trash question elements. Below we illustrate how the question elements are named, how blocks elements are named, and what the question looks like that this point. Questions are named with their Data Export Tags (variable name roots). Blocks are named with descriptive text. Within blocks, the Block Elements for survey questions are named with QIDs.</p>
 <pre class="r"><code>valid_q_b &lt;- valid_questions_blocks_from_survey(survey)
 valid_questions &lt;- valid_q_b[[&quot;questions&quot;]]
 valid_blocks &lt;- valid_q_b[[&quot;blocks&quot;]]</code></pre>
 <p>Print names of valid_questions. Previous version of question organization did not name these elements, but now we can see that they are named.</p>
 <pre class="r"><code>names(valid_questions)</code></pre>
-<pre><code>##  [1] &quot;QID10&quot; &quot;QID11&quot; &quot;QID12&quot; &quot;QID3&quot;  &quot;QID4&quot;  &quot;QID6&quot;  &quot;QID2&quot;  &quot;QID5&quot;  &quot;QID1&quot; 
-## [10] &quot;QID9&quot;  &quot;QID8&quot;</code></pre>
+<pre><code>##  [1] &quot;Q10&quot;             &quot;Q11&quot;             &quot;Q12&quot;             &quot;q5_position&quot;    
+##  [5] &quot;q1_recent&quot;       &quot;q6_reservations&quot; &quot;q4_rank&quot;         &quot;q3_volunteer&quot;   
+##  [9] &quot;q2_favorite&quot;     &quot;Q9&quot;              &quot;Q8&quot;</code></pre>
 <p>Print names of elements of the first question. This will allow us to see what changes in the next step.</p>
 <pre class="r"><code>names(valid_questions[[1]])</code></pre>
 <pre><code>## [1] &quot;SurveyID&quot;           &quot;Element&quot;            &quot;PrimaryAttribute&quot;  
@@ -809,70 +824,112 @@ names(questions_added[[1]])</code></pre>
 <pre><code>## [1] &quot;SurveyID&quot;           &quot;Element&quot;            &quot;PrimaryAttribute&quot;  
 ## [4] &quot;SecondaryAttribute&quot; &quot;TertiaryAttribute&quot;  &quot;Payload&quot;           
 ## [7] &quot;QuestionTextClean&quot;  &quot;Qualtrics_qtype&quot;    &quot;QuestionTypeHuman&quot;</code></pre>
-<p>The first question in the list does not include Qualtrics user notes or skip logic. However, we can see that these have been added in questions QID1 (skip logic) and QID4 (user note).</p>
-<pre class="r"><code>names(questions_added$QID1)</code></pre>
+<p>The first question in the list does not include Qualtrics user notes or skip logic. However, we can see that these have been added in questions q2_favorite (skip logic) and q1_recent (user note).</p>
+<pre class="r"><code>names(questions_added$q2_favorite)</code></pre>
 <pre><code>##  [1] &quot;SurveyID&quot;           &quot;Element&quot;            &quot;PrimaryAttribute&quot;  
 ##  [4] &quot;SecondaryAttribute&quot; &quot;TertiaryAttribute&quot;  &quot;Payload&quot;           
 ##  [7] &quot;QuestionTextClean&quot;  &quot;Qualtrics_qtype&quot;    &quot;QuestionTypeHuman&quot; 
 ## [10] &quot;SkipLogic&quot;</code></pre>
 <pre class="r"><code>questions_added$QID1[[&quot;SkipLogic&quot;]]</code></pre>
-<pre><code>## [[1]]
-## [[1]]$SkipLogicID
-## [1] 1
-## 
-## [[1]]$ChoiceLocator
-## [1] &quot;q://QID1/SelectableChoice/1&quot;
-## 
-## [[1]]$Condition
-## [1] &quot;Selected&quot;
-## 
-## [[1]]$SkipToDestination
-## [1] &quot;ENDOFBLOCK&quot;
-## 
-## [[1]]$Locator
-## [1] &quot;q://QID1/SelectableChoice/1&quot;
-## 
-## [[1]]$SkipToDescription
-## [1] &quot;Please select your favorite... &lt;strong&gt;Canteloupe&lt;/strong&gt; Is &lt;strong&gt;Selected&lt;/strong&gt;&quot;
-## 
-## [[1]]$Description
-## [1] &quot;If &lt;strong title=\&quot;Canteloupe\&quot;&gt;Canteloupe&lt;/strong&gt; Is &lt;strong&gt;Selected&lt;/strong&gt;, Then Skip To &lt;strong&gt;End of Block&lt;/strong&gt;&quot;
-## 
-## [[1]]$QuestionID
-## [1] &quot;QID1&quot;</code></pre>
-<pre class="r"><code>names(questions_added$QID4)</code></pre>
+<pre><code>## NULL</code></pre>
+<pre class="r"><code>names(questions_added$q1_recent)</code></pre>
 <pre><code>##  [1] &quot;SurveyID&quot;           &quot;Element&quot;            &quot;PrimaryAttribute&quot;  
 ##  [4] &quot;SecondaryAttribute&quot; &quot;TertiaryAttribute&quot;  &quot;Payload&quot;           
 ##  [7] &quot;QuestionTextClean&quot;  &quot;Qualtrics_qtype&quot;    &quot;QuestionTypeHuman&quot; 
 ## [10] &quot;qtNotes&quot;</code></pre>
 <pre class="r"><code>questions_added$QID4[[&quot;qtNotes&quot;]]</code></pre>
-<pre><code>## [[1]]
-## [1] &quot;User note: This is a note, and it belongs here.&quot;</code></pre>
+<pre><code>## NULL</code></pre>
 <p>After adding this extra information to the questions, the next step of the function is to split side-by-side questions. We can see that there are many side-by-side questions in this survey. This can be seen by mapping over the questions and pulling the Question Type Human</p>
 <pre class="r"><code>purrr::map_chr(questions_added, &quot;QuestionTypeHuman&quot;)</code></pre>
-<pre><code>##             QID10             QID11             QID12              QID3 
+<pre><code>##               Q10               Q11               Q12       q5_position 
 ##    &quot;Side-by-side&quot;    &quot;Side-by-side&quot;    &quot;Side-by-side&quot;      &quot;Text Entry&quot; 
-##              QID4              QID6              QID2              QID5 
+##         q1_recent   q6_reservations           q4_rank      q3_volunteer 
 ## &quot;Multiple Answer&quot;    &quot;Side-by-side&quot;   &quot;Single Answer&quot; &quot;Multiple Answer&quot; 
-##              QID1              QID9              QID8 
+##       q2_favorite                Q9                Q8 
 ##   &quot;Single Answer&quot; &quot;Multiple Answer&quot;   &quot;Single Answer&quot;</code></pre>
 <p>From this mapping it is clear that there are multiple side-by-side questions. After splitting side-by-sides, the side-by-side quesiton elements should be removed from the list and replaced with the split componenet questions.</p>
 <pre class="r"><code>split_questions_blocks &lt;- split_sbs_questions_blocks(questions_added, valid_blocks)
 split_questions &lt;- split_questions_blocks[[&quot;questions&quot;]]
 split_blocks &lt;- split_questions_blocks[[&quot;blocks&quot;]]
 names(split_questions)</code></pre>
-<pre><code>##  [1] &quot;QID10_1&quot; &quot;QID10_2&quot; &quot;QID11_1&quot; &quot;QID11_2&quot; &quot;QID11_3&quot; &quot;QID12_1&quot; &quot;QID12_2&quot;
-##  [8] &quot;QID3&quot;    &quot;QID4&quot;    &quot;QID6_1&quot;  &quot;QID6_2&quot;  &quot;QID2&quot;    &quot;QID5&quot;    &quot;QID1&quot;   
-## [15] &quot;QID9&quot;    &quot;QID8&quot;</code></pre>
-<p>The named elements of the quesiton list above show that the first three questions (Q10, Q11, Q12), which were all side-by-side, are now split inot their component questions. It can be shown that the blocks had something similar.</p>
+<pre><code>##  [1] &quot;Q10_1&quot;             &quot;Q10_2&quot;             &quot;Q11_1&quot;            
+##  [4] &quot;Q11_2&quot;             &quot;Q11_3&quot;             &quot;Q12_1&quot;            
+##  [7] &quot;Q12_2&quot;             &quot;q5_position&quot;       &quot;q1_recent&quot;        
+## [10] &quot;q6_reservations_1&quot; &quot;q6_reservations_2&quot; &quot;q4_rank&quot;          
+## [13] &quot;q3_volunteer&quot;      &quot;q2_favorite&quot;       &quot;Q9&quot;               
+## [16] &quot;Q8&quot;</code></pre>
+<p>The named elements of the quesiton list above show that the first three questions (Q10, Q11, Q12), which were all side-by-side, are now split inot their component questions. It can be shown that the blocks had something similar. At this point the block elements are still named with QIDs. These will be replaced with Data Export Tags in the last step of reorganizing_questions_and_blocks.</p>
 <pre class="r"><code>names(split_blocks$`First Question Block`$BlockElements)</code></pre>
 <pre><code>##  [1] &quot;QID4-Question&quot;    &quot;QID1-Question&quot;    &quot;QID5-Question&quot;    &quot;QID2-Question&quot;   
 ##  [5] &quot;QID6_1-Question&quot;  &quot;QID6_2-Question&quot;  &quot;QID3-Question&quot;    &quot;QID8-Question&quot;   
 ##  [9] &quot;QID9-Question&quot;    &quot;QID10_1-Question&quot; &quot;QID10_2-Question&quot; &quot;QID11_1-Question&quot;
 ## [13] &quot;QID11_2-Question&quot; &quot;QID11_3-Question&quot; &quot;QID12_1-Question&quot; &quot;QID12_2-Question&quot;</code></pre>
 <p>One could explore further to see that these split questions contain relevant information for future processing.</p>
-<p>The next steps of the funciton proceed as normal. Changes have not yet been made to linking responses or processing results.</p>
-<p>It may be more useful to name the quesitons and blocks with varialbe names instead of QIDs. However, it would be important to establish that the questions are named UNIQUELY if these are to be used. The benefit of this would be easily pulling a question from the list since users often know the variale name (or Data Export Tag), but do not know the quesiton position or QID.</p>
+<p>The next steps of the function proceed as normal. Changes have not yet been made to linking responses or processing results.</p>
+<pre class="r"><code>#Clear the environment
+rm(list = ls())
+
+get_setup(qsf_path = here::here(&quot;data/Sample Surveys/Long Exhaustive Sample Survey/Long_Exhaustive_Sample_Survey.qsf&quot;),
+          csv_path = here::here(&quot;data/Sample Surveys/Long Exhaustive Sample Survey/Long_Exhaustive_Sample_Survey.csv&quot;),
+          headerrows = 3)</code></pre>
+<pre><code>## survey, responses, questions, blocks, original_first_rows,
+##         and flow have now been made global objects.</code></pre>
+<p>Here are the elements of our blocks with questions inserted and labeled by name.</p>
+<pre class="r"><code>purrr::map(blocks, ~ if (&#39;BlockElements&#39; %in% names(.x)) {names(.x[[&#39;BlockElements&#39;]])})</code></pre>
+<pre><code>## $Intro
+## [1] &quot;Q1&quot;
+## 
+## $`MCSA Questions`
+## [1] &quot;Q2&quot;               &quot;Q10&quot;              &quot;Q11&quot;              &quot;Q3&quot;              
+## [5] &quot;q4_colored_fruit&quot; &quot;Q5&quot;               &quot;Q6&quot;               &quot;Q7&quot;              
+## 
+## $`Matrix-SA Questions`
+##  [1] &quot;Q8&quot;                  &quot;Q39&quot;                 &quot;Q27&quot;                
+##  [4] &quot;Q23&quot;                 &quot;Q24&quot;                 &quot;Q25&quot;                
+##  [7] &quot;Q26&quot;                 &quot;Q22&quot;                 &quot;Q20&quot;                
+## [10] &quot;Q18&quot;                 &quot;snozzberries_4_life&quot;
+## 
+## $`MCMA Questions`
+## [1] &quot;Q9&quot;              &quot;Q21&quot;             &quot;q13_family_food&quot; &quot;Q14&quot;            
+## [5] &quot;Q15&quot;             &quot;Q16&quot;             &quot;Q12&quot;            
+## 
+## $`Matrix-MA Questions`
+## [1] &quot;Q29&quot;               &quot;Q36&quot;               &quot;Q37&quot;              
+## [4] &quot;q30_cooking_style&quot; &quot;Q31&quot;               &quot;Q32&quot;              
+## [7] &quot;Q33&quot;               &quot;Q34&quot;               &quot;Q35&quot;              
+## 
+## $`Side-by-Side Questions`
+##  [1] &quot;Q40_1&quot;                 &quot;Q40_2&quot;                 &quot;Q41_1&quot;                
+##  [4] &quot;Q41_2&quot;                 &quot;q42_animal_patterns_1&quot; &quot;q42_animal_patterns_2&quot;
+##  [7] &quot;Q44_1&quot;                 &quot;Q44_2&quot;                 &quot;Q45_1&quot;                
+## [10] &quot;Q45_2&quot;                 &quot;Q43_1&quot;                 &quot;Q43_2&quot;                
+## 
+## $`Text Entry Questions`
+## [1] &quot;Q46&quot;                  &quot;Q50&quot;                  &quot;Q47&quot;                 
+## [4] &quot;q48_jellyfish_though&quot;
+## 
+## $header
+## NULL</code></pre>
+<p>We can similarly see that the question names exist as expected.</p>
+<pre class="r"><code>names(questions)</code></pre>
+<pre><code>##  [1] &quot;q42_animal_patterns_1&quot; &quot;q42_animal_patterns_2&quot; &quot;Q44_1&quot;                
+##  [4] &quot;Q44_2&quot;                 &quot;Q45_1&quot;                 &quot;Q45_2&quot;                
+##  [7] &quot;Q40_1&quot;                 &quot;Q40_2&quot;                 &quot;Q36&quot;                  
+## [10] &quot;Q37&quot;                   &quot;Q18&quot;                   &quot;Q39&quot;                  
+## [13] &quot;Q27&quot;                   &quot;q30_cooking_style&quot;     &quot;Q33&quot;                  
+## [16] &quot;Q32&quot;                   &quot;Q34&quot;                   &quot;Q31&quot;                  
+## [19] &quot;Q35&quot;                   &quot;snozzberries_4_life&quot;   &quot;Q24&quot;                  
+## [22] &quot;Q23&quot;                   &quot;Q22&quot;                   &quot;Q25&quot;                  
+## [25] &quot;Q26&quot;                   &quot;Q50&quot;                   &quot;Q46&quot;                  
+## [28] &quot;q4_colored_fruit&quot;      &quot;Q5&quot;                    &quot;Q6&quot;                   
+## [31] &quot;Q7&quot;                    &quot;Q3&quot;                    &quot;Q12&quot;                  
+## [34] &quot;Q43_1&quot;                 &quot;Q43_2&quot;                 &quot;Q21&quot;                  
+## [37] &quot;q13_family_food&quot;       &quot;Q15&quot;                   &quot;Q16&quot;                  
+## [40] &quot;Q14&quot;                   &quot;Q29&quot;                   &quot;Q8&quot;                   
+## [43] &quot;Q2&quot;                    &quot;Q10&quot;                   &quot;Q11&quot;                  
+## [46] &quot;Q9&quot;                    &quot;Q47&quot;                   &quot;Q41_1&quot;                
+## [49] &quot;Q41_2&quot;                 &quot;q48_jellyfish_though&quot;  &quot;Q20&quot;                  
+## [52] &quot;Q1&quot;</code></pre>
 </div>
 
 
