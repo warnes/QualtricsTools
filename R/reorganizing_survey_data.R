@@ -97,6 +97,10 @@ valid_questions_blocks_from_survey <- function(survey) {
   questions <- purrr::keep(survey_elements, ~ .x[["Element"]]=="SQ")
   #Remove questions that are in the trash, as specified by "trash_questions
   questions <- purrr::discard(questions, ~ .x[["PrimaryAttribute"]] %in% trash_questions)
+  #Rename quesions with their Data Export Tags (question variable name) instead of QID
+  questions <- purrr::set_names(questions, purrr::map_chr(questions, ~ .x[['Payload']][['DataExportTag']] ))
+  #Rename the Block elements with variable names
+
   return(list("questions" = questions, "blocks"=blocks_notrash))
 }
 
@@ -152,6 +156,8 @@ split_sbs_questions_blocks <- function(questions, blocks) {
   #Now get a list of the side-by-side questions
   #This is a named list where the name is the NEW split question ID and the element is the original QID
   sbs_question_qids <- purrr::keep(questions,~"SBS_origQID" %in% names(.x))
+  #Now set the names to be the split QID instead of the split variable names
+  sbs_question_qids <- purrr::set_names(sbs_question_qids, purrr::map_chr(sbs_question_qids, "PrimaryAttribute"))
   sbs_question_qids <- purrr::map(sbs_question_qids, "SBS_origQID")
   #Revise the blocks to create space for elements split from side-by-side questions
   blocks <- purrr::map(blocks, ~ split_block_elements(.x,sbs_question_qids))
@@ -264,7 +270,7 @@ split_sbs_questions <-  function(questions) {
       #Update the list of split questions
       questions <- append(questions,
                           split_side_by_side_q(question = q),
-                          after=match(q[["PrimaryAttribute"]],names(questions)))
+                          after=match(q[['Payload']][["DataExportTag"]],names(questions)))
     }
   }
   #Now remove the original side-by-side questions since we no longer need these
@@ -300,12 +306,13 @@ split_side_by_side_q <- function(question) {
                                question[["QuestionTextClean"]],
                                question[["Payload"]][["QuestionText"]])
 
-  main_qid <- mainq[["PrimaryAttribute"]]
+  mainq_exporttag <- mainq[['Payload']][["DataExportTag"]]
+  mainq_QID <- mainq[['PrimaryAttribute']]
 
   additional_questions <- question[["Payload"]][["AdditionalQuestions"]]
   #Add names based on the QID; replace "#" symbol with underscore
   additional_questions <- purrr::set_names(additional_questions ,
-                                           purrr::map_chr(additional_questions, ~ stringr::str_replace(.x[["QuestionID"]], "#","_")))
+                                           purrr::map_chr(additional_questions, ~ stringr::str_replace(.x[["DataExportTag"]], "#","_")))
   #Create a new element for with split questions. These have the information
   #from additional questions supplemented with key information from the main question.
   split_q <- additional_questions
@@ -330,7 +337,8 @@ split_side_by_side_q <- function(question) {
   #Add Primary Attribute that corresponds to the list element name
   split_q <- purrr::map(split_q, ~ rlist::list.append(.x, PrimaryAttribute = stringr::str_replace(.x[["Payload"]][["QuestionID"]], "#","_")))
   #Add a new element indicating that this was split from a side-by-side question
-  split_q <- purrr::map(split_q, ~ rlist::list.append(.x, SBS_origQID = main_qid))
+  split_q <- purrr::map(split_q, ~ rlist::list.append(.x, SBS_DataExportTag = mainq_exporttag))
+  split_q <- purrr::map(split_q, ~ rlist::list.append(.x, SBS_origQID = mainq_QID))
 
 
   return(split_q)
@@ -403,10 +411,18 @@ insert_questions_into_block <- function(block,questions) {
   if ("BlockElements" %in% names(block)) {
     block[["BlockElements"]] <- purrr::modify_if(block[["BlockElements"]],
                                                  ~.x[["Type"]]=="Question",
-                                                 ~ append(purrr::pluck(questions,.x[["QuestionID"]]),
+                                                 ~ append(questions[[which(.x[['QuestionID']]==purrr::map_chr(questions, "PrimaryAttribute"))]],
+                                                          #purrr::pluck(questions,.x[["QuestionID"]]),
                                                           values = c("Type" = "Question",
                                                                      "QuestionID" = .x[["QuestionID"]])))
   }
+  #Now rename the block elements with question names
+  blockelement_names <- purrr::map_chr(block[['BlockElements']], ~ dplyr::if_else(.x[['Type']]=="Question",
+                                                                                  stringr::str_replace(.x[['Payload']][['DataExportTag']],"#","_"),
+                                                                                  stringr::str_c(.x[["QuestionID"]], .x[["Type"]],sep="-")))
+  block <- purrr::modify_at(block, "BlockElements",
+                            ~ purrr::set_names(.x, blockelement_names))
+
   return(block)
 }
 
@@ -1508,8 +1524,8 @@ create_question_dictionary_from_qsf <- function(qsf_path) {
   #them remove the original side-by-side question elements
   questions <- split_sbs_questions(questions)
   #This is a named list where the name is the NEW split question ID and the element is the original QID
-  sbs_question_qids <- purrr::keep(questions,~"SBS_origQID" %in% names(.x))
-  sbs_question_qids <- purrr::map(sbs_question_qids, "SBS_origQID")
+  sbs_question_qids <- purrr::keep(questions,~"SBS_DataExportTag" %in% names(.x))
+  sbs_question_qids <- purrr::map(sbs_question_qids, "SBS_DataExportTag")
   #Revise the blocks to create space for elements split from side-by-side questions
   blocks <- purrr::map(blocks, ~ split_block_elements(.x,sbs_question_qids))
   #Now insert questions into blocks
