@@ -229,6 +229,7 @@ generate_summary_stats <-
       # setting up column names
       colnames(results_table)[1] <- "Summary Statistics"
       colnames(results_table)[2] <- ""
+
     }
 
     # appending dataframe with all stats to question

@@ -3,7 +3,7 @@ context("Testing text_entry_numerical_results")
 
 # Load the original_first_rows from the Dummy Enhancement Sample Survey.
 # This is needed for the next several tests that use questions from the
-# Long Exhaustive Sample Survey.
+# Dummy Enhancement Sample Survey.
 original_first_rows <- readRDS(
   file.path(
     find.package('QualtricsTools'),
@@ -29,11 +29,11 @@ test_that(
     Q4 <- process_question_results(Q4, original_first_rows)
 
     # Load the previously computed results table.
-    Q29_results_table <-  readRDS(
+    Q4_results_table <-  readRDS(
       file.path(
         find.package('QualtricsTools'),
-        'data/Sample Surveys/Long Exhaustive Sample Survey/RDS',
-        'Q29_results_table.rds'
+        'data/Sample Surveys/Dummy Enhancement Sample Survey/RDS',
+        'Q4_results_table.rds'
       )
     )
     Q4_results_table <- as.data.frame(Q4_results_table)

@@ -56,3 +56,5 @@ And when we set horizontal table to TRUE, we get a table styled like this:
 demoquestion<-generate_summary_stats(demoquestion, horizontal_table=TRUE)
 demoquestion[['Table']]
 ````
+
+The numbers are calculated using R base functions, with the possibility of more being added. 
