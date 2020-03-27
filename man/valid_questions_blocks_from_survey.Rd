@@ -14,7 +14,8 @@ ask_for_qsf() to create such a survey list object from a QSF file.}
 \value{
 List with named elements questions and blocks. this includes only valid
 questions. Trash questions have been removed from both questions and blocks.
-Side-by-side questions have been split into their component parts.
+Questions are named by their data export tags, blocks named by their descriptive names.
+Block elements for questions are name by the QIDs.
 }
 \description{
 This pulls the questions and blocks from a QSF survey file.

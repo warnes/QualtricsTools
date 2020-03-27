@@ -12,7 +12,7 @@ split_sbs_questions_blocks(questions, blocks)
 \item{blocks}{A list of Qualtrics blocks for which a side-by-side question is a single block element.}
 }
 \value{
-A named list with two elements: "questions" is a list of survye questions
+A named list with two elements: "questions" is a list of survey questions
 with side-by-side questions split into their component questions, and "blocks" is a list
 of survey blocks within which side-by-side question block elements have been replaced with
 spaces for each of the component question elements.

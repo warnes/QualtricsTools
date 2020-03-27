@@ -12,7 +12,9 @@ insert_questions_into_block(block, questions)
 \item{questions}{A list of questions from a Qualtrics survey}
 }
 \value{
-The single survey block with question elements updated to include the full question.
+The single survey block with question elements updated to include the full question. In the setup process,
+BlockElements within the blocks that correspond to survey questions are initially named with question QIDs. This function
+renames the Block Elements with question Data Export Tags corresponding to the question list.
 }
 \description{
 This inserts questions into a single block. It should be iterated over all blocks
