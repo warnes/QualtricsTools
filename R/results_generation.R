@@ -220,17 +220,15 @@ generate_summary_stats <-
       colnames(results_table)[7] <- "Maximum"
     }
     else{
-      # initialising data data frame with 2 columns
-      results_table <- data.frame("N", NumberOfEntries, row.names=NULL , check.names = FALSE)
+      # setting up a column of statistics names
+      Summary_Statistics <- c("N", "Mean", "Median", "Standard Deviation", "Minimum", "Maximum")
+      # setting up a column containing all the calculated stats
+      Numbers<- c(NumberOfEntries, Mean, Median, StandardDev, Minimum, Maximum)
+      # creating a data frame with the two columns
+      results_table <- data.frame(Summary_Statistics, Numbers)
       # setting up column names
-      colnames(results_table)[1]<-"Summary Statistics"
-      colnames(results_table)[2]<-""
-      # Adding rest of statistics
-      results_table <- rbind(results_table, c("Mean", Mean))
-      results_table <- rbind(results_table, c("Median", Median))
-      results_table <- rbind(results_table, c("Standard Deviation", StandardDev))
-      results_table <- rbind(results_table, c("Minimum", Minimum))
-      results_table <- rbind(results_table, c("Maximum", Maximum))
+      colnames(results_table)[1] <- "Summary Statistics"
+      colnames(results_table)[2] <- ""
     }
 
     # appending dataframe with all stats to question
