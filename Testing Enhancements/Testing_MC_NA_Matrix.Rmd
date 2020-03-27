@@ -129,3 +129,33 @@ question <- questions[[34]]
 
 
 
+
+## Trying to make RDS files
+
+
+```{r Working_RDS_Files}
+
+
+devtools::load_all(".")
+library(tidyverse)
+
+
+get_setup(
+  qsf_path = here::here("data", "Sample Surveys", "Multiple Choice with NA", "MC_with_NA.qsf"),
+  csv_path = here::here("data", "Sample Surveys", "Multiple Choice with NA", "MC_with_NA.csv"),
+  headerrows = 3
+)
+
+question <- questions[[5]]
+
+NA_Matrix_Table <- question$Table
+
+saveRDS(NA_Matrix_Table, file = here::here("data", "Sample Surveys", "Multiple Choice with NA", "RDS", "NA_Matrix_Table.rds"))
+
+
+saveRDS(original_first_rows, file = here::here("data", "Sample Surveys", "Multiple Choice with NA", "RDS", "original_first_rows.rds"))
+
+
+
+```
+
