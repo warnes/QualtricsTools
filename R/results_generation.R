@@ -221,16 +221,19 @@ generate_summary_stats <-
     }
     else{
       # initialising data data frame with 2 columns
-      results_table <- data.frame("N", NumberOfEntries, row.names=NULL , check.names = FALSE)
-      # setting up column names
-      colnames(results_table)[1]<-"Summary Statistics"
-      colnames(results_table)[2]<-""
-      # Adding rest of statistics
-      results_table <- rbind(results_table, c("Mean", Mean))
-      results_table <- rbind(results_table, c("Median", Median))
-      results_table <- rbind(results_table, c("Standard Deviation", StandardDev))
-      results_table <- rbind(results_table, c("Minimum", Minimum))
-      results_table <- rbind(results_table, c("Maximum", Maximum))
+      Summary_Stats <- c("N", "Mean", "Median", "Standard Deviation", "Minimum", "Maximum")
+      Numbers<- c(NumberOfEntries, Mean, Median, StandardDev, Minimum, Maximum)
+      results_table <- data.frame(Summary_Stats, Numbers)
+    #   results_table <- data.frame("N", NumberOfEntries, row.names=NULL , check.names = FALSE)
+    #   # setting up column names
+    #   colnames(results_table)[1]<-"Summary Statistics"
+    #   colnames(results_table)[2]<-""
+    #   # Adding rest of statistics
+    #   results_table <- rbind(results_table, c("Mean", Mean))
+    #   results_table <- rbind(results_table, c("Median", Median))
+    #   results_table <- rbind(results_table, c("Standard Deviation", StandardDev))
+    #   results_table <- rbind(results_table, c("Minimum", Minimum))
+    #   results_table <- rbind(results_table, c("Maximum", Maximum))
     }
 
     # appending dataframe with all stats to question
