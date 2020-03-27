@@ -26,7 +26,9 @@
 #' from a survey originally only refer to questions
 #' by their DataExportTag. However, this is inconvenient
 #' because it adds an additional lookup step, and so they are
-#' replaced by the real objects here.
+#' replaced by the real objects here. Questions is a named list for which names
+#' are data export tags. Blocks containing questions have Block Elements for these
+#' questions named with the Data Export Tags.
 get_reorganized_questions_and_blocks <- function(survey,
                                                  responses,
                                                  original_first_rows) {
@@ -65,7 +67,8 @@ get_reorganized_questions_and_blocks <- function(survey,
 #' @inheritParams get_reorganized_questions_and_blocks
 #' @return List with named elements questions and blocks. this includes only valid
 #' questions. Trash questions have been removed from both questions and blocks.
-#' Side-by-side questions have been split into their component parts.
+#' Questions are named by their data export tags, blocks named by their descriptive names.
+#' Block elements for questions are name by the QIDs.
 valid_questions_blocks_from_survey <- function(survey) {
   #Extract the survey elements from survey
   survey_elements <- survey[["SurveyElements"]]
@@ -145,7 +148,7 @@ add_question_detail <- function(questions, blocks, qtNotesList){
 #' spaces within the blocks for these split elements.
 #' @param questions A list of Qualtrics survey questions that may include side-by-side.
 #' @param blocks A list of Qualtrics blocks for which a side-by-side question is a single block element.
-#' @return A named list with two elements: "questions" is a list of survye questions
+#' @return A named list with two elements: "questions" is a list of survey questions
 #' with side-by-side questions split into their component questions, and "blocks" is a list
 #' of survey blocks within which side-by-side question block elements have been replaced with
 #' spaces for each of the component question elements.
@@ -406,7 +409,9 @@ split_block_elements <- function(block,sbs_question_qids) {
 #' to fully update the survey.
 #' @param questions A list of questions from a Qualtrics survey
 #' @param block A single block from a Qualtrics survey
-#' @return The single survey block with question elements updated to include the full question.
+#' @return The single survey block with question elements updated to include the full question. In the setup process,
+#' BlockElements within the blocks that correspond to survey questions are initially named with question QIDs. This function
+#' renames the Block Elements with question Data Export Tags corresponding to the question list.
 insert_questions_into_block <- function(block,questions) {
   if ("BlockElements" %in% names(block)) {
     block[["BlockElements"]] <- purrr::modify_if(block[["BlockElements"]],
