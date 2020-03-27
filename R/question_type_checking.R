@@ -62,9 +62,8 @@ is_matrix_multiple_answer <- function(question) {
 #'
 #' @param question The question parameter is a single question from a qualtrics survey.
 #'
-#' @return The return value of this is a string, Regular if it is one of these kinds of
-#' questions, nope if it isn't, and Turn_Matrix if it is a MC_single_answer question that
-#' should be treated as a Matrix question.
+#' @return The return value of this is a boolean, true if it is one of these kinds of
+#' questions and false otherwise.
 is_mc_single_answer <- function(question) {
     is_Multiple_Choice = (question[['Payload']][['QuestionType']] == "MC")
     has_SingleAnswer_selector = (question[['Payload']][['Selector']] == "SAVR" ||
@@ -72,32 +71,57 @@ is_mc_single_answer <- function(question) {
                                  question[['Payload']][['Selector']] == "SACOL" ||
                                  question[['Payload']][['Selector']] == "DL" ||
                                  question[['Payload']][['Selector']] == "SB")
-
-    # determine if the question has any NA-type choices
-    if ('RecodeValues' %in% names(question[['Payload']])) {
-      has_na <- any(question[['Payload']][['RecodeValues']] < 0)
-    } else
-      has_na <- FALSE
-
-
-    if(!is.na(is_Multiple_Choice) && !is.na(has_SingleAnswer_selector)){
-      # If it has any NA-type choices tell us...
-      if(is_Multiple_Choice && has_SingleAnswer_selector) {
-        if(has_na){
-          is_MC_Single_answer <- "Turn_Matrix"
-        } else {
-          is_MC_Single_answer <- "Regular"
-        }
-      } else {
-        is_MC_Single_answer <- "Nope"
-      }
-    } else {
-      is_MC_Single_answer <- "Nope"
-    }
-
+    is_MC_Single_answer <- isTRUE(is_Multiple_Choice && has_SingleAnswer_selector)
 
     return(is_MC_Single_answer)
 }
+
+
+#' Determine if a question is a single answer question
+#'
+#' Each of the is-functions defined in the qualtrics package are used
+#' for determining which response parsing function should be used. A
+#' function is considered multiple choice if it is listed in
+#' the qsf file as having [['Payload']][['QuestionType']] == "MC"
+#' (standing for Multiple Choice), and the `[['Payload']][['Selector']]` is set to one of the
+#' following:
+#' "Single Answer Vertical",
+#' "Single Answer Horizontal",
+#' "Single Answer Column",
+#' "Dropdown List",
+#' "Select Box",
+#'
+#' @param question The question parameter is a single question from a qualtrics survey.
+#'
+#' @return The return value of this is a boolean, true if it has any NA type choices
+#' and false otherwise.
+is_mc_single_answer_NA <- function(question) {
+  is_Multiple_Choice = (question[['Payload']][['QuestionType']] == "MC")
+  has_SingleAnswer_selector = (question[['Payload']][['Selector']] == "SAVR" ||
+                                 question[['Payload']][['Selector']] == "SAHR" ||
+                                 question[['Payload']][['Selector']] == "SACOL" ||
+                                 question[['Payload']][['Selector']] == "DL" ||
+                                 question[['Payload']][['Selector']] == "SB")
+
+  # determine if the question has any NA-type choices
+  if ('RecodeValues' %in% names(question[['Payload']])) {
+    has_na <- any(question[['Payload']][['RecodeValues']] < 0)
+  } else
+    has_na <- FALSE
+
+
+  # If it has any NA-type choices tell us...
+  if(is_Multiple_Choice && has_SingleAnswer_selector && has_na) {
+    is_MC_Single_answer <- TRUE
+  } else {
+    is_MC_Single_answer <- FALSE
+  }
+
+  return(is_MC_Single_answer)
+}
+
+
+
 
 #' Determine if a question is a matrix and multiple answer question
 #'
@@ -146,7 +170,7 @@ is_multiple_answer <- function(x) {
 
 #' Determine if a question is a single answer question
 is_single_answer <- function(x) {
-  return(is_mc_single_answer(x) == "Regular" || is_matrix_bipolar(x) || is_matrix_single_answer(x))
+  return(is_mc_single_answer(x) || is_matrix_bipolar(x) || is_matrix_single_answer(x))
 }
 
 

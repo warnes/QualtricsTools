@@ -1123,21 +1123,21 @@ process_question_results <-
             question <- mc_multiple_answer_results(question)
           }
 
-          # multiple choice single answer
-        } else if (is_mc_single_answer(question) == "Regular") {
-          if (should_use_ofr) {
-            question <- mc_single_answer_results(question, original_first_rows)
-          } else {
-            question <- mc_single_answer_results(question)
-          }
-
-
-        } else if(is_mc_single_answer(question) == "Turn_Matrix") {
+          # multiple choice single answer with NA type choice
+        } else if(is_mc_single_answer(question) && is_mc_single_answer_NA(question)){
           if (should_use_ofr) {
             question <-
               matrix_single_answer_results(question, original_first_rows)
           } else {
             question <- matrix_single_answer_results(question)
+          }
+
+          # regular multiple choice single answer
+        } else if(is_mc_single_answer(question) && !is_mc_single_answer_NA(question)){
+          if (should_use_ofr) {
+            question <- mc_single_answer_results(question, original_first_rows)
+          } else {
+            question <- mc_single_answer_results(question)
           }
 
           # matrix multiple answer
