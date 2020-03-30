@@ -44,9 +44,6 @@ make_results_tables(
 
 
 
-
-
-
 # Lets test it with my enhancements
 
 
@@ -81,19 +78,57 @@ make_results_tables(
 ```
 
 
+## These are the main functions that I worked on
 
-
-## Hmmm this isn't working lets get into the weeds
-
-```{r}
-
+```{r main_functions}
 question <- questions[[5]]
 
 question
 
+# This is what the table looks like (this is a MC question with a -1 recode value for the NA option)
+question$Table
 
+
+# Lets delete it and regenerate it
+question$Table = NULL
+
+question$Table
+
+# This is the function I edited that generates it:
+
+question = process_question_results(question, original_first_rows)
+
+question$Table
+
+
+
+# Lets delete it and regenerate it again
+question$Table = NULL
+
+question$Table
+
+# If a -1 Recode value is found, instead of mc_single_answer_results being run, matrix_single_answer_results is run:
+# (I edited matrix_single_answer_results so this works)
+
+question <- matrix_single_answer_results(question, original_first_rows)
+
+question$Table
+
+
+
+# The way it works in process_question_results that it checks if it is a MCSA question, then it checks if it has an NA
+# It uses these functions - I edited the second, the first should be unchanged I think
+
+is_mc_single_answer(question)
+
+is_mc_single_answer_NA(question)
+
+# I created Two tests and put them at the end of the test_msca_question_processing.R file
+# The RDS files and the r code I used to make them are in the Dummy Enhancement Sample Survey folder 
 
 ```
+
+
 
 
 
@@ -130,37 +165,4 @@ question <- questions[[34]]
 
 
 
-## Trying to make RDS files
-
-
-```{r Working_RDS_Files}
-
-
-devtools::load_all(".")
-library(tidyverse)
-
-
-get_setup(
-  qsf_path = here::here("data", "Sample Surveys", "Multiple Choice with NA", "MC_with_NA.qsf"),
-  csv_path = here::here("data", "Sample Surveys", "Multiple Choice with NA", "MC_with_NA.csv"),
-  headerrows = 3
-)
-
-question <- questions[[5]]
-
-NA_Matrix_Table <- question$Table
-
-saveRDS(NA_Matrix_Table, file = here::here("data", "Sample Surveys", "Multiple Choice with NA", "RDS", "NA_Matrix_Table.rds"))
-
-
-saveRDS(original_first_rows, file = here::here("data", "Sample Surveys", "Multiple Choice with NA", "RDS", "original_first_rows.rds"))
-
-
-question$Table <- NULL
-
-saveRDS(question, file = here::here("data", "Sample Surveys", "Multiple Choice with NA", "RDS", "NA_Matrix_Question_NO_Table.rds"))
-
-
-
-```
 
