@@ -4,8 +4,13 @@
 \alias{table_text_entry}
 \title{Create Text Appendices for Text Entry Type Questions}
 \usage{
-table_text_entry(question, text_responses, appendix_e, blocks,
-  original_first_row)
+table_text_entry(
+  question,
+  text_responses,
+  appendix_e,
+  blocks,
+  original_first_row
+)
 }
 \arguments{
 \item{question}{is the question for which the text appendix is being created.}

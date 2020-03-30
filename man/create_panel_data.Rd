@@ -4,8 +4,12 @@
 \alias{create_panel_data}
 \title{Create Panel Data for Reshaped Data}
 \usage{
-create_panel_data(panel_columns, survey_responses, lean_responses,
-  question_dict)
+create_panel_data(
+  panel_columns,
+  survey_responses,
+  lean_responses,
+  question_dict
+)
 }
 \arguments{
 \item{panel_columns}{a list of names of columns desired for inclusion}

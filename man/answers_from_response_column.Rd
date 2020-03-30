@@ -4,8 +4,12 @@
 \alias{answers_from_response_column}
 \title{Get the Survey Respondents Answers from a Specific Response Column}
 \usage{
-answers_from_response_column(response_column, responses, lean_responses,
-  question_dict)
+answers_from_response_column(
+  response_column,
+  responses,
+  lean_responses,
+  question_dict
+)
 }
 \arguments{
 \item{response_column}{The name of a response column that appears in the response set.}

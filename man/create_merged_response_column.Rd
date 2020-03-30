@@ -4,8 +4,12 @@
 \alias{create_merged_response_column}
 \title{Add a Custom Response Column with Merged Contents}
 \usage{
-create_merged_response_column(response_columns, col_name, question_blocks,
-  survey_responses)
+create_merged_response_column(
+  response_columns,
+  col_name,
+  question_blocks,
+  survey_responses
+)
 }
 \arguments{
 \item{response_columns}{a list of names of response columns}
