@@ -342,3 +342,46 @@ test_that("Test that mc_single_answer_results is correct for Q7 in the Long Exha
 })
 
 
+
+# Multiple Choice with NA: NA_Matrix_Question
+test_that(
+  "Test that process_question_results is correct for NA_Matrix_Question in the Multiple Choice with NA Survey",
+  {
+    # Load the original first rows from the Multiple Choice with NA
+    original_first_rows <- readRDS(
+      file.path(
+        find.package('QualtricsTools'),
+        'data/Sample Surveys/Multiple Choice with NA/RDS',
+        'original_first_rows.rds'
+      )
+    )
+
+    # Load the question, without the results tables, for processing.
+    NA_Matrix_Question_NO_Table <- readRDS(
+      file.path(
+        find.package('QualtricsTools'),
+        'data/Sample Surveys/Multiple Choice with NA/RDS',
+        'NA_Matrix_Question_NO_Table.rds'
+      )
+    )
+
+    # Process the question and insert results tables into it.
+    NA_Matrix_Question_NO_Table <-
+      process_question_results(NA_Matrix_Question_NO_Table, original_first_rows)
+
+    # Load the previously computed results table.
+    NA_Matrix_Table <- readRDS(
+      file.path(
+        find.package('QualtricsTools'),
+        'data/Sample Surveys/Multiple Choice with NA/RDS',
+        'NA_Matrix_Table.rds'
+      )
+    )
+    NA_Matrix_Table <- as.data.frame(NA_Matrix_Table)
+
+    # Check that the previously computed results and new results match.
+    expect_true(all(NA_Matrix_Question_NO_Table[['Table']][["N"]] == NA_Matrix_Table[["N"]]) &&
+                  all(NA_Matrix_Question_NO_Table[['Table']][['Percent']] == NA_Matrix_Table[['Percent']]))
+
+  }
+)

@@ -156,6 +156,10 @@ saveRDS(NA_Matrix_Table, file = here::here("data", "Sample Surveys", "Multiple C
 saveRDS(original_first_rows, file = here::here("data", "Sample Surveys", "Multiple Choice with NA", "RDS", "original_first_rows.rds"))
 
 
+question$Table <- NULL
+
+saveRDS(question, file = here::here("data", "Sample Surveys", "Multiple Choice with NA", "RDS", "NA_Matrix_Question_NO_Table.rds"))
+
 
 ```
 
