@@ -409,6 +409,17 @@ mc_multiple_answer_results <-
       sort_na <- FALSE
 
 
+    # if(sort_na){
+    #   # calculate the valid denominator for each answer
+    #   valid_denominator <-
+    #     apply(relevant_responses, 2, function(x)
+    #       sum(x >= 0))
+    #   
+    #   # calculate the total denominator for each answer
+    #   total_denominator <-
+    #     apply(relevant_responses, 2, function(x)
+    #       sum(x != -99 & x != ""))
+    # }
 
 
     # get the na responses for the question, if it has NA responses
@@ -423,22 +434,95 @@ mc_multiple_answer_results <-
 
     # get the valid responses for the question
     if ("RecodeValues" %in% names(question[['Payload']]) &&
-        length(question[['Payload']][['RecodeValues']]) > 0) {
+        length(question[['Payload']][['RecodeValues']]) > 0 &&
+        length(question[['Payload']][['RecodeValues']]) < 900) {
       valid_factors <-
         question[['Payload']][['RecodeValues']][
-          which(question[['Payload']][['RecodeValues']] >= 0)]
+          which((question[['Payload']][['RecodeValues']] >= 0) & (question[['Payload']][['RecodeValues']] < 900))]
     } else {
       valid_factors <- names(question[['Payload']][['Answers']])
     }
 
+    length(na_factors)
 
 
-
-
-
-
-
-
+    # # table the responses
+    # valid_responses <-
+    #   sapply(relevant_responses, function(x)
+    #     table(factor(x, valid_factors)))
+    # if (!is.data.frame(valid_responses)) {
+    #   valid_responses <- as.data.frame(valid_responses)
+    # }
+    # 
+    # if (!(length(colnames(relevant_responses)) == length(rownames(valid_responses))
+    #       &&
+    #       all(colnames(relevant_responses) == rownames(valid_responses)))) {
+    #   valid_responses <- t(valid_responses)
+    #   
+    #   #Think these should already be true?
+    #   colnames(valid_responses) <- valid_factors
+    #   rownames(valid_responses) <- colnames(relevant_responses)
+    # }
+    # 
+    # 
+    # if (sort_na) {
+    #   na_responses <-
+    #     sapply(relevant_responses, function(x)
+    #       table(factor(x, na_factors)))
+    #   if (!is.data.frame(na_responses)) {
+    #     na_responses <- as.data.frame(na_responses)
+    #   }
+    #   
+    #   if (!(
+    #     nrow(na_responses) == ncol(relevant_responses) &&
+    #     ncol(na_responses) == length(na_factors)
+    #   )) {
+    #     na_responses <- t(na_responses)
+    #   }
+    #   
+    #   colnames(na_responses) <- na_factors
+    #   rownames(na_responses) <- colnames(relevant_responses)
+    #   
+    # }
+    # 
+    # valid_responses <- as.data.frame(valid_responses)
+    # 
+    # 
+    # 
+    # 
+    # 
+    # 
+    # # convert the number of respondents for each answer
+    # # (row) by choice (column) combination
+    # # to a percentage
+    # for (i in 1:nrow(valid_responses)) {
+    #   for (j in 1:ncol(valid_responses)) {
+    #     if (valid_responses[i, j] == 0 | valid_denominator[[i]] == 0) {
+    #       valid_responses[i, j] <- percent0(0)
+    #     } else {
+    #       valid_responses[i, j] <-
+    #         percent0(as.integer(valid_responses[i, j]) / valid_denominator[[i]])
+    #     }
+    #   }
+    # }
+    # 
+    # # if there's a set of na_responses
+    # # convert the number of respondents for each
+    # # answer (row) by choice (column) combination
+    # # to a percentage
+    # if (sort_na) {
+    #   for (i in 1:nrow(na_responses)) {
+    #     for (j in 1:ncol(na_responses)) {
+    #       if (na_responses[i, j] == 0 | total_denominator[[i]] == 0) {
+    #         na_responses[i, j] <- percent0(0)
+    #       } else {
+    #         na_responses[i, j] <-
+    #           percent0(as.integer(na_responses[i, j]) / total_denominator[[i]])
+    #       }
+    #     }
+    #   }
+    # }
+    # 
 
 
 
