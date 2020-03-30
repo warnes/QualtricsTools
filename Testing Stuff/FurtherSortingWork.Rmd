@@ -131,3 +131,46 @@ for(i in 1:4){
 
 ```
 
+
+
+#### Now lets sort by choice
+
+```{r}
+
+for(i in 1:4){
+  q <- questions[[i]]
+
+  q_table <- mc_multiple_answer_results(q, original_first_rows, sort_by = "Choices_Alpha")
+  rt <- q_table$Table
+
+  print(rt)
+}
+
+
+```
+
+
+
+## 3/30/20 Work
+
+```{r}
+devtools::load_all(".")
+library(tidyverse)
+
+get_setup(
+  qsf_path = here::here("Testing Stuff", "MCMA_with_Recodes__900.qsf"),
+  csv_path = here::here("Testing Stuff", "MCMA_with_Recodes__900.csv"),
+  headerrows = 2
+
+)
+
+# grab one for testing stuff
+question <- questions[[3]]
+
+# Delete the table - I wanna generate it myself
+question$Table = NULL
+
+question <- mc_multiple_answer_results(question, original_first_rows)
+question$Table
+
+```
