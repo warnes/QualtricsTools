@@ -33,5 +33,7 @@ determine how to table the results paired
 to that question. If you look at the source code,
 keep in mind that a matrix question's sub-questions
 are called "Choices" and that the choices for each
-sub-question are called "Answers"
+sub-question are called "Answers". This function is also used
+to table results for single answer  multiple choice questions
+with N/A options indicated by negative integer recode values.
 }
