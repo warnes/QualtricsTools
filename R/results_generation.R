@@ -262,7 +262,7 @@ mc_single_answer_results <-
   }
 
 
-#' Create the Results Table for a Multiple Choice Single Answer Question
+#' Create the Results Table for a Multiple Choice Multiple Answer Question
 #'
 #' The mc_multiple_answer_results function uses the definition of the choices in the QSF file
 #' and their (if present) recoded values to determine how to table the results paired to that question.
@@ -407,6 +407,8 @@ mc_multiple_answer_results <-
 
     return(question)
   }
+
+
 
 
 #' Create the Results Table for a Matrix Single Answer Question
@@ -558,7 +560,6 @@ matrix_single_answer_results <-
     }
 
 
-    #  } else valid_responses <- t(valid_responses)
     if (has_na) {
       na_responses <-
         sapply(relevant_responses, function(x)
@@ -644,14 +645,28 @@ matrix_single_answer_results <-
       }
     }
 
-    # translate the choice indices to choice text
-    colnames(valid_responses) <-
-      lapply(colnames(valid_responses), function(x)
-        question[['Payload']][['Answers']][[x]][[1]])
-    if (has_na)
-      colnames(na_responses) <-
-      lapply(colnames(na_responses), function(x)
-        question[['Payload']][['Answers']][[x]][[1]])
+    # translate the choice indices to choice text - do this differently if it is a
+    # MC single answer question with an NA
+    if(is_matrix_single_answer(question)){
+      colnames(valid_responses) <-
+        lapply(colnames(valid_responses), function(x)
+          question[['Payload']][['Answers']][[x]][[1]])
+      if (has_na)
+        colnames(na_responses) <-
+          lapply(colnames(na_responses), function(x)
+            question[['Payload']][['Answers']][[x]][[1]])
+    } else if(is_mc_single_answer(question) && has_na(question)){
+      colnames(valid_responses) <-
+        lapply(colnames(valid_responses), function(x)
+          question[['Payload']][['Choices']][[x]][[1]])
+      if (has_na)
+        colnames(na_responses) <-
+          lapply(colnames(na_responses), function(x)
+            question[['Payload']][['Choices']][[x]][[1]])
+    }
+
+
+
     colnames(valid_responses) <-
       lapply(colnames(valid_responses), clean_html)
     if (has_na)
@@ -667,22 +682,32 @@ matrix_single_answer_results <-
       lapply(rownames(valid_responses), function(x)
         gsub(paste0(question_id, "-"), "", x))
 
-    # get the answer text as a list
-    choices <- rownames(valid_responses)
-    if ('ChoiceDataExportTags' %in% names(question[['Payload']]) &&
-        typeof(question[['Payload']][['ChoiceDataExportTags']]) != 'logical' &&
-        rownames(valid_responses) %in%
-        question[['Payload']][['ChoiceDataExportTags']]) {
+
+    if(is_matrix_single_answer(question)){
+      # get the answer text as a list
+      choices <- rownames(valid_responses)
+      if ('ChoiceDataExportTags' %in% names(question[['Payload']]) &&
+          typeof(question[['Payload']][['ChoiceDataExportTags']]) != 'logical' &&
+          rownames(valid_responses) %in%
+          question[['Payload']][['ChoiceDataExportTags']]) {
+        choices <-
+          lapply(choices, function(x)
+            names(question[['Payload']][['ChoiceDataExportTags']])[
+              which(question[['Payload']][['ChoiceDataExportTags']] == x)])
+      }
+
       choices <-
         lapply(choices, function(x)
-          names(question[['Payload']][['ChoiceDataExportTags']])[
-            which(question[['Payload']][['ChoiceDataExportTags']] == x)])
+          question[['Payload']][['Choices']][[x]][[1]])
+      choices <- lapply(choices, clean_html)
+      choices <- unlist(choices, use.names = FALSE)
+    } else if(is_mc_single_answer(question) && has_na(question)){
+      # Get the question text; this is based on a decision from OIR to repeat
+      # the question text as the row name so that the tables will have formatting
+      # consistent with other matrix questions.
+      choices <- clean_html(question[['Payload']][['QuestionText']])
     }
-    choices <-
-      lapply(choices, function(x)
-        question[['Payload']][['Choices']][[x]][[1]])
-    choices <- lapply(choices, clean_html)
-    choices <- unlist(choices, use.names = FALSE)
+
 
     # construct the data frame
     if (has_na) {
@@ -707,9 +732,10 @@ matrix_single_answer_results <-
         )
     }
 
-    # clean up the colnames and rownames
+
     colnames(results_table)[1] <- ""
     rownames(results_table) <- NULL
+
 
     # append the results table
     question[['Table']] <- results_table
@@ -1051,6 +1077,7 @@ process_question_results <-
     if (has_responses) {
       question[['Table']] <- NULL
 
+
       try({
         # multiple choice multiple answer
         if (is_mc_multiple_answer(question)) {
@@ -1061,8 +1088,17 @@ process_question_results <-
             question <- mc_multiple_answer_results(question)
           }
 
-          # multiple choice single answer
-        } else if (is_mc_single_answer(question)) {
+          # multiple choice single answer with NA type choice
+        } else if(is_mc_single_answer(question) && has_na(question)){
+          if (should_use_ofr) {
+            question <-
+              matrix_single_answer_results(question, original_first_rows)
+          } else {
+            question <- matrix_single_answer_results(question)
+          }
+
+          # regular multiple choice single answer
+        } else if(is_mc_single_answer(question) && !has_na(question)){
           if (should_use_ofr) {
             question <- mc_single_answer_results(question, original_first_rows)
           } else {

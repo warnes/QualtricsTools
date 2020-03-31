@@ -72,8 +72,29 @@ is_mc_single_answer <- function(question) {
                                  question[['Payload']][['Selector']] == "DL" ||
                                  question[['Payload']][['Selector']] == "SB")
     is_MC_Single_answer <- isTRUE(is_Multiple_Choice && has_SingleAnswer_selector)
+
     return(is_MC_Single_answer)
 }
+
+
+#' Determine if a question has an NA type choice by looking for negative recode values
+#'
+#' @param question The question parameter is a single question from a qualtrics survey.
+#'
+#' @return The return value of this is a boolean, true if it has any NA type choices
+#' and false otherwise.
+has_na <- function(question) {
+  # determine if the question has any NA-type choices
+  if ('RecodeValues' %in% names(question[['Payload']])) {
+    has_na <- any(question[['Payload']][['RecodeValues']] < 0)
+  } else
+    has_na <- FALSE
+
+  return(has_na)
+}
+
+
+
 
 #' Determine if a question is a matrix and multiple answer question
 #'

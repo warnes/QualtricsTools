@@ -1,0 +1,167 @@
+---
+title: "Testing_MC_NA_Matrix"
+author: "Matthew Hudes"
+date: "3/2/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+# Lets try and get a basic thing going to see what it used to be
+
+
+```{r Up_to_Speed}
+
+devtools::install_github("emma-morgan/QualtricsTools")
+
+library(tidyverse)
+library(QualtricsTools)
+
+get_setup(
+  qsf_path = here::here("Testing Enhancements", "MC_with_NA.qsf"),
+  csv_path = here::here("Testing Enhancements", "MC_with_NA.csv"),
+  headerrows = 3
+)
+
+```
+
+## Lets make some results tables
+
+
+```{r Result_Tables}
+
+make_results_tables(
+  output_dir = here::here("Testing Enhancements"),
+  filename = "Results Tables.docx"
+)
+
+```
+
+
+
+# Lets test it with my enhancements
+
+
+```{r Setup_Enhance}
+
+devtools::load_all(".")
+
+
+get_setup(
+  qsf_path = here::here("Testing Enhancements", "MC_with_NA.qsf"),
+  csv_path = here::here("Testing Enhancements", "MC_with_NA.csv"),
+  headerrows = 3
+)
+
+
+```
+
+
+
+
+## Lets make some enhanced results tables!!!
+
+
+```{r Enhanced_Result_Tables}
+
+make_results_tables(
+  output_dir = here::here("Testing Enhancements"),
+  filename = "Enhanced Results Tables.docx"
+)
+
+```
+
+
+## These are the main functions that I worked on
+
+```{r main_functions}
+question <- questions[[5]]
+
+question
+
+# This is what the table looks like (this is a MC question with a -1 recode value for the NA option)
+question$Table
+
+
+# Lets delete it and regenerate it
+question$Table = NULL
+
+question$Table
+
+# This is the function I edited that generates it:
+
+question = process_question_results(question, original_first_rows)
+
+question$Table
+
+
+
+# Lets delete it and regenerate it again
+question$Table = NULL
+
+question$Table
+
+# If a -1 Recode value is found, instead of mc_single_answer_results being run, matrix_single_answer_results is run:
+# (I edited matrix_single_answer_results so this works)
+
+question <- matrix_single_answer_results(question, original_first_rows)
+
+question$Table
+
+
+
+# The way it works in process_question_results that it checks if it is a MCSA question, then it checks if it has an NA
+# It uses these functions - I edited the second, the first should be unchanged I think
+
+is_mc_single_answer(question)
+
+is_mc_single_answer_NA(question)
+
+# I created Two tests and put them at the end of the test_msca_question_processing.R file
+# The RDS files and the r code I used to make them are in the Dummy Enhancement Sample Survey folder 
+
+```
+
+
+
+
+
+
+## Lets figure out the test stuff
+
+
+```{r}
+
+devtools::load_all(".")
+library(tidyverse)
+
+
+get_setup(
+  qsf_path = here::here("data", "Sample Surveys", "Long Exhaustive Sample Survey", "Long_Exhaustive_Sample_Survey.qsf"),
+  csv_path = here::here("data", "Sample Surveys", "Long Exhaustive Sample Survey", "Long_Exhaustive_Sample_Survey.csv"),
+  headerrows = 3
+)
+
+make_text_appendices(output_dir = here::here("Testing Enhancements"))
+
+
+get_setup(
+  qsf_path = here::here("Testing Enhancements", "Long_Exhaustive_Sample_Survey.qsf"),
+  csv_path = here::here("Testing Enhancements", "Long_Exhaustive_Sample_Survey.csv"),
+  headerrows = 3
+)
+
+
+question <- questions[[34]]
+
+```
+
+
+
+
+
