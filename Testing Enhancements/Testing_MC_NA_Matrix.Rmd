@@ -50,7 +50,6 @@ make_results_tables(
 ```{r Setup_Enhance}
 
 devtools::load_all(".")
-library(tidyverse)
 
 
 get_setup(

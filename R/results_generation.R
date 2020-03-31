@@ -655,7 +655,7 @@ matrix_single_answer_results <-
         colnames(na_responses) <-
           lapply(colnames(na_responses), function(x)
             question[['Payload']][['Answers']][[x]][[1]])
-    } else{
+    } else if(is_mc_single_answer(question) && has_na(question)){
       colnames(valid_responses) <-
         lapply(colnames(valid_responses), function(x)
           question[['Payload']][['Choices']][[x]][[1]])
@@ -701,76 +701,41 @@ matrix_single_answer_results <-
           question[['Payload']][['Choices']][[x]][[1]])
       choices <- lapply(choices, clean_html)
       choices <- unlist(choices, use.names = FALSE)
-    } else{
-      # Get the question text
-      question_text <- question[['Payload']][['QuestionText']]
-
-      # Clean it up
-      question_text <- lapply(question_text, clean_html)
-      question_text <- unlist(question_text, use.names = FALSE)
+    } else if(is_mc_single_answer(question) && has_na(question)){
+      # Get the question text; this is based on a decision from OIR to repeat
+      # the question text as the row name so that the tables will have formatting
+      # consistent with other matrix questions.
+      choices <- clean_html(question[['Payload']][['QuestionText']])
     }
 
 
-    # construct the data frame - do this differently if it is a
-    # MC single answer question with an NA
-    if(is_matrix_single_answer(question)){
-      if (has_na) {
-        results_table <-
-          data.frame(
-            choices,
-            N = valid_denominator,
-            valid_responses,
-            total_N = total_denominator,
-            na_responses,
-            check.names = FALSE,
-            row.names = NULL
-          )
-      } else {
-        results_table <-
-          data.frame(
-            choices,
-            N = valid_denominator,
-            valid_responses,
-            check.names = FALSE,
-            row.names = NULL
-          )
-      }
-    } else{
-      if (has_na) {
-        results_table <-
-          data.frame(
-            question_text,
-            N = valid_denominator,
-            valid_responses,
-            total_N = total_denominator,
-            na_responses,
-            check.names = FALSE,
-            row.names = NULL
-          )
-      } else {
-        results_table <-
-          data.frame(
-            question_text,
-            N = valid_denominator,
-            valid_responses,
-            check.names = FALSE,
-            row.names = NULL
-          )
-      }
-
-      # Clean up the colnames and rownames for our special mcsa to matrix case
-      colnames(results_table)[1] <- ""
-      rownames(results_table) <- NULL
-
+    # construct the data frame
+    if (has_na) {
+      results_table <-
+        data.frame(
+          choices,
+          N = valid_denominator,
+          valid_responses,
+          total_N = total_denominator,
+          na_responses,
+          check.names = FALSE,
+          row.names = NULL
+        )
+    } else {
+      results_table <-
+        data.frame(
+          choices,
+          N = valid_denominator,
+          valid_responses,
+          check.names = FALSE,
+          row.names = NULL
+        )
     }
 
 
-    # clean up the colnames and rownames - don't do this if it is a
-    # MC single answer question with an NA
-    if(is_matrix_single_answer(question)) {
-      colnames(results_table)[1] <- ""
-      rownames(results_table) <- NULL
-    }
+    colnames(results_table)[1] <- ""
+    rownames(results_table) <- NULL
+
 
     # append the results table
     question[['Table']] <- results_table
@@ -1124,7 +1089,7 @@ process_question_results <-
           }
 
           # multiple choice single answer with NA type choice
-        } else if(is_mc_single_answer(question) && is_mc_single_answer_NA(question)){
+        } else if(is_mc_single_answer(question) && has_na(question)){
           if (should_use_ofr) {
             question <-
               matrix_single_answer_results(question, original_first_rows)
@@ -1133,7 +1098,7 @@ process_question_results <-
           }
 
           # regular multiple choice single answer
-        } else if(is_mc_single_answer(question) && !is_mc_single_answer_NA(question)){
+        } else if(is_mc_single_answer(question) && !has_na(question)){
           if (should_use_ofr) {
             question <- mc_single_answer_results(question, original_first_rows)
           } else {
