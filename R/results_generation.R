@@ -378,12 +378,16 @@ mc_multiple_answer_results <-
     choices <-
       lapply(names(N), function(choice)
         question_variable_to_choice_text(question, choice, use_recode_values = FALSE))
-
+    
+    
+    
+    
     # make sure that these are flat lists
     choices <- unlist(choices, use.names = FALSE)
     N <- unlist(N, use.names = FALSE)
     Percent <- unlist(Percent, use.names = FALSE)
-
+    
+    
     # construct and return the output data frame
     results_table <-
       data.frame(N, Percent, choices, row.names = NULL)
@@ -395,9 +399,8 @@ mc_multiple_answer_results <-
       results_table <- results_table[order(choices),]
     }
 
-
-
-
+    
+    
     # Determine if the question has recode values greater than 900 or a recode value
     # of -1 indicating it is an NA that we should sort to the bottom
     if ('RecodeValues' %in% names(question[['Payload']])) {
@@ -407,152 +410,61 @@ mc_multiple_answer_results <-
       }
     } else
       sort_na <- FALSE
-
-
-    # if(sort_na){
-    #   # calculate the valid denominator for each answer
-    #   valid_denominator <-
-    #     apply(relevant_responses, 2, function(x)
-    #       sum(x >= 0))
-    #   
-    #   # calculate the total denominator for each answer
-    #   total_denominator <-
-    #     apply(relevant_responses, 2, function(x)
-    #       sum(x != -99 & x != ""))
-    # }
-
-
-    # get the na responses for the question, if it has NA responses
+    
+    
     if (sort_na) {
-      na_factors <-
-        question[['Payload']][['Choices']][
-          which(question[['Payload']][['RecodeValues']] < 0)]
-      na_factors <-
-        question[['Payload']][['Choices']][
-          which(question[['Payload']][['RecodeValues']] > 900)]
+      recode_values <- question[['Payload']][['RecodeValues']]
+      
+      # Make sure the list of recode values is flat and is stored as a numbers
+      recode_values <- unlist(recode_values, use.names = FALSE)
+      recode_values <- as.numeric(recode_values)
+      
+      # construct and return the output data frame with recode values
+      results_table <-
+        data.frame(N, Percent, choices, recode_values, row.names = NULL)
+      
+      reg_results_table <-
+        data.frame(N = integer(), Percent = integer(), choices = integer(), recode_values = double(), row.names = NULL)
+      na_results_table <-
+        data.frame(N = integer(), Percent = integer(), choices = integer(), recode_values = double(), row.names = NULL)
+      
+      len <- length(results_table$N)
+      len <- unlist(len, use.names = FALSE)
+      for(i in 1:len){
+        row <- results_table[i, ]
+        if(row$recode_values < 900){
+          reg_results_table <- rbind(reg_results_table, row)
+        } else{
+          na_results_table <- rbind(na_results_table, row)
+        }
+      }
+      
+      
+      # Sort the regular data table descending by N then by choices or by choices, depending on the user
+      if(sort_by == "N"){
+        reg_results_table <- reg_results_table[order(-N, choices),]
+      }else if(sort_by == "Choices_Alpha"){
+        reg_results_table <- reg_results_table[order(choices),]
+      }
+      
+      # Sort the NA data table first by Recode value, then descending by N then by choices or 
+      # by choices, depending on the user
+      if(sort_by == "N"){
+        na_results_table <- na_results_table[order(-recode_values, -N, choices),]
+      }else if(sort_by == "Choices_Alpha"){
+        na_results_table <- na_results_table[order(-recode_values, choices),]
+      }
+      
+      # Remove the rows of NA
+      reg_results_table <- reg_results_table[complete.cases(reg_results_table), ]
+      na_results_table <- na_results_table[complete.cases(na_results_table), ]
+      
+      results_table <- rbind(reg_results_table, na_results_table)
+      results_table$recode_values <- NULL
     }
 
-    # get the valid responses for the question
-    if ("RecodeValues" %in% names(question[['Payload']]) &&
-        length(question[['Payload']][['RecodeValues']]) > 0 &&
-        length(question[['Payload']][['RecodeValues']]) < 900) {
-      valid_factors <-
-        question[['Payload']][['RecodeValues']][
-          which((question[['Payload']][['RecodeValues']] >= 0) & (question[['Payload']][['RecodeValues']] < 900))]
-    } else {
-      valid_factors <- names(question[['Payload']][['Answers']])
-    }
 
-    length(na_factors)
-
-
-    # # table the responses
-    # valid_responses <-
-    #   sapply(relevant_responses, function(x)
-    #     table(factor(x, valid_factors)))
-    # if (!is.data.frame(valid_responses)) {
-    #   valid_responses <- as.data.frame(valid_responses)
-    # }
-    # 
-    # if (!(length(colnames(relevant_responses)) == length(rownames(valid_responses))
-    #       &&
-    #       all(colnames(relevant_responses) == rownames(valid_responses)))) {
-    #   valid_responses <- t(valid_responses)
-    #   
-    #   #Think these should already be true?
-    #   colnames(valid_responses) <- valid_factors
-    #   rownames(valid_responses) <- colnames(relevant_responses)
-    # }
-    # 
-    # 
-    # if (sort_na) {
-    #   na_responses <-
-    #     sapply(relevant_responses, function(x)
-    #       table(factor(x, na_factors)))
-    #   if (!is.data.frame(na_responses)) {
-    #     na_responses <- as.data.frame(na_responses)
-    #   }
-    #   
-    #   if (!(
-    #     nrow(na_responses) == ncol(relevant_responses) &&
-    #     ncol(na_responses) == length(na_factors)
-    #   )) {
-    #     na_responses <- t(na_responses)
-    #   }
-    #   
-    #   colnames(na_responses) <- na_factors
-    #   rownames(na_responses) <- colnames(relevant_responses)
-    #   
-    # }
-    # 
-    # valid_responses <- as.data.frame(valid_responses)
-    # 
-    # 
-    # 
-    # 
-    # 
-    # 
-    # # convert the number of respondents for each answer
-    # # (row) by choice (column) combination
-    # # to a percentage
-    # for (i in 1:nrow(valid_responses)) {
-    #   for (j in 1:ncol(valid_responses)) {
-    #     if (valid_responses[i, j] == 0 | valid_denominator[[i]] == 0) {
-    #       valid_responses[i, j] <- percent0(0)
-    #     } else {
-    #       valid_responses[i, j] <-
-    #         percent0(as.integer(valid_responses[i, j]) / valid_denominator[[i]])
-    #     }
-    #   }
-    # }
-    # 
-    # # if there's a set of na_responses
-    # # convert the number of respondents for each
-    # # answer (row) by choice (column) combination
-    # # to a percentage
-    # if (sort_na) {
-    #   for (i in 1:nrow(na_responses)) {
-    #     for (j in 1:ncol(na_responses)) {
-    #       if (na_responses[i, j] == 0 | total_denominator[[i]] == 0) {
-    #         na_responses[i, j] <- percent0(0)
-    #       } else {
-    #         na_responses[i, j] <-
-    #           percent0(as.integer(na_responses[i, j]) / total_denominator[[i]])
-    #       }
-    #     }
-    #   }
-    # }
-    # 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+   
     # Remove choices as the name of the third column
     colnames(results_table)[3] <- ""
 
