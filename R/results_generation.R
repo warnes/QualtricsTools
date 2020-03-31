@@ -420,7 +420,9 @@ mc_multiple_answer_results <-
 #' to that question. If you look at the source code,
 #' keep in mind that a matrix question's sub-questions
 #' are called "Choices" and that the choices for each
-#' sub-question are called "Answers"
+#' sub-question are called "Answers". This function is also used
+#' to table results for single answer  multiple choice questions
+#' with N/A options indicated by negative integer recode values.
 #'
 #' @inheritParams mc_single_answer_results
 #' @return a table with the matrix-sub-questions listed
@@ -509,10 +511,9 @@ matrix_single_answer_results <-
     }
 
     # determine if the question has any NA-type choices
-    if ('RecodeValues' %in% names(question[['Payload']])) {
-      has_na <- any(question[['Payload']][['RecodeValues']] < 0)
-    } else
-      has_na <- FALSE
+    # There is a function to do this that checks for the presence
+    #   of recode values and, if present, checkes for any less than 0.
+    has_na <- has_na(question)
 
     # calculate the valid denominator for each answer
     valid_denominator <-
@@ -655,7 +656,7 @@ matrix_single_answer_results <-
         colnames(na_responses) <-
           lapply(colnames(na_responses), function(x)
             question[['Payload']][['Answers']][[x]][[1]])
-    } else if(is_mc_single_answer(question) && has_na(question)){
+    } else if(is_mc_single_answer(question) && has_na){
       colnames(valid_responses) <-
         lapply(colnames(valid_responses), function(x)
           question[['Payload']][['Choices']][[x]][[1]])
@@ -701,7 +702,7 @@ matrix_single_answer_results <-
           question[['Payload']][['Choices']][[x]][[1]])
       choices <- lapply(choices, clean_html)
       choices <- unlist(choices, use.names = FALSE)
-    } else if(is_mc_single_answer(question) && has_na(question)){
+    } else if(is_mc_single_answer(question) && has_na){
       # Get the question text; this is based on a decision from OIR to repeat
       # the question text as the row name so that the tables will have formatting
       # consistent with other matrix questions.
