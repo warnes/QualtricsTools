@@ -459,7 +459,7 @@ clean_html_and_css <- function(text) {
   # Removes CSS
   text<- stringr::str_replace_all(text, ".Matrix.*?\\.c\\d|.Skin.*?\\.c\\d", "")
   # Remove leading or trailing whitespace
-  text <- stringr::str_replace_all(text, "^\\s+|\\s+$", "")
+  text <- stringr::str_replace_all(text, "\\s+", " ")
   return(text)
 }
 
