@@ -2,7 +2,7 @@
 % Please edit documentation in R/results_generation.R
 \name{mc_multiple_answer_results}
 \alias{mc_multiple_answer_results}
-\title{Create the Results Table for a Multiple Choice Single Answer Question}
+\title{Create the Results Table for a Multiple Choice Multiple Answer Question}
 \usage{
 mc_multiple_answer_results(question, original_first_rows)
 }
