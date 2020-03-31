@@ -425,10 +425,10 @@ mc_multiple_answer_results <-
     # get the na responses for the question, if it has NA responses
     if (sort_na) {
       na_factors <-
-        question[['Payload']][['RecodeValues']][
+        question[['Payload']][['Choices']][
           which(question[['Payload']][['RecodeValues']] < 0)]
       na_factors <-
-        question[['Payload']][['RecodeValues']][
+        question[['Payload']][['Choices']][
           which(question[['Payload']][['RecodeValues']] > 900)]
     }
 
