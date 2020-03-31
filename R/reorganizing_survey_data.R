@@ -440,7 +440,7 @@ clean_question_text <- function(questions) {
 #' mathces all text within {} except for ones that have a preceeding $ - which is used
 #' to indicate piped text. Each matched substring is replaced with a space character.
 #' The 4th regex expression removes a specific type of CSS table formatting used by
-#' the office, starting with .Matrix and ending with .c\\d where\\d in regex represents
+#' the office, starting with .Matrix or .Skin and ending with .c\\d where\\d in regex represents
 #' a arbitrary digit.
 #' At the end, all extra whitespaces are removed.
 #'
