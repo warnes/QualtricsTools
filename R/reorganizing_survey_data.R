@@ -443,7 +443,7 @@ clean_question_text <- function(questions) {
 #' {} except for ones that have a preceeding $ - which is used to indicate piped text.
 #' Each matched substring is replaced with a space character to avoid concatenation of
 #' words on either side of formatting tags.
-#' At the end, all extra whitespaces is removed.
+#' At the end, all leading, trailing and extra whitespace are removed.
 #'
 #' @param text any text string that might contain HTML or whitespace that needs to be
 #' stripped.
