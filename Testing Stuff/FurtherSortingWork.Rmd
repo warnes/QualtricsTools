@@ -103,7 +103,6 @@ get_setup(
   qsf_path = here::here("Testing Stuff", "MCMA_with_Recodes__900.qsf"),
   csv_path = here::here("Testing Stuff", "MCMA_with_Recodes__900.csv"),
   headerrows = 2
-
 )
 
 # grab one for testing stuff
@@ -170,6 +169,5 @@ question$Table = NULL
 question <- mc_multiple_answer_results(question, original_first_rows)
 question$Table
 
-<<<<<<< HEAD
 ```
 
