@@ -754,6 +754,7 @@ make_results_tables <-
     for (i in 1:length(varnames)) {
       assign(varnames[[i]], qt_vals[[i]])
     }
+
     original_first_rows = as.data.frame(original_first_rows)
     responses = as.data.frame(responses)
 
