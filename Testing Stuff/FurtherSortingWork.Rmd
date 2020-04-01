@@ -131,7 +131,6 @@ for(i in 1:4){
 ```
 
 
-
 #### Now lets sort by choice
 
 ```{r}
@@ -171,4 +170,6 @@ question$Table = NULL
 question <- mc_multiple_answer_results(question, original_first_rows)
 question$Table
 
+<<<<<<< HEAD
 ```
+
