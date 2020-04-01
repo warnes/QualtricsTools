@@ -61,7 +61,7 @@ is_text_entry_numeric <- function(question){
   is_textentry = (question[['Payload']][['QuestionType']] == "TE")
   has_content_validation = (question[['Payload']][['Validation']][['Settings']][['Type']] == "ContentType" )
   has_numerical_validation = (question[['Payload']][['Validation']][['Settings']][['ContentType']] == "ValidNumber" )
-  is_Text_Entry_With_Numeric_Validation <- isTRUE(is_TE && has_numerical_validation && has_content_validation )
+  is_Text_Entry_With_Numeric_Validation <- isTRUE(is_textentry && has_numerical_validation && has_content_validation )
   return(is_Text_Entry_With_Numeric_Validation)
 }
 

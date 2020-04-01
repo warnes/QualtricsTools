@@ -188,7 +188,7 @@ question_variable_to_choice_text <- function(question, choice, use_recode_values
 #' present
 
 generate_summary_stats <-
-  function(question, horizontal_table = FALSE) {
+  function(question, orientation = "vertical") {
     # Extracting the datatexport tag from question
     exp <- question[['Payload']][['DataExportTag']]
 
@@ -208,16 +208,18 @@ generate_summary_stats <-
     Maximum <- max(entries)
 
     # Use this code if horizontal representation is preffered
-    if (horizontal_table == TRUE){
+    if (orientation == "horizontal"){
       results_table <- data.frame("",NumberOfEntries,Mean,Median,StandardDev,Minimum,Maximum, row.names=NULL)
       # setting up column names in new data frame
-      colnames(results_table)[1] <- ""
-      colnames(results_table)[2] <- "N"
-      colnames(results_table)[3] <- "Mean"
-      colnames(results_table)[4] <- "Median"
-      colnames(results_table)[5] <- "Standard Deviation"
-      colnames(results_table)[6] <- "Minimum"
-      colnames(results_table)[7] <- "Maximum"
+      colnames(results_table) <- c("", "N", "Mean", "Median", "Standard Deviation",
+                                   "Minimum", "Maximum")
+      # colnames(results_table)[1] <- ""
+      # colnames(results_table)[2] <- "N"
+      # colnames(results_table)[3] <- "Mean"
+      # colnames(results_table)[4] <- "Median"
+      # colnames(results_table)[5] <- "Standard Deviation"
+      # colnames(results_table)[6] <- "Minimum"
+      # colnames(results_table)[7] <- "Maximum"
     }
     else{
       # setting up a column of statistics names
@@ -1120,7 +1122,7 @@ process_question_results <-
 
       try({
         # numerical text answer
-        if(is_TE_numerical(question)){
+        if(is_text_entry_numeric(question)){
           question<-generate_summary_stats(question)
         }
         # multiple choice multiple answer
