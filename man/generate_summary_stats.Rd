@@ -4,19 +4,24 @@
 \alias{generate_summary_stats}
 \title{Create Summary Statistics tables for numerical data only questions}
 \usage{
-generate_summary_stats(question)
+generate_summary_stats(question, horizontal_table = FALSE)
 }
 \arguments{
 \item{question}{This is the question which has been checked to contain
 Text Entry data with Numerical verification. This TE question will now
 be processed to give a summary stats table and not an appendice.}
+
+\item{horizontal_table}{This variable indicated whether the summary statistics
+table should be presented with each statistic in a separate column. By default it
+is set to FALSE.}
 }
 \value{
-question with a ['Table'] appended to it where the summary stats are present
+A question with a ['Table'] appended to it where the summary stats are
+present
 }
 \description{
 This function uses the data frame of responses that
 have been linked to a question to generate summary statistics using
-basic R functions mean(), median(), min(), max(), sd(). Creates a
-new data frame with colnames and the stats and appends to question['Table'].
+basic R functions mean(), median(), min(), max(), sd(). It creates a
+new data frame with colnames and the stats then appends it to question['Table'].
 }
