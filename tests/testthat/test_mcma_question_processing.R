@@ -244,3 +244,41 @@ test_that(
                   all(names(Q12[['Table']]) == names(Q12_results_table)))
   }
 )
+
+
+#################
+#  Tests for the Sorting Enhancement
+##################
+
+# Long Exhaustive Sample Survey: Q16 - But only sort by Choices
+test_that(
+  "Test that mc_multiple_answer_results is correct for Q16 in the Long Exhaustive Sample Survey",
+  {
+    # Load the question, without the results tables, for processing.
+    Q16 <- readRDS(
+      file.path(
+        find.package('QualtricsTools'),
+        'data/Sample Surveys/Long Exhaustive Sample Survey/RDS',
+        'Q16.rds'
+      )
+    )
+    
+    # Process the question and insert results tables into it.
+    Q16 <- process_question_results(Q16, original_first_rows)
+    
+    # Load the previously computed results table.
+    Q16_results_table <-  readRDS(
+      file.path(
+        find.package('QualtricsTools'),
+        'data/Sample Surveys/Long Exhaustive Sample Survey/RDS',
+        'Q16_results_table.rds'
+      )
+    )
+    Q16_results_table <- as.data.frame(Q16_results_table)
+    
+    # Check that the previously computed results and new results match.
+    expect_true(all(Q16[['Table']][['N']] == Q16_results_table[['N']]) &&
+                  all(Q16[['Table']][['Percent']] == Q16_results_table[['Percent']]) &&
+                  all(names(Q16[['Table']]) == names(Q16_results_table)))
+  }
+)

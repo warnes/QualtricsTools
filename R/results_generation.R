@@ -270,7 +270,7 @@ mc_single_answer_results <-
 #' @inheritParams mc_single_answer_results
 #' @param sort_by This determines how the data table is sorted. It is automatically set to
 #' sort by N then by Choices alphebetically, but if you want to only sort by Choices alphebetically,
-#' simply set sort_by = "Choices". If you don't want the table to be sorted, set sort_by = "NA".
+#' simply set sort_by = "Choices_Alpha". If you don't want the table to be sorted, set sort_by = "NA".
 mc_multiple_answer_results <-
   function(question, original_first_rows, sort_by = "N") {
     # save the original responses

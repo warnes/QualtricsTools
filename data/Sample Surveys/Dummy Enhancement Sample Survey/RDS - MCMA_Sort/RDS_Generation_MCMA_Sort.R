@@ -9,7 +9,7 @@ get_setup(
 )
 
 # Get the question we want to test against
-question <- questions[[2]]
+question <- questions[[8]]
 
 # Save its table as an RDS file
 NA_Matrix_Table <- question$Table
@@ -24,25 +24,4 @@ question$Table <- NULL
 
 # Save the question without the Table
 saveRDS(question, file = here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", "RDS - MC_with_NA", "NA_Matrix_Question_NO_Table.rds"))
-
-
-
-
-
-# Lets do this again but with a different question that has only positive recode values
-
-# Get the question we want to test against
-question <- questions[[1]]
-
-# Save its table as an RDS file
-Reg_MCSA_Table <- question$Table
-saveRDS(Reg_MCSA_Table, file = here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", "RDS - MC_with_NA", "Reg_MCSA_Table.rds"))
-
-# Delete the table from the question so the question can be used in the future by a test
-question$Table <- NULL
-
-# Save the question without the Table
-saveRDS(question, file = here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", "RDS - MC_with_NA", "Reg_MCSA_Question_NO_Table.rds"))
-
-
 
