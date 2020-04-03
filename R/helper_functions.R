@@ -1080,7 +1080,7 @@ make_split_coded_comments <-
            split_by,
            n_threshold = 15,
            headerrows,
-           code_type) {
+           code_type = "nvivo") {
     # This turns the split_by list into a name for the column
     # which will contain the concatenation of the entries of responses
     # which are being split over. That is if split_by = c('column1', 'column2', 'column3'),
