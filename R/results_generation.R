@@ -432,7 +432,7 @@ mc_multiple_answer_results <-
       len <- unlist(len, use.names = FALSE)
       for(i in 1:len){
         row <- results_table[i, ]
-        if(row$recode_values < 900){
+        if(row$recode_values < 900 && row$recode_values > 0){
           reg_results_table <- rbind(reg_results_table, row)
         } else{
           na_results_table <- rbind(na_results_table, row)
