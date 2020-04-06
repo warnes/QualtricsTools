@@ -9,19 +9,37 @@ get_setup(
 )
 
 # Get the question we want to test against
-question <- questions[[8]]
+question <- questions[[9]]
 
 # Save its table as an RDS file
-NA_Matrix_Table <- question$Table
-saveRDS(NA_Matrix_Table, file = here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", "RDS - MC_with_NA", "NA_Matrix_Table.rds"))
+No_recode_Table <- question$Table
+saveRDS(No_recode_Table, file = here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", "RDS - MCMA_Sort", "No_recode_Table.rds"))
 
 # Save the original first rows
-saveRDS(original_first_rows, file = here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", "RDS - MC_with_NA", "original_first_rows.rds"))
+saveRDS(original_first_rows, file = here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", "RDS - MCMA_Sort", "original_first_rows.rds"))
 
 
 # Delete the table from the question so the question can be used in the future by a test
 question$Table <- NULL
 
 # Save the question without the Table
-saveRDS(question, file = here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", "RDS - MC_with_NA", "NA_Matrix_Question_NO_Table.rds"))
+saveRDS(question, file = here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", "RDS - MC_with_NA", "No_recode_NO_Table.rds"))
+
+
+
+
+# Get the question we want to test against
+question <- questions[[8]]
+
+# Save its table as an RDS file
+Recode_900_Table <- question$Table
+saveRDS(Recode_900_Table, file = here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", "RDS - MCMA_Sort", "Recode_900_Table.rds"))
+
+# Delete the table from the question so the question can be used in the future by a test
+question$Table <- NULL
+
+# Save the question without the Table
+saveRDS(question, file = here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", "RDS - MC_with_NA", "Recode_900_NO_Table.rds"))
+
+
 
