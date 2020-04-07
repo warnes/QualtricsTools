@@ -127,6 +127,9 @@ question_variable_to_choice_text <- function(question, choice, use_recode_values
   # corresponding choice's index.
   choice_text <- question[['Payload']][['Choices']][[choice_index]][[1]]
 
+  # Clean the choice text of HTML entities.
+  choice_text <- clean_html_and_css(choice_text)
+
   # If the choice is one with text entry components, insert
   # "See Appendix [Column DataExportTag]"
   # so that the corresponding text appendix may be easily found.
@@ -159,9 +162,6 @@ question_variable_to_choice_text <- function(question, choice, use_recode_values
         corresponding_export_tag <- question[['Payload']][['DataExportTag']]
       }
     }
-
-    # Clean the choice text of HTML entities.
-    choice_text <- clean_html_and_css(choice_text)
 
     # Insert the corresponding export tag into the question choice.
     choice_text <- paste0(choice_text,
