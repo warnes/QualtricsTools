@@ -433,13 +433,16 @@ clean_question_text <- function(questions) {
 #' This function uses regex extensively to clean HTML and CSS out of a given text block.
 #'
 #' The first regex used is "\\s+". It matches multiple characters of whitespace, and
-#' reduces them to a single space character. HTML tags and Entries are then cleaned
-#' with this regular expression: "<.*?>|&[# a-z 0-9]*". It matches a substring that
+#' reduces them to a single space character. We then replace all linebreaks with a space character.
+#' HTML tags and Entries are then cleaned
+#' in two parts with this regular expression: "<.*?>|&[# a-z 0-9]*" which matches a substring that
 #' starts with & and ends with ; with lower case letters between them, or a substring
-#' with < and > on each side, with any characters between.
-#' The third regex expression removes a specific type of CSS table formatting used by
+#' with < and > on each side, with any characters between. The first part considers characters being
+#' placed right next to the tags and replaces the tags with a space character. The second part cleans
+#' the remaining tags and replaces them with "".
+#' The fourth regex expression removes a specific type of CSS table formatting used by
 #' the office, starting with .Matrix or .Skin and ending with .c\\d where\\d in regex
-#' represents an arbitrary digit. The fourth regex expression mathces all text within
+#' represents an arbitrary digit. The fifth regex expression mathces all text within
 #' {} except for ones that have a preceeding $ - which is used to indicate piped text.
 #' Each matched substring is replaced with a space character to avoid concatenation of
 #' words on either side of formatting tags.
@@ -453,8 +456,13 @@ clean_question_text <- function(questions) {
 clean_html_and_css <- function(text) {
   # Removes extra whitespace
   text <- stringr::str_replace_all(text, "\\s+", " ")
+  # Replaces all linebreaks with a space character
+  text <- stringr::str_replace_all(text, "<br>", " ")
   # Cleans HTML tags and Entries
-  text <- stringr::str_replace_all(text, "<.*?>|&[# a-z 0-9]*;", " ")
+  # The first case will remove HTML tags and entries with characters on either side with " "
+  text <- stringr::str_replace_all(text, "(?<=\\w)<.*?>(?=\\w)|(?<=\\w)&[# a-z 0-9]*;(?=\\w)", " ")
+  # The next cleans all remaining HTML tags and entries replaced with ""
+  text <- stringr::str_replace_all(text, "<.*?>|&[# a-z 0-9]*;", "")
   # Removes CSS
   text<- stringr::str_replace_all(text, ".Matrix.*?\\.c\\d|.Skin.*?\\.c\\d", "")
   # Removing all formatting tags, except piped text
