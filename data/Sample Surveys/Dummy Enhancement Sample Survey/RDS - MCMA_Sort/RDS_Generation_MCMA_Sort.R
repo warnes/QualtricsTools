@@ -9,7 +9,7 @@ get_setup(
 )
 
 # Get the question we want to test against
-question <- questions[[9]]
+question <- questions[[10]]
 
 # Save its table as an RDS file
 No_recode_Table <- question$Table
@@ -42,4 +42,13 @@ question$Table <- NULL
 saveRDS(question, file = here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", "RDS - MC_with_NA", "Recode_900_NO_Table.rds"))
 
 
+# Sort by Choice_Alpha then save that table
+question <- mc_multiple_answer_results(question, original_first_rows, sort_by = "Choices_Alpha")
+Recode_Choice_Table <- question$Table
+saveRDS(Recode_Choice_Table, file = here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", "RDS - MCMA_Sort", "Recode_Choice_Table.rds"))
 
+
+# Sort by Choice Order then save that table
+question <- mc_multiple_answer_results(question, original_first_rows, sort_by = "Choice_Order")
+Recode_Order_Table <- question$Table
+saveRDS(Recode_Choice_Table, file = here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", "RDS - MCMA_Sort", "Recode_Order_Table.rds"))

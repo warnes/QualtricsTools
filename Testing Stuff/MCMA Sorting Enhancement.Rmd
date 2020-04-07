@@ -1,0 +1,116 @@
+---
+title: "MCMA Sorting Enhancement"
+author: "Matthew Hudes"
+date: "4/7/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Hello! In this document we will go over the enhancement made that sorts MCMA type questions
+
+### First we load the package, then we call get setup with our example survey
+``` {r results = 'hide'}
+
+devtools::load_all(".")
+
+get_setup(
+  qsf_path = here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", "Dummy_Enhancement_Sample_Survey.qsf"),
+  csv_path = here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", "Dummy_Enhancement_Sample_Survey.csv"),
+  headerrows = 3
+)
+
+```
+
+### So lets grab the 10th question from the survey - it is MCMA without any recode values.
+
+```{r}
+question <- questions[[10]]
+```
+
+### Now lets generate a Table with this question. The table by default will be sorted by the N column, then alphebetically by the choices in the third column.
+```{r}
+question <- mc_multiple_answer_results(question, original_first_rows)
+
+## This code prints that table out:
+knitr::kable(question$Table)
+
+```
+
+
+### Sorting by N then choices is the default, but if you want to be explicit about your choice, seting sort_by equal "N" will produce the same output as shown below:
+```{r}
+question <- mc_multiple_answer_results(question, original_first_rows, sort_by = "N")
+
+## This code prints that table out:
+knitr::kable(question$Table)
+
+```
+
+
+
+### Instead of sorting by the N column, then alphebetically by the choices, we can set sort_by to equal "Choices_Alpha" which will sort the table only alpebetically by the choices.
+```{r}
+question <- mc_multiple_answer_results(question, original_first_rows, sort_by = "Choices_Alpha")
+
+## This code prints that table out:
+knitr::kable(question$Table)
+
+```
+
+
+
+### If you would like your table to be in the choice order, simply set sort_by to equal "Choice_Order"
+```{r}
+question <- mc_multiple_answer_results(question, original_first_rows, sort_by = "Choice_Order")
+
+## This code prints that table out:
+knitr::kable(question$Table)
+
+```
+
+
+
+
+## Now, if you have an NA question that you would like to be sorted to the bottom, simply set the recode value for that choice to any number greater than 900
+
+
+### Lets take a different question from the survey which has three NA type choices with recode values of 997, 998 and 999
+```{r}
+question <- questions[[8]]
+```
+
+
+### By default, the table will still sort by N then by choices, but all of the NA choices will be brought to the bottom and sorted at the bottom in order of descending recode value, so the choice with value 997 will be first, and the choice with value 999 will be last.
+```{r}
+question <- mc_multiple_answer_results(question, original_first_rows)
+
+## This code prints that table out:
+knitr::kable(question$Table)
+
+```
+
+
+### You can still sort the table by Choices and the NA choices will still be brought to the bottom.
+```{r}
+question <- mc_multiple_answer_results(question, original_first_rows, sort_by = "Choices_Alpha")
+
+## This code prints that table out:
+knitr::kable(question$Table)
+
+```
+
+
+### The same goes with sorting by the Choice Order.
+```{r}
+question <- mc_multiple_answer_results(question, original_first_rows, sort_by = "Choice_Order")
+
+## This code prints that table out:
+knitr::kable(question$Table)
+
+```
+
+
+### Thank you for reading this document! The last thing to note is that currently in order to change what you sort by you have to use mc_multiple_answer_results() to make that table. Otherwise, if the default settings are fine you don't have to!
