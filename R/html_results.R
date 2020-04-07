@@ -553,7 +553,7 @@ tabelize_display_logic <- function(blocks, flow) {
           for (k in 1:length(blocks[[i]][['BlockElements']][[j]][['Payload']][['SkipLogic']])) {
             display_logic <-
               c(display_logic,
-                clean_html(blocks[[i]][['BlockElements']][[j]][['Payload']][['SkipLogic']][[k]][['Description']]))
+                clean_html_and_css(blocks[[i]][['BlockElements']][[j]][['Payload']][['SkipLogic']][[k]][['Description']]))
           }
         }
         if (length(display_logic) > 1) {

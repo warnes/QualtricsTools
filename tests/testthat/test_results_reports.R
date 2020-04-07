@@ -47,3 +47,12 @@ test_that("Test that generate_results_tables creates a file when run on the User
   status = file.exists(results_output_file)
   expect_equal(status, TRUE)
 })
+
+test_that("Test that generate_results_tables creates a file when run on the Dummy Enhancement Sample Survey", {
+  survey_dir = file.path(surveysdir, "Dummy Enhancement Sample Survey")
+  qsf = file.path(survey_dir, "Dummy_Enhancement_Sample_Survey.qsf")
+  csv = file.path(survey_dir, "Dummy_Enhancement_Sample_Survey.csv")
+  results_output_file = make_results_tables(headerrows=3, qsf_path = qsf, csv_path = csv)
+  status = file.exists(results_output_file)
+  expect_equal(status, TRUE)
+})

@@ -421,37 +421,51 @@ clean_question_text <- function(questions) {
 
   for (i in 1:length(questions)) {
     questions[[i]][['Payload']][['QuestionTextClean']] <-
-      clean_html(questions[[i]][['Payload']][['QuestionText']])
+      clean_html_and_css(questions[[i]][['Payload']][['QuestionText']])
   }
 
   return(questions)
 }
 
 
-#' Clean HTML and whitespace from a string
+#' Clean HTML and CSS from a string
 #'
-#' This function uses regex extensively to clean HTML out of a given text block.
-#' "(&[a-z]*;|<.*?>)" is the first regular expression used.
-#' It matches a substring that starts with & and ends with ; with
-#' lower case letters between them, or a substring with < and > on each side, with
-#' any characters between. Each matched substring is replaced with a space character.
-#' The next regex is "\\s+". It matches multiple characters of whitespace, and
-#' reduces them to a single space character.
-#' The last regex used is "^\\s+|\\s+$". It matches whitespace at the beginning
-#' or end of the text and removes it.
+#' This function uses regex extensively to clean HTML and CSS out of a given text block.
 #'
-#' @param text any text string that might contain HTML or whitespace that needs stripped.
-#' @return text without any html or extraneous whitespace.
-clean_html <- function(text) {
-  # Clean HTML Tags and HTML Entitie
-  text <- gsub("<.*?>|&[# a-z 0-9]*;", " ", text)
+#' This function uses regular expressions to clean HTML and CSS from text. This is used
+#' in various places to clean quesiton and choice text.
+#' All line breaks and non-break space are replaced with a space character.
+#' HTML tags are removed, so HTML formatting will NOT be included in any reports.
+#' This also removes CSS based on patterns specific to matrix formatting and row banding
+#' used by Tufts OIR.
+#' At the end, all leading, trailing and extra whitespace are removed, and repeated
+#' whiteshapce is replaced by a single whitespace character.
+#'
+#' @param text any text string that might contain HTML or whitespace that needs to be
+#' stripped.
+#' @inheritParams clean_question_text
+#' @return text without any html, css or extraneous whitespace, and with breaks replaced by space character.
+
+clean_html_and_css <- function(text) {
+  # Removes extra whitespace
+  text <- stringr::str_replace_all(text, "\\s+", " ")
+  # Replaces all linebreaks and non-breaking space with a space character
+  text <- stringr::str_replace_all(text, "<br>|&nbsp;", " ")
+  # Cleans HTML tags and Entries
+  # The first case will remove HTML tags and entries with characters on either side with " "
+  text <- stringr::str_replace_all(text, "(?<=\\w)<.*?>(?=\\w)|(?<=\\w)&[# a-z 0-9]*;(?=\\w)", " ")
+  # The next cleans all remaining HTML tags and entries replaced with ""
+  text <- stringr::str_replace_all(text, "<.*?>|&[# a-z 0-9]*;", "")
+  # Removes CSS
+  text<- stringr::str_replace_all(text, ".Matrix.*?\\.c\\d|.Skin.*?\\.c\\d", "")
+  # Removing all formatting tags, except piped text
+  text <- stringr::str_replace_all(text, "(?<!\\$)\\{.*\\}*|&[# a-z 0-9]*;", " ")
   # Remove leading or trailing whitespace
-  text <- gsub("^\\s+|\\s+$", "", text)
-  # Remove extra whitespace
-  text <- gsub("\\s+", " ", text)
+  text <- stringr::str_replace_all(text, "^\\s+|\\s+$", "")
+  # Remove any remaning extra whitespace
+  text <- stringr::str_replace_all(text, "\\s+", " ")
   return(text)
 }
-
 
 #' Create Human Readable Question Types
 #'
@@ -710,7 +724,7 @@ create_response_lookup_table <-
           }
         }
         # Insert the choice text that corresponds to r
-        lookup_table[[i]][['text']] <- clean_html(question[['Payload']][['Choices']][[r]][[1]])
+        lookup_table[[i]][['text']] <- clean_html_and_css(question[['Payload']][['Choices']][[r]][[1]])
       }
     } else if (is_matrix_single_answer(question)) {
       has_recode_values <- any("RecodeValues" == names(question[['Payload']]))
@@ -731,7 +745,7 @@ create_response_lookup_table <-
         }
         # Matrix questions use "Answers" instead of "Choices" -- look up the text corresponding
         # to r and insert it as r's corresponding "text".
-        lookup_table[[i]][['text']] <- clean_html(question[['Payload']][['Answers']][[r]][[1]])
+        lookup_table[[i]][['text']] <- clean_html_and_css(question[['Payload']][['Answers']][[r]][[1]])
       }
     }
     # Convert the lookup table from a list to a Dataframe:
@@ -988,9 +1002,9 @@ split_side_by_sides <- function(questions, blocks) {
         # question text will include the SBS question's original question text and the
         # specific question component's question text.
         split_questions[[j]][['Payload']][['QuestionText']] <-
-          paste0(clean_html(questions[[i]][['Payload']][['QuestionText']]),
+          paste0(clean_html_and_css(questions[[i]][['Payload']][['QuestionText']]),
                  "-",
-                 clean_html(questions[[i]][['Payload']][['AdditionalQuestions']][[as.character(j)]][['QuestionText']]))
+                 clean_html_and_css(questions[[i]][['Payload']][['AdditionalQuestions']][[as.character(j)]][['QuestionText']]))
 
         # append a qtNote to split side-by-side questions
         split_questions[[j]][['qtNotes']] <- list()
@@ -1078,7 +1092,7 @@ display_logic_from_question <- function(question) {
       for (j in dl_indices_2) {
         if ("Description" %in% names(question[['Payload']][['DisplayLogic']][[i]][[j]])) {
           display_logic[[e]] <-
-            clean_html(question[['Payload']][['DisplayLogic']][[i]][[j]][['Description']])
+            clean_html_and_css(question[['Payload']][['DisplayLogic']][[i]][[j]][['Description']])
           e <- e + 1
         }
       }
@@ -1112,7 +1126,7 @@ display_logic_from_question <- function(question) {
           for (k in dl_indices_2) {
             if ("Description" %in% names(question[['Payload']][['Choices']][[i]][['DisplayLogic']][[j]][[k]])) {
               display_logic[[e]] <-
-                clean_html(question[['Payload']][['Choices']][[i]][['DisplayLogic']][[j]][[k]][['Description']])
+                clean_html_and_css(question[['Payload']][['Choices']][[i]][['DisplayLogic']][[j]][[k]][['Description']])
               e <- e + 1
             }
           }
@@ -1146,7 +1160,7 @@ display_logic_from_question <- function(question) {
           for (k in dl_indices_2) {
             if ("Description" %in% names(question[['Payload']][['Answers']][[i]][['DisplayLogic']][[j]][[k]])) {
               display_logic[[e]] <-
-                clean_html(question[['Payload']][['Answers']][[i]][['DisplayLogic']][[j]][[k]][['Description']])
+                clean_html_and_css(question[['Payload']][['Answers']][[i]][['DisplayLogic']][[j]][[k]][['Description']])
               e <- e + 1
             }
           }
