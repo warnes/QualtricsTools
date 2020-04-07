@@ -83,7 +83,7 @@ question <- questions[[8]]
 ```
 
 
-### By default, the table will still sort by N then by choices, but all of the NA choices will be brought to the bottom and sorted at the bottom in order of descending recode value, so the choice with value 997 will be first, and the choice with value 999 will be last.
+### By default, the table will still sort by N then by choices, but all of the NA choices will be brought to the bottom and sorted at the bottom in order of ascending recode value, so the choice with value 997 will be first, and the choice with value 999 will be last.
 ```{r}
 question <- mc_multiple_answer_results(question, original_first_rows)
 
