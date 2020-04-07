@@ -96,7 +96,7 @@ ask_for_csv <- function(responsesfile, headerrows) {
 
     responses <- responses[headerrows:nrow(responses),]
     responses <- responses[apply(responses, 1, function(x) any(x != "")),]
-    responses <- as.data.frame(apply(responses, 2, trimws))
+    responses <- as.data.frame(apply(responses, 2, trimws),stringsAsFactors = FALSE)
     return(list(responses, original_first_rows))
 }
 
