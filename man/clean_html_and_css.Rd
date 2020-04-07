@@ -11,25 +11,18 @@ clean_html_and_css(text)
 stripped.}
 }
 \value{
-text without any html or extraneous whitespace.
+text without any html, css or extraneous whitespace, and with breaks replaced by space character.
 }
 \description{
 This function uses regex extensively to clean HTML and CSS out of a given text block.
 }
 \details{
-The first regex used is "\\s+". It matches multiple characters of whitespace, and
-reduces them to a single space character. We then replace all linebreaks with a space character.
-HTML tags and Entries are then cleaned
-in two parts with this regular expression: "<.*?>|&[# a-z 0-9]*" which matches a substring that
-starts with & and ends with ; with lower case letters between them, or a substring
-with < and > on each side, with any characters between. The first part considers characters being
-placed right next to the tags and replaces the tags with a space character. The second part cleans
-the remaining tags and replaces them with "".
-The fourth regex expression removes a specific type of CSS table formatting used by
-the office, starting with .Matrix or .Skin and ending with .c\\d where\\d in regex
-represents an arbitrary digit. The fifth regex expression mathces all text within
-{} except for ones that have a preceeding $ - which is used to indicate piped text.
-Each matched substring is replaced with a space character to avoid concatenation of
-words on either side of formatting tags.
-At the end, all leading, trailing and extra whitespace are removed.
+This function uses regular expressions to clean HTML and CSS from text. This is used
+in various places to clean quesiton and choice text.
+All line breaks and non-break space are replaced with a space character.
+HTML tags are removed, so HTML formatting will NOT be included in any reports.
+This also removes CSS based on patterns specific to matrix formatting and row banding
+used by Tufts OIR.
+At the end, all leading, trailing and extra whitespace are removed, and repeated
+whiteshapce is replaced by a single whitespace character.
 }
