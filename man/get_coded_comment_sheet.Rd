@@ -4,17 +4,25 @@
 \alias{get_coded_comment_sheet}
 \title{Turn a Single Coded File into a Data Frame}
 \usage{
-get_coded_comment_sheet(codedfile)
+get_coded_comment_sheet(codedfile, code_type)
 }
 \arguments{
 \item{codedfile}{The string path to a Excel file.}
+
+\item{codetype}{Type of coded comment data export. The default is
+to use NVivo crosstab export with the ResponseID in the first row and
+second column labeled with the varnmae and containing response presence
+1/0 indicator. For old filemaker pro format, use "fmp" specification.
+(\code{"nvivo"} or \code{"fmp"})}
 }
 \value{
 A dataframe version of the contents of the coded comments
 in the codedfile.
 }
 \description{
-This retrieves comment coding data as a dataframe
-from a Excel file. Coded comments are retrieved from the sheet named "Coded"
-(case does not matter).
+This retreives comment coding data as a dataframe from an excel
+or .csv file. Use code_type to specify the format of coded comment data:
+NVivo crosstab export (current) or  Filemaker Pro exports (legacy).
+This is a wrapper function that calls get_coded_comment_sheet_fmp
+or get_coded_comment_sheet_nvivo based on code_type.
 }
