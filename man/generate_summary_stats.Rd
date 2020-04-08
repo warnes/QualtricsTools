@@ -4,7 +4,7 @@
 \alias{generate_summary_stats}
 \title{Create Summary Statistics tables for numerical data only questions}
 \usage{
-generate_summary_stats(question, horizontal_table = FALSE)
+generate_summary_stats(question, orientation = "vertical")
 }
 \arguments{
 \item{question}{This is the question which has been checked to contain

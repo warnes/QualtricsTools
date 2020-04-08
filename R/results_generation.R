@@ -189,24 +189,24 @@ question_variable_to_choice_text <- function(question, choice, use_recode_values
 
 generate_summary_stats <-
   function(question, orientation = "vertical") {
-    # Extracting the datatexport tag from question
-
     # Assign the data frame of responses to entries
     entries <- question[['Responses']]
+    # Checking whether Responses is single column of data and exiting function if not.
     if (ncol(as.data.frame(entries))!= 1){
       question[['qtNotes']]<- "This question could not be automatically processed due to incorrect number of response columns. Please check vignette for generate_summary_statistics"
       return(question)
     }
+    # Converting to character to avoid factors, and filtering all unwanted entries
     entries <- as.character(unlist(entries))
     entries <- entries[ which( !entries %in% c(NA, "-99", "\\s+", "") )]
-
-
+    # Checking for strings present in data and exiting function if TRUE
     if (any( which(is.na(as.numeric(entries))))){
       question[['qtNotes']]<- "This question could not be automatically processed due to inconsistent response data. Please check vignette for generate_summary_statistics"
       return(question)
     }
-
+  # Generating Tables with summary statistics
   else{
+
         entries <- as.numeric(entries)
         # Calcuate the stats
         NumberOfEntries <- length(entries)
@@ -216,20 +216,14 @@ generate_summary_stats <-
         Minimum <- min(entries)
         Maximum <- max(entries)
 
-        # Use this code if horizontal representation is preffered
+        # If horizontal representation is preffered
         if (orientation == "horizontal"){
           results_table <- data.frame("",NumberOfEntries,Mean,Median,StandardDev,Minimum,Maximum, row.names=NULL)
           # setting up column names in new data frame
           colnames(results_table) <- c("", "N", "Mean", "Median", "Standard Deviation",
                                        "Minimum", "Maximum")
-          # colnames(results_table)[1] <- ""
-          # colnames(results_table)[2] <- "N"
-          # colnames(results_table)[3] <- "Mean"
-          # colnames(results_table)[4] <- "Median"
-          # colnames(results_table)[5] <- "Standard Deviation"
-          # colnames(results_table)[6] <- "Minimum"
-          # colnames(results_table)[7] <- "Maximum"
         }
+        # If the default, vertical representation is preferred
         else{
           # setting up a column of statistics names
           Summary_Statistics <- c("N", "Mean", "Median", "Standard Deviation", "Minimum", "Maximum")
