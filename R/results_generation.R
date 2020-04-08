@@ -190,13 +190,21 @@ question_variable_to_choice_text <- function(question, choice, use_recode_values
 generate_summary_stats <-
   function(question, orientation = "vertical") {
     # Extracting the datatexport tag from question
-    exp <- question[['Payload']][['DataExportTag']]
 
     # Assign the data frame of responses to entries
-    entries <- question[['Responses']][[(exp)]]
+    entries <- question[['Responses']]
 
-    # Clean entries of all empty values
+    entries <- sapply(entries, function(x) gsub("^$|^ $",NA, x))
     entries <- entries[!is.na(entries)]
+
+    if ((ncol(as.data.frame(entries))!=1)|(sapply(entries, is. ))){
+      question[['Table']]<- c("", "This question could not be automatically processed due to
+    more response columns than appropriate")
+      return(question)
+    }
+    # Clean entries of all empty values
+
+
     entries <- as.integer(entries)
 
     # Calcuate the stats
