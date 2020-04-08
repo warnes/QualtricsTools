@@ -379,7 +379,11 @@ format_coded_comment_sheets <- function(coded_comment_sheets, code_type) {
 #' create the splitting column in the responses.
 #' Then pass the column name of the column created by
 #' create_merged_response_column() as split_column
-#' @inheritParams format_coded_comments
+#' @param coded_comment_seet A single dataframe, imported from a
+#' file either NVivo or filemake pro legacy format.
+#' @return A pair (varname, coded_table) where varname corresponds
+#' to the corresponding original response column name and coded_table
+#' summarizes the frequencies of the provided coded comments
 #' @param responses A dataframe of Qualtrics responses to a survey.
 #' Use ask_for_csv() to create such a dataframe from a CSV file.
 #' @param split_column The string name of the column to merge in for splitting
