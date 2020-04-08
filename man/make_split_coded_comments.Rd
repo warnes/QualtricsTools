@@ -11,7 +11,8 @@ make_split_coded_comments(
   output_dir,
   split_by,
   n_threshold = 15,
-  headerrows
+  headerrows,
+  code_type = "nvivo"
 )
 }
 \arguments{
@@ -31,6 +32,12 @@ https://github.com/ctesta01/QualtricsTools/wiki/Comment-Coding}
 coded comments will be included.}
 
 \item{headerrows}{(optional) specifies the number of header rows in the CSV data.}
+
+\item{code_type}{type of coded comment data export. The default is
+to use NVivo crosstab export with the ResponseID in the first row and
+second column labeled with the varnmae and containing response presence
+1/0 indicator. For old filemaker pro format, use "fmp" specification.
+(\code{"nvivo"} or \code{"fmp"})}
 }
 \description{
 This question automates the entire process of splitting a
