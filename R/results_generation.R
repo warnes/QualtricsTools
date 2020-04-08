@@ -193,58 +193,60 @@ generate_summary_stats <-
 
     # Assign the data frame of responses to entries
     entries <- question[['Responses']]
-
-    entries <- sapply(entries, function(x) gsub("^$|^ $",NA, x))
-    entries <- entries[!is.na(entries)]
-
-    if ((ncol(as.data.frame(entries))!=1)|(sapply(entries, is. ))){
-      question[['Table']]<- c("", "This question could not be automatically processed due to
-    more response columns than appropriate")
+    if (ncol(as.data.frame(entries))!= 1){
+      question[['qtNotes']]<- "This question could not be automatically processed due to incorrect number of response columns. Please check vignette for generate_summary_statistics"
       return(question)
     }
-    # Clean entries of all empty values
+    entries <- as.character(unlist(entries))
+    entries <- entries[ which( !entries %in% c(NA, "-99", "\\s+", "") )]
 
 
-    entries <- as.integer(entries)
-
-    # Calcuate the stats
-    NumberOfEntries <- length(entries)
-    Mean <- round(mean(entries), digits=2)
-    Median <-  round(median(entries), digits=2)
-    StandardDev <- round(sd(entries), digits = 2)
-    Minimum <- min(entries)
-    Maximum <- max(entries)
-
-    # Use this code if horizontal representation is preffered
-    if (orientation == "horizontal"){
-      results_table <- data.frame("",NumberOfEntries,Mean,Median,StandardDev,Minimum,Maximum, row.names=NULL)
-      # setting up column names in new data frame
-      colnames(results_table) <- c("", "N", "Mean", "Median", "Standard Deviation",
-                                   "Minimum", "Maximum")
-      # colnames(results_table)[1] <- ""
-      # colnames(results_table)[2] <- "N"
-      # colnames(results_table)[3] <- "Mean"
-      # colnames(results_table)[4] <- "Median"
-      # colnames(results_table)[5] <- "Standard Deviation"
-      # colnames(results_table)[6] <- "Minimum"
-      # colnames(results_table)[7] <- "Maximum"
-    }
-    else{
-      # setting up a column of statistics names
-      Summary_Statistics <- c("N", "Mean", "Median", "Standard Deviation", "Minimum", "Maximum")
-      # setting up a column containing all the calculated stats
-      Numbers<- c(NumberOfEntries, Mean, Median, StandardDev, Minimum, Maximum)
-      # creating a data frame with the two columns
-      results_table <- data.frame(Summary_Statistics, Numbers)
-      # setting up column names
-      colnames(results_table)[1] <- "Summary Statistics"
-      colnames(results_table)[2] <- ""
-
+    if (any( which(is.na(as.numeric(entries))))){
+      question[['qtNotes']]<- "This question could not be automatically processed due to inconsistent response data. Please check vignette for generate_summary_statistics"
+      return(question)
     }
 
-    # appending dataframe with all stats to question
-    question[['Table']] <- results_table
-    question[['qtNotes']] <- "Note: Data must be cleaned before processing summary statistics."
+  else{
+        entries <- as.numeric(entries)
+        # Calcuate the stats
+        NumberOfEntries <- length(entries)
+        Mean <- round(mean(entries), digits=2)
+        Median <-  round(median(entries), digits=2)
+        StandardDev <- round(sd(entries), digits = 2)
+        Minimum <- min(entries)
+        Maximum <- max(entries)
+
+        # Use this code if horizontal representation is preffered
+        if (orientation == "horizontal"){
+          results_table <- data.frame("",NumberOfEntries,Mean,Median,StandardDev,Minimum,Maximum, row.names=NULL)
+          # setting up column names in new data frame
+          colnames(results_table) <- c("", "N", "Mean", "Median", "Standard Deviation",
+                                       "Minimum", "Maximum")
+          # colnames(results_table)[1] <- ""
+          # colnames(results_table)[2] <- "N"
+          # colnames(results_table)[3] <- "Mean"
+          # colnames(results_table)[4] <- "Median"
+          # colnames(results_table)[5] <- "Standard Deviation"
+          # colnames(results_table)[6] <- "Minimum"
+          # colnames(results_table)[7] <- "Maximum"
+        }
+        else{
+          # setting up a column of statistics names
+          Summary_Statistics <- c("N", "Mean", "Median", "Standard Deviation", "Minimum", "Maximum")
+          # setting up a column containing all the calculated stats
+          Numbers<- c(NumberOfEntries, Mean, Median, StandardDev, Minimum, Maximum)
+          # creating a data frame with the two columns
+          results_table <- data.frame(Summary_Statistics, Numbers)
+          # setting up column names
+          colnames(results_table)[1] <- "Summary Statistics"
+          colnames(results_table)[2] <- ""
+
+        }
+
+        # appending dataframe with all stats to question
+        question[['Table']] <- results_table
+        question[['qtNotes']] <- "Note: Data must be cleaned before processing summary statistics."
+        }
     return(question)
   }
 
