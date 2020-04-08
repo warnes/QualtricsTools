@@ -51,4 +51,4 @@ saveRDS(Recode_Choice_Table, file = here::here("data", "Sample Surveys", "Dummy 
 # Sort by Choice Order then save that table
 question <- mc_multiple_answer_results(question, original_first_rows, sort_by = "Choice_Order")
 Recode_Order_Table <- question$Table
-saveRDS(Recode_Choice_Table, file = here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", "RDS - MCMA_Sort", "Recode_Order_Table.rds"))
+saveRDS(Recode_Order_Table, file = here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", "RDS - MCMA_Sort", "Recode_Order_Table.rds"))
