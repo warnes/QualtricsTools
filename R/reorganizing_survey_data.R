@@ -451,10 +451,7 @@ clean_html_and_css <- function(text) {
   text <- stringr::str_replace_all(text, "\\s+", " ")
   # Replaces all linebreaks and non-breaking space with a space character
   text <- stringr::str_replace_all(text, "<br>|&nbsp;", " ")
-  # Cleans HTML tags and Entries
-  # The first case will remove HTML tags and entries with characters on either side with " "
-  text <- stringr::str_replace_all(text, "(?<=\\w)<.*?>(?=\\w)|(?<=\\w)&[# a-z 0-9]*;(?=\\w)", " ")
-  # The next cleans all remaining HTML tags and entries replaced with ""
+  # Cleans HTML tags and Entries and replace with ""
   text <- stringr::str_replace_all(text, "<.*?>|&[# a-z 0-9]*;", "")
   # Removes CSS
   text<- stringr::str_replace_all(text, ".Matrix.*?\\.c\\d|.Skin.*?\\.c\\d", "")
