@@ -14,6 +14,7 @@ LazyData: true
 Imports:
     digest,
     dplyr,
+    DT,
     gdata,
     gtools,
     htmltools,
