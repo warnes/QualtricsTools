@@ -420,14 +420,14 @@ insert_questions_into_block <- function(block,questions) {
                                                           #purrr::pluck(questions,.x[["QuestionID"]]),
                                                           values = c("Type" = "Question",
                                                                      "QuestionID" = .x[["QuestionID"]])))
-  }
-  #Now rename the block elements with question names
-  blockelement_names <- purrr::map_chr(block[['BlockElements']], ~ dplyr::if_else(.x[['Type']]=="Question",
-                                                                                  stringr::str_replace(.x[['Payload']][['DataExportTag']],"#","_"),
-                                                                                  stringr::str_c(.x[["QuestionID"]], .x[["Type"]],sep="-")))
-  block <- purrr::modify_at(block, "BlockElements",
-                            ~ purrr::set_names(.x, blockelement_names))
+    #Now rename the block elements with question names
+    blockelement_names <- purrr::map_chr(block[['BlockElements']], ~ dplyr::if_else(.x[['Type']]=="Question",
+                                                                                    stringr::str_replace(.x[['Payload']][['DataExportTag']],"#","_"),
+                                                                                    stringr::str_c(.x[["QuestionID"]], .x[["Type"]],sep="-")))
+    block <- purrr::modify_at(block, "BlockElements",
+                              ~ purrr::set_names(.x, blockelement_names))
 
+  }
   return(block)
 }
 
