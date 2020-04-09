@@ -170,15 +170,9 @@ split_sbs_questions_blocks <- function(questions, blocks) {
 
 
 #' Determine the question type from the QSF
-<<<<<<< HEAD
 #'
 #' Determine the question type from the question's Payload information and return this as human readable text.
 #'
-=======
-#'
-#' Determine the question type from the question's Payload information and return this as human readable text.
-#'
->>>>>>> f999f22fe853e75301b422751ac277486a3d57d3
 #' Determine the type of question based on user understanding and how the question results will be processed.
 #' This is in the QualtricsTools intially with questions, then again when splitting
 #' side-by-side questions into their components. The list of question types has been defined
@@ -1090,7 +1084,6 @@ answers_from_response_column <-
   }
 
 
-<<<<<<< HEAD
 #' Split Side-by-Side Questions into Multiple Questions
 #'
 #' This function updates both the list of questions and list of blocks from a survey
@@ -1168,8 +1161,6 @@ split_side_by_sides <- function(questions, blocks) {
 }
 
 
-=======
->>>>>>> f999f22fe853e75301b422751ac277486a3d57d3
 #' Return a list of a Question's Display Logic Components
 #'
 #' For each question, if they appear, go through the
