@@ -312,7 +312,7 @@ format_coded_comments_NVivo <- function(coded_comment_sheet) {
   #Construct the table
   coded_table <- coded_comment_sheet
   #Gather values to make them long and lean so we can easily tabulate
-  coded_table <- tidyr::gather(coded_table, key = "Category", value="codeValue", -ResponseID, -!!varname, -ends_with("-split"))
+  coded_table <- tidyr::gather(coded_table, key = "Category", value="codeValue", -ResponseID, -!!varname, -stringr::ends_with("-split"))
   #Filter the long and lean data to keep only positive values showing a mapping to the category
   #This used to be values equal to 1, but we want to be flexible with multi-part questions coded as a single question
   #e.g. What are 3 strengths of the Fletcher School?
