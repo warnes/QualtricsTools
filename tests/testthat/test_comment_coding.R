@@ -5,6 +5,7 @@ context("Generating text appendices with inserted coded comments")
 
 surveysdir = file.path(path.package('QualtricsTools'), 'data/Sample Surveys/')
 
+### Test code_type='fmp' specification----
 test_that("Test that make_coded_comments with fmp code_type creates a file and coded comment table.", {
 
   requireNamespace("XML")
@@ -75,7 +76,7 @@ test_that("Test that make_coded_comments with fmp code_type creates a file and c
 })
 
 
-
+###Test code_type = "nvivo" specification-----
 test_that("Test that make_coded_comments with nvivo code_type creates a file and coded comment table.", {
 
   requireNamespace("XML")
