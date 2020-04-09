@@ -78,7 +78,7 @@ but the coded comment appendix functions will add coded comment tables for any t
 survey question or question component which has a corresponding excel sheet. 
 
 
-### NVivo Crosstab Export
+### NVivo Matrix Export
 
 NVivo is useful for coding comments and the tool that Tufts OIR uses as of April 2020. 
 When coding comments with NVivo, use the matrix export for each node to produce a coded comment table
