@@ -127,8 +127,8 @@ valid_questions_blocks_from_survey <- function(survey) {
 #' @return A list of survey questions with added elements for Question Text cleaned of
 #' HTML and CSS, human readable question type, user notes, and skip logic.
 add_question_detail <- function(questions, blocks, qtNotesList){
-  #Now clean question text using clean_html
-  questions <- purrr::map(questions, ~ append(.x,list("QuestionTextClean" = clean_html(.x[["Payload"]][["QuestionText"]]))))
+  #Now clean question text using clean_html_and_css
+  questions <- purrr::map(questions, ~ append(.x,list("QuestionTextClean" = clean_html_and_css(.x[["Payload"]][["QuestionText"]]))))
   #Add the Qualtrics question type; this is for reference and won't be used in results
   questions <- purrr::map(questions, ~append(.x, list("Qualtrics_qtype" = .x[["Payload"]][["QuestionType"]])))
   #Add human readable question type to each question; this can be edited if we want
@@ -549,7 +549,7 @@ link_responses_to_questions <-
 
 #' Create Cleaned Question Text
 #'
-#' This function loops through every question and applies the clean_html function to
+#' This function loops through every question and applies the clean_html_and_css function to
 #' the QuestionText and then saves the cleaned output to QuestionTextClean.
 #'
 #' @param questions A list of questions extracted from a Qualtrics QSF file. Use
@@ -1164,7 +1164,7 @@ split_side_by_sides <- function(questions, blocks) {
 #'
 #' For each question, if they appear, go through the
 #' Question's DisplayLogic, each Choice's DisplayLogic, and
-#' each Answer's DisplayLogic. For each of them, use clean_html
+#' each Answer's DisplayLogic. For each of them, use clean_html_and_css
 #' to format them, and then add them to the list. If a question
 #' has any of these display logic components, insert before
 #' adding any display logic a line detailing what part of the
@@ -1601,7 +1601,7 @@ create_question_dictionary_from_qsf <- function(qsf_path) {
   valid_questions_blocks <- valid_questions_blocks_from_survey(survey)
   questions <- valid_questions_blocks[["questions"]]
   blocks <- valid_questions_blocks[["blocks"]]
-  #Now clean question text using clean_html
+  #Now clean question text using clean_html_and_css
   questions <- purrr::map(questions,~ clean_question_text(.x))
   #Add the Qualtrics question type; this is for reference and won't be used in results
   questions <- purrr::map(questions, ~append(.x, list("Qualtrics_qtype" = .x[["Payload"]][["QuestionType"]])))
