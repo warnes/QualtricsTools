@@ -198,27 +198,27 @@ generate_summary_stats <-
     #Add a note that question results could not be processed; if notes already exist,
     #append to the existing list of qtNotes
     if (ncol(as.data.frame(entries))!= 1){
-      question <- rlist::list.append(question,
-                                     qt_notes = dplyr::if_else("qtNotes" %in% names(question),
-                                                               list(append(question[["qtNotes"]],
-                                                                           "This question requires one column of numeric text entry responses to generate summary statistics. Please check your results and try again.")),
-                                                               list("This question requires one column of numeric text entry responses to generate summary statistics. Please check your results and try again.")))
+      question[["qtNotes"]] <- dplyr::if_else("qtNotes" %in% names(question),
+                                            list(append(question[["qtNotes"]],
+                                                        "This question requires one column of numeric text entry responses to generate summary statistics. Please check your results and try again.")),
+                                            list("This question requires one column of numeric text entry responses to generate summary statistics. Please check your results and try again."))
       return(question)
     }
-    # Converting to character to avoid factors, and filtering all unwanted entries
+    # Converting to character to avoid factors
     entries <- as.character(unlist(entries))
-    entries <- entries[ which( !entries %in% c(NA, "-99", "\\s+", "") )]
-    # Converting all entries to numeric
-    entries <- as.numeric(entries)
+    # Filter out NA, -99 (seen but unanswered), and any "" or blank space
+    entries <- entries[! purrr::map_lgl(entries, ~ is.na(.x) || stringr::str_detect(.x, "^-99$|^\\s*$"))]
+    # Converting all entries to numeric; suppress warnings so it will not print in the console
+      #if values are converted to NA
+    entries <- suppressWarnings(as.numeric(entries))
     # Any character values would have been converted to NA
     # Check for N/A values; if they exist, add a note to qtNotes indicating that
     # the question data needs to be cleaned of text values before processing
     if (any(is.na(entries))){
-      question <- rlist::list.append(question,
-                                     qt_notes = dplyr::if_else("qtNotes" %in% names(question),
-                                                               list(append(question[["qtNotes"]],
-                                                                           "Summary statistics for this question could not be processed due to non-numeric response data. Please clean the data and try again.")),
-                                                               list("Summary statistics for this question could not be processed due to non-numeric response data. Please clean the data and try again.")))
+      question[["qtNotes"]] <- dplyr::if_else("qtNotes" %in% names(question),
+                                             list(append(question[["qtNotes"]],
+                                                         "Summary statistics for this question could not be processed due to non-numeric response data. Please clean the data and try again.")),
+                                             list("Summary statistics for this question could not be processed due to non-numeric response data. Please clean the data and try again."))
       return(question)
     }
     # Generating Tables with summary statistics
@@ -248,12 +248,10 @@ generate_summary_stats <-
     # appending dataframe with all stats to question
     question[['Table']] <- results_table
     #Add a note that summary statistics dat amust be cleaned before processing
-    # question <- rlist::list.append(question,
-    #                               qt_notes = dplyr::if_else("qtNotes" %in% names(question),
-    #                                                         list(append(question[["qtNotes"]],
-    #                                                                     "Note: Summary Statistic data must be cleaned before processing.")),
-    #                                                         list("Note: Summary Statistic data must be cleaned before processing.")))
-    question[['qtNotes']] <- "Note: Data must be cleaned before processing summary statistics."
+    question[["qtNotes"]] <- dplyr::if_else("qtNotes" %in% names(question),
+                                                            list(append(question[["qtNotes"]],
+                                                                        "Note: Summary Statistic data must be cleaned before processing.")),
+                                                            list("Note: Summary Statistic data must be cleaned before processing."))
     return(question)
   }
 
