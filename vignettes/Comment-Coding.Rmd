@@ -1,30 +1,160 @@
 ---
-title: Inserting Coded Comments into Output Text Appendices
+title: Creating Text Appendices with Coded Comments
 ---
 
-QualtricsTools not only makes it easy to create reports of text appendices, but 
-also to create text appendices with frequency reports of categorized "coded comments."
-The coded comments must follow a standardized format, containing the "ResponseID" 
-in the first column, and a column titled "varname" past which each column title 
-represents a category which have "1" entries in cells to represent a respondent's
-response being categorized into the given category. 
+QualtricsTools makes it easy to create survey summary report appendices of full text comments using 
+`make_text_appendices` and `make_split_text_appendices`. In addition, users can easily make 
+text appendices that include both full text comments and frequency reports of categorized "coded comments"
+using the functions `make_coded_comments` and `make_split_coded_comments`.
 
-An example of a coded comments document is included in the QualtricsTools package.
+Coded comments must follow one of two standardized formats (see below for details and examples).
+These coded comment data formats correspond to how Tufts Office of Institutional Research 
+codes and exports coded comment data. The parameter `code_type` specifies whether
+the coded comment data are exported from FileMaker Pro (or have been modified to appear as such)
+or exported from NVivo using the matrix export.
+
+
+## Coded Comment Appendices with the Command Line in R
+
+There are two functions to create coded comment appendices:
+
+1. **make_coded_comments** creates coded comment appendix for an overall survey summary report
+2. **make_split_coded_comments** creates coded comment appendices for split supgroup reports
+
+Both of these functions require the following arguments (input):
+
+* **qsf_path**: The path location of the .qsf file to be processed. This must be passed as text string (surrounded by "") 
+and, on a Windows machine, all '\' must be replaced by '/'. If no qsf_path is provided, the user will be asked to choose 
+a qsf.
+
+* **csv_path**: The string path location of the .csv file to be processed. This requires path specifications as above. 
+If no csv_path is provided, the user will be prompted to choose from the dialogue box.
+
+* **headerrows**: Specifies the number of header rows in the CSV data. 
+Use 3 for data exported under current OIR specifications (legacy exporter, unchecked legacy view results)
+
+* **sheets_dir**: The string path location of the directory which contains Excel documents for each coded comment 
+using one of the two formats specified. All coded comments must use the same data output format that follows the 
+NVivo or FileMaker Pro export format.
+
+* **output_dir**: The string path for the directory to which R should write the coded comment report. If not specified,
+your coded comment appendix will be written to a temporaryy file.
+
+* **n_threshold**: The the number of verbatim comments which must appear before an appendix of
+coded comments will be included. This defaults to 15, but it can be set to any level. Split appendices may require 
+a lower n_threshold since some subgroups are smaller.
+
+* **code_type**: The type of coded comment data export. These two  types of data exports are described above.
+If no code_type is specified, the default is to use NVivo crosstab export with the ResponseID in the first row and
+second column labeled with the varnmae and containing response presence
+1/0 indicator. For old filemaker pro format, use "fmp" specification.
+
+* **filename**: The desired name of the output file including extension (e.g. .docx). If this is not specified, 
+it will default to "Text Appendices with Coded Comments.docx".
+
+  * `filename` is relevant for make_coded_comments ONLY. Split coded comment appendices generated using 
+  make_split_coded_comments on the command line will be named based on the split group.
+  
+* **split_by**: A list specifying which columns of the response date should be used to split the respondents. This
+can be one column or a combination of columns. The split_by specifications will be used to create filenames 
+for split coded comment appendices.
+
+  * `split_by` ia relevant for make_split_coded_comments ONLY, since make_coded_comments is used for overall reports.
+  * Example for splitting reports by undergraduate school: `split_by = c("ENorLA")`
+
+## Coded Comment Appendices with the QualtricsTools App
+
+This functionality is under development as of Spring 2020 but is not yet available. Please use the command 
+line to generate coded comment appendices.
+
+
+## Formatting Coded Comment Data for QualtricsTools
+
+Examples of coded comment data exports for each `code_type` format are included in the QualtricsTools package.
 In the prescribed workflow, each individual text entry component of a survey 
-which needs to be categorized must have a corresponding coded comments xlsx file
-in a directory. However, in this example we will only use coded comments 
-for a single text entry component. 
+which needs to be categorized must have a corresponding coded comments ,xlsx file
+in the specified `sheets_dir`. The example below has only one question with coded comments,
+but the coded comment appendix functions will add coded comment tables for any text entry 
+survey question or question component which has a corresponding excel sheet. 
 
-First, let's download the data into a directory. 
 
-```{r}
+### NVivo Matrix Export
+
+NVivo is useful for coding comments and the tool that Tufts OIR uses as of April 2020. 
+When coding comments with NVivo, use the matrix export for each node to produce a coded comment table
+compatible with QualtricsTools (`code type = nvivo`). Coded comments using the `code_type` specification 
+"nvivo" contain an unlabeled first column of **ResponseIDs**. 
+The second column is labeled with the **variable name** and includes 1's and 0's indicating
+response presence for each respondent (i.e. did the person respond to the question). 
+The variable name in the second column header will be used to link
+coded comment responses to the appropriate survey question. 
+NVivo matrix export can include data for all respondents, The response presence column will be used 
+to filter out non-respondents and provide an accurate count of total comments coded.
+Columns to the right of the named response presence column contain coded category data. 
+Each column has a coded comment category as its headers with 1's and 0's indicating whether 
+the row's response was assigned to that category. Matrix exports from NVivo
+may also contain a "Total" column. This "Total" column is not necessary and will be ignored
+when creating the coded comment table.
+
+Sample data are shown below to illustrate the `code_type = "nvivo"` data export format.
+
+```{r nvivo-data-export-sample, echo=FALSE, message = FALSE}
+library(QualtricsTools)
+nvivo_data_path <- here::here("data/Sample Surveys/Better Sample Survey/Comment Coding NVivo/Q5 Coded_NVivo.xlsx")
+coded_comment_nvivo <- readxl::read_excel(nvivo_data_path,.name_repair = "minimal")
+options(knitr.kable.NA = '')
+knitr::kable(coded_comment_nvivo, format='markdown')
+
+```
+
+
+### FileMaker Pro Export
+Prior to adopting NVivo for comments coding, Tufts OIR used FileMaker Pro (FMP) to code comments. Coded Comment data
+exported form FileMaker can be turned into coded comment appendices with the code_type specification "fmp".
+FMP data exports must contain **ResponseID** in the first column. There must be a column named **varname** 
+that includes the variable name values in all rows. Any columns between the initial **ResponseID** and **varname** 
+The column immediately right of **varname** is labeled with the question text and contains full 
+response text for each respondent. Columns to the right of this included coded comment data. 
+Each column title represents a coded comment category, and "1" entries in cells indicate that a respondent's
+response has been assigned to that category. 
+
+Sample data are shown below to illustrate the `code_type = "fmp"` data export format.
+
+```{r fmp-data-export-sample, echo=FALSE, message = FALSE}
+library(QualtricsTools)
+fmp_data_path <- here::here("data/Sample Surveys/Comment Coding/Coded Comments/Q5 Coded.xlsx")
+coded_comment_fmp <- readxl::read_excel(fmp_data_path)
+options(knitr.kable.NA = '')
+knitr::kable(coded_comment_fmp, format='markdown')
+
+```
+
+
+### A Note on Coded Comment Data Export Types
+
+Tufts OIR transitioned their comment coding process from FMP to NVivo in Summer 2018. 
+Between Summer 2018 and Spring 20202, data exported from NVivo was manually modified to 
+mimic FMP data export format so the data would be compatible for QualtricsTools. 
+As of April 2020, QualtricsTools functions to create coded comment appendices have been 
+modified to accept the `code_type` parameter specification and will work with data exported 
+under either format. Please look at the coded comment data files when generating 
+reports from older surveys that may have coded comments prepared in FMP or using the NVivo to FMP manual 
+manipulations. Use `code_type="fmp"` specification to generate appendices from these data.
+
+## Sample Output from make_coded_comments
+
+Below is a sample of the coded comment appendix file created using make_coded comments.
+In this example, I have specified `n_threshold = 5` since there are only six responses
+to the text question q5_position.
+
+
+```{r load_coded_comment_data, echo=FALSE}
 library(shiny)
 library(QualtricsTools)
-library(RCurl)
 
 # Grab the sample survey data from our repository.
-qsf <- getURL("https://raw.githubusercontent.com/emmamorgan-tufts/QualtricsTools/master/data/Sample%20Surveys/Better%20Sample%20Survey/Better_Sample_Survey.qsf")
-csv <- getURL("https://raw.githubusercontent.com/emmamorgan-tufts/QualtricsTools/master/data/Sample%20Surveys/Better%20Sample%20Survey/Better_Sample_Survey.csv")
+qsf <- RCurl::getURL("https://raw.githubusercontent.com/emma-morgan/QualtricsTools/master/data/Sample%20Surveys/Better%20Sample%20Survey/Better_Sample_Survey.qsf")
+csv <- RCurl::getURL("https://raw.githubusercontent.com/emma-morgan/QualtricsTools/master/data/Sample%20Surveys/Better%20Sample%20Survey/Better_Sample_Survey.csv")
 
 # Write the sample survey data to file.
 qsf_tempfile_path = tempfile()
@@ -33,7 +163,7 @@ write(x = qsf, file = qsf_tempfile_path)
 write(x = csv, file = csv_tempfile_path)
 
 # Download the sample coded comments
-url <- "https://github.com/emmamorgan-tufts/QualtricsTools/blob/master/data/Sample%20Surveys/Comment%20Coding/Coded%20Comments/Q5%20Coded.xlsx?raw=true"
+url <- "https://github.com/emma-morgan/QualtricsTools/blob/master/data/Sample%20Surveys/Comment%20Coding/Coded%20Comments/Q5%20Coded.xlsx?raw=true"
 coded_comments_directory <- file.path(tempdir(), basename(tempfile(pattern="")))
 dir.create(path = coded_comments_directory)
 filename <- "Q5 Coded.xlsx"
@@ -41,25 +171,19 @@ coded_comments_filepath <- file.path(coded_comments_directory, filename)
 download.file(url, coded_comments_filepath, mode="wb")
 ```
 
-Just to make clear what the formatting of the Coded Comments should be, here's the file we just downloaded.
-```{r}
-df <- readxl::read_xlsx(coded_comments_filepath)
-options(knitr.kable.NA = '')
-knitr::kable(df, format='markdown')
-```
-
-```{r}
+```{r echo=FALSE, message=FALSE}
 output_filepath <- make_coded_comments(
   qsf_path = qsf_tempfile_path,
   csv_path = csv_tempfile_path,
   headerrows = 3, 
   sheets_dir = coded_comments_directory,
   n_threshold = 0,
-  filename = "ExampleHTMLCodedComments.html"
+  filename = "ExampleHTMLCodedComments.html",
+  code_type = "fmp"
 )
 ```
 
-```{r}
+```{r render-html}
 # We use the includeHTML function from the shiny package to 
 # render the HTML output.
 includeHTML(output_filepath)
@@ -68,13 +192,14 @@ includeHTML(output_filepath)
 
 The `n_threshold` parameter which is passed above as 0 is the threshold for which coded comments frequency tables with a total number of responses less than `n_threshold` are not included. The parameter defaults to 15 if it is not specified. For example, when we render the report with the `n_threshold = 15` default parameter we see that the coded comments frequency table is not included in the report:
 
-```{r}
+```{r coded-comment-sample-report}
 output_filepath <- make_coded_comments(
   qsf_path = qsf_tempfile_path,
   csv_path = csv_tempfile_path,
   headerrows = 3, 
   sheets_dir = coded_comments_directory,
-  filename = "ExampleHTMLCodedComments.html"
+  filename = "ExampleHTMLCodedComments.html",
+  code_type = "fmp"
 )
 
 shiny::includeHTML(output_filepath)

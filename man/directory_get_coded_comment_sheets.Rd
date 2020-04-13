@@ -4,12 +4,18 @@
 \alias{directory_get_coded_comment_sheets}
 \title{Turn a Directory into a list of Coded Comment Data Frames (unprocessed)}
 \usage{
-directory_get_coded_comment_sheets(directory)
+directory_get_coded_comment_sheets(directory, code_type)
 }
 \arguments{
 \item{directory}{A string path to the directory containing the coded comments
 sheets, which are formatted as described in the Wiki.
 https://github.com/ctesta01/QualtricsTools/wiki/Comment-Coding}
+
+\item{code_type}{type of coded comment data export. The default is
+to use NVivo crosstab export with the ResponseID in the first row and
+second column labeled with the varnmae and containing response presence
+1/0 indicator. For old filemaker pro format, use "fmp" specification.
+(\code{"nvivo"} or \code{"fmp"})}
 }
 \value{
 A list of dataframes for each sheet of coded comments.
@@ -17,8 +23,7 @@ A list of dataframes for each sheet of coded comments.
 \description{
 This function takes as an argument a string representative of a
 directory, loads the CSVs and Excel data from that directory,
-looks for 'Coded' sheets, extracts the coded sheets,
-and saves the coded comment table and the question ID
+extracts the coded sheets,and saves the coded comment table and the question ID
 as a pair in the output coded_appendix_tables list. If there
 are sheets which contain non-numeric data, warnings are raised.
 }

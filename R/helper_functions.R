@@ -834,6 +834,11 @@ make_text_appendices <-
 #' https://github.com/ctesta01/QualtricsTools/wiki/Comment-Coding
 #' @param n_threshold is the number of verbatim comments which must appear before an appendix of
 #' coded comments will be included.
+#' @param code_type type of coded comment data export. The default is
+#' to use NVivo crosstab export with the ResponseID in the first row and
+#' second column labeled with the varnmae and containing response presence
+#' 1/0 indicator. For old filemaker pro format, use "fmp" specification.
+#' (\code{"nvivo"} or \code{"fmp"})
 make_coded_comments <-
   function(qsf_path,
            csv_path,
@@ -841,7 +846,8 @@ make_coded_comments <-
            sheets_dir,
            output_dir,
            filename = 'Text Appendices with Coded Comments.docx',
-           n_threshold = 15
+           n_threshold = 15,
+           code_type = "nvivo"
   ) {
     # Either use the passed parameters or interactively get setup with the survey data.
     get_setup_in_environment(
@@ -851,14 +857,14 @@ make_coded_comments <-
       environment = environment()
     )
 
-    coded_sheets <- directory_get_coded_comment_sheets(sheets_dir)
+    coded_sheets <- directory_get_coded_comment_sheets(sheets_dir, code_type = code_type)
 
     if (is.null(coded_sheets)) {
       stop("Please fix errors before attempting again")
     }
 
     comment_tables <-
-      format_coded_comment_sheets(coded_comment_sheets = coded_sheets)
+      format_coded_comment_sheets(coded_comment_sheets = coded_sheets, code_type = code_type)
     blocks <-
       insert_coded_comments(
         blocks = blocks,
@@ -1073,7 +1079,8 @@ make_split_coded_comments <-
            output_dir,
            split_by,
            n_threshold = 15,
-           headerrows) {
+           headerrows,
+           code_type = "nvivo") {
     # This turns the split_by list into a name for the column
     # which will contain the concatenation of the entries of responses
     # which are being split over. That is if split_by = c('column1', 'column2', 'column3'),
@@ -1097,14 +1104,14 @@ make_split_coded_comments <-
     responses <-
       create_merged_response_column(split_by, split_string, blocks, responses)
 
-    coded_sheets <- directory_get_coded_comment_sheets(sheets_dir)
+    coded_sheets <- directory_get_coded_comment_sheets(sheets_dir, code_type = code_type)
 
     if (is.null(coded_sheets)) {
       stop("Please fix errors before attempting again")
     }
 
     split_comment_tables <-
-      format_and_split_comment_sheets(coded_sheets, responses, split_string)
+      format_and_split_comment_sheets(coded_sheets, responses, split_string, code_type = code_type)
 
     split_blocks <-
       split_respondents(

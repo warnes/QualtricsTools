@@ -4,7 +4,12 @@
 \alias{format_and_split_comment_sheets}
 \title{Format and Split a list of Unprocessed Coded Comment Sheets}
 \usage{
-format_and_split_comment_sheets(coded_comment_sheets, responses, split_column)
+format_and_split_comment_sheets(
+  coded_comment_sheets,
+  responses,
+  split_column,
+  code_type
+)
 }
 \arguments{
 \item{coded_comment_sheets}{A list of dataframes for
@@ -15,6 +20,12 @@ Use ask_for_csv() to create such a dataframe from a CSV file.}
 
 \item{split_column}{The string name of the column across which the coded comments
 should be split.}
+
+\item{code_type}{type of coded comment data export. The default is
+to use NVivo crosstab export with the ResponseID in the first row and
+second column labeled with the varnmae and containing response presence
+1/0 indicator. For old filemaker pro format, use "fmp" specification.
+(\code{"nvivo"} or \code{"fmp"})}
 }
 \value{
 A list of lists, for each split group, and for the pairs of question IDs with

@@ -11,16 +11,19 @@ merge_split_column_into_comment_sheet(
 )
 }
 \arguments{
-\item{coded_comment_sheet}{A single dataframe, imported from a
-file in the format as specified by the wiki.
-https://github.com/ctesta01/QualtricsTools/wiki/Comment-Coding}
-
 \item{responses}{A dataframe of Qualtrics responses to a survey.
 Use ask_for_csv() to create such a dataframe from a CSV file.}
 
 \item{split_column}{The string name of the column to merge in for splitting}
+
+\item{coded_comment_seet}{A single dataframe, imported from a
+file either NVivo or filemake pro legacy format.}
 }
 \value{
+A pair (varname, coded_table) where varname corresponds
+to the corresponding original response column name and coded_table
+summarizes the frequencies of the provided coded comments
+
 A dataframe similar to the input coded_comment_sheet, but with
 the additional column specified by split_column merged in.
 }

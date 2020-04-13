@@ -443,7 +443,6 @@ clean_question_text <- function(questions) {
 #'
 #' @param text any text string that might contain HTML or whitespace that needs to be
 #' stripped.
-#' @inheritParams clean_question_text
 #' @return text without any html, css or extraneous whitespace, and with breaks replaced by space character.
 
 clean_html_and_css <- function(text) {

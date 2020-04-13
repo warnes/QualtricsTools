@@ -4,11 +4,17 @@
 \alias{format_coded_comment_sheets}
 \title{Format Comment Coding Data into Frequency Tables}
 \usage{
-format_coded_comment_sheets(coded_comment_sheets)
+format_coded_comment_sheets(coded_comment_sheets, code_type)
 }
 \arguments{
 \item{coded_comment_sheets}{A list of dataframes for
 each sheet of coded comments.}
+
+\item{code_type}{type of coded comment data export. The default is
+to use NVivo crosstab export with the ResponseID in the first row and
+second column labeled with the varnmae and containing response presence
+1/0 indicator. For old filemaker pro format, use "fmp" specification.
+(\code{"nvivo"} or \code{"fmp"})}
 }
 \value{
 A list of pairs (varname, coded_table) where varname corresponds

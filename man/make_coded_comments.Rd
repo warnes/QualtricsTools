@@ -11,7 +11,8 @@ make_coded_comments(
   sheets_dir,
   output_dir,
   filename = "Text Appendices with Coded Comments.docx",
-  n_threshold = 15
+  n_threshold = 15,
+  code_type = "nvivo"
 )
 }
 \arguments{
@@ -31,6 +32,12 @@ https://github.com/ctesta01/QualtricsTools/wiki/Comment-Coding}
 
 \item{n_threshold}{is the number of verbatim comments which must appear before an appendix of
 coded comments will be included.}
+
+\item{code_type}{type of coded comment data export. The default is
+to use NVivo crosstab export with the ResponseID in the first row and
+second column labeled with the varnmae and containing response presence
+1/0 indicator. For old filemaker pro format, use "fmp" specification.
+(\code{"nvivo"} or \code{"fmp"})}
 }
 \description{
 Using `get_setup`, `directory_get_coded_comment_sheets`, `format_coded_comment_sheets`,
