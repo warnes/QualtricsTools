@@ -132,7 +132,7 @@ question_description <- function(question) {
   #                 automatically processed."
   if ("Payload" %in% names(question)) {
     if (!"Table" %in% names(question) &&
-        question[['Payload']][['QuestionType']] == "TE") {
+        is_text_entry_appendix(question)) {
       description <- c(
         description,
         paste0(

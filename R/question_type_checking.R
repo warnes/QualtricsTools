@@ -55,14 +55,32 @@ is_matrix_multiple_answer <- function(question) {
 #' "ValidNumber"
 #'
 #' @param question The question parameter is a single question from a qualtrics survey.
-#' @return The return value of this is a boolean, true if it is one of these kinds of
-#' questions and false otherwise.
+#' @return Boolean value indicating whether the quest is text entry questions with numeric validation
 is_text_entry_numeric <- function(question){
-  is_textentry = (question[['Payload']][['QuestionType']] == "TE")
-  has_content_validation = (question[['Payload']][['Validation']][['Settings']][['Type']] == "ContentType" )
-  has_numerical_validation = (question[['Payload']][['Validation']][['Settings']][['ContentType']] == "ValidNumber" )
-  is_Text_Entry_With_Numeric_Validation <- isTRUE(is_textentry && has_numerical_validation && has_content_validation )
-  return(is_Text_Entry_With_Numeric_Validation)
+  is_text_entry_numeric <- question[['Payload']][['QuestionType']] == "TE" &&
+    #Check that it has content validation
+    ! is.null(question[['Payload']][['Validation']][['Settings']][['ContentType']]) &&
+    #Content Type validation is ValidNumber
+    question[['Payload']][['Validation']][['Settings']][['ContentType']] == "ValidNumber"
+
+  return(is_text_entry_numeric)
+}
+
+#' Determine if a question is text entry without numerical validation
+#'
+#' Text question without numerical validation should be reported as text appendices typically.
+#' questions with numeric validation are reported instead with summary statistics tables.
+#' Check here for standard appendix text entry
+#'
+#' @param question A question from a qualtrics survey that includes "Payload"
+#' @return Boolean value indicating whether this is a text entry question that should have an associated appendix
+is_text_entry_appendix <- function(question) {
+  #This needs to be text entry and either have null validation content type
+    #OR have content type that is not ValidNumber
+  is_text_entry_appendix <- question[['Payload']][['QuestionType']] == "TE" &&
+    (is.null(question[['Payload']][['Validation']][['Settings']][['ContentType']]) ||
+       question[['Payload']][['Validation']][['Settings']][['ContentType']] != "ValidNumber")
+  return(is_text_entry_appendix)
 }
 
 #' Determine if a question is a single answer question

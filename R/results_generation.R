@@ -1167,7 +1167,7 @@ process_question_results <-
       try({
         # numerical text answer
         if(is_text_entry_numeric(question)){
-          question<-generate_summary_stats(question)
+          question <- generate_summary_stats(question)
         }
         # multiple choice multiple answer
         else if (is_mc_multiple_answer(question)) {
