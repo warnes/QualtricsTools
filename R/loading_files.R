@@ -93,7 +93,7 @@ ask_for_csv <- function(responsesfile, headerrows) {
         x <- gsub("'\\}$", "", x, perl=TRUE)
       })
     }
-#removes headerrows
+    #removes headerrows
     responses <- responses[headerrows:nrow(responses),]
     #removes empty entries
     responses <- responses[apply(responses, 1, function(x) any(x != "")),]
