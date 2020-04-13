@@ -24,21 +24,20 @@ Within the sturcture, we note that [['PayLoad']][['Validation']][['Settings']][[
 
 
 ```{r message=FALSE, warning=FALSE, cache=FALSE, results='hide'}
-library(QualtricsTools)
 devtools::load_all('.')
 library(XML)
 requireNamespace("XML")
-surveysdir = "C:/Users/deyut/Documents/Aonkon- Qualtrics/QualtricsTools/data/Sample Surveys/"
-  qsf_path = file.path(surveysdir, "Dummy Enhancement Sample Survey/Dummy_Survey_to_Test.qsf")
-  csv_path = file.path(surveysdir, "Dummy Enhancement Sample Survey/Dummy_Survey_to_Test.csv")
+qsf_path = here::here("data/Sample Surveys/Dummy Enhancement Sample Survey/Dummy_Enhancement_Sample_Survey.qsf")
+csv_path = here::here("data/Sample Surveys/Dummy Enhancement Sample Survey/Dummy_Enhancement_Sample_Survey.csv")
+
 get_setup(qsf_path, csv_path, headerrows = 3)
-demoquestion<- find_question(questions, "Q4")
+demoquestion<- find_question(questions, "te_numeric_good")
 ```
 
 When each question is passed into process_question_results() for results generation, we identify this question type with the function is_TE_numerical() - which checks for the QSF attributes mentioned above. 
 
 ```{r}
-is_TE_numerical(demoquestion)
+is_text_entry_numeric(demoquestion)
 ```
 
 When returned TRUE, we pass the demoquestion into the generate_summary_stats() function. 
@@ -53,7 +52,7 @@ demoquestion[['Table']]
 ````
 And when we set horizontal table to TRUE, we get a table styled like this: 
 ```{r}
-demoquestion<-generate_summary_stats(demoquestion, horizontal_table=TRUE)
+demoquestion<-generate_summary_stats(demoquestion, orientation = "horizontal")
 demoquestion[['Table']]
 ````
 
