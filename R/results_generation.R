@@ -172,6 +172,92 @@ question_variable_to_choice_text <- function(question, choice, use_recode_values
 }
 
 
+#' Create Summary Statistics tables for numerical data only questions
+#' @name generate_summary_stats
+#' @description This function uses the data frame of responses that
+#' have been linked to a question to generate summary statistics using
+#' basic R functions for mean, median, min, max, standard deviation. It creates a
+#' new data frame of summary statistics and appends it to question['Table'] element.
+#' @param question This is the question which has been checked to contain
+#' Text Entry data with Numerical verification. This TE question will now
+#' be processed to give a summary stats table and not an appendix.
+#' @param orientation Specification to display summary statistics in rows ("vertical")
+#' or columns ("horizontal"). Default is set to vertical.
+#' @return A question with a ['Table'] appended to it where the summary stats are
+#' present
+
+generate_summary_stats <-
+  function(question, orientation = "vertical") {
+    #Check that orientation is either vertical or horizontal; otherwise, stop execution
+    if (! orientation %in% c("vertical", "horizontal")) {
+      stop("Orientation must be either vertical or horizontal")
+    }
+    # Assign the data frame of responses to entries
+    entries <- question[['Responses']]
+    # Checking whether Responses is single column of data and exiting function if not.
+    #Add a note that question results could not be processed; if notes already exist,
+    #append to the existing list of qtNotes
+    if (ncol(as.data.frame(entries))!= 1){
+      question <- rlist::list.append(question,
+                                     qt_notes = dplyr::if_else("qtNotes" %in% names(question),
+                                                               list(append(question[["qtNotes"]],
+                                                                           "This question requires one column of numeric text entry responses to generate summary statistics. Please check your results and try again.")),
+                                                               list("This question requires one column of numeric text entry responses to generate summary statistics. Please check your results and try again.")))
+      return(question)
+    }
+    # Converting to character to avoid factors, and filtering all unwanted entries
+    entries <- as.character(unlist(entries))
+    entries <- entries[ which( !entries %in% c(NA, "-99", "\\s+", "") )]
+    # Converting all entries to numeric
+    entries <- as.numeric(entries)
+    # Any character values would have been converted to NA
+    # Check for N/A values; if they exist, add a note to qtNotes indicating that
+    # the question data needs to be cleaned of text values before processing
+    if (any(is.na(entries))){
+      question <- rlist::list.append(question,
+                                     qt_notes = dplyr::if_else("qtNotes" %in% names(question),
+                                                               list(append(question[["qtNotes"]],
+                                                                           "Summary statistics for this question could not be processed due to non-numeric response data. Please clean the data and try again.")),
+                                                               list("Summary statistics for this question could not be processed due to non-numeric response data. Please clean the data and try again.")))
+      return(question)
+    }
+    # Generating Tables with summary statistics
+    # Calcuate the stats and convert the values to character so we won't lose any digits later on
+    NumberOfEntries <- format(length(entries))
+    Mean <- format(mean(entries), digits=2)
+    Median <-  format(median(entries), digits=2)
+    StandardDev <- format(sd(entries), digits = 2, nsmall=2)
+    Minimum <- format(min(entries), digits=2)
+    Maximum <- format(max(entries), digits = 2)
+
+    results_table <- data.frame("Statistic" = c("N", "Mean", "Median",
+                                                "Standard Deviation", "Minimum", "Maximum"),
+                                "Value" = c(NumberOfEntries, Mean, Median,
+                                            StandardDev,
+                                            Minimum, Maximum))
+
+    #If orientation is set to "horizontal", transpose the table and set column names
+
+    # If orientation is 'horizontal', set up summary statistics as columns
+    if (orientation == "horizontal"){
+      row.names(results_table) <- results_table[["Statistic"]]
+      #Now transpose the Value column only; remove the row name
+      results_table <- data.frame(t(results_table['Value']), row.names=NULL)
+
+    }
+    # appending dataframe with all stats to question
+    question[['Table']] <- results_table
+    #Add a note that summary statistics dat amust be cleaned before processing
+    # question <- rlist::list.append(question,
+    #                               qt_notes = dplyr::if_else("qtNotes" %in% names(question),
+    #                                                         list(append(question[["qtNotes"]],
+    #                                                                     "Note: Summary Statistic data must be cleaned before processing.")),
+    #                                                         list("Note: Summary Statistic data must be cleaned before processing.")))
+    question[['qtNotes']] <- "Note: Data must be cleaned before processing summary statistics."
+    return(question)
+  }
+
+
 #' Create the Results Table for a Multiple Choice Single Answer Question
 #'
 #' The mc_single_answer_results function uses the definition of the choices in the QSF file
@@ -1081,8 +1167,12 @@ process_question_results <-
 
 
       try({
+        # numerical text answer
+        if(is_text_entry_numeric(question)){
+          question<-generate_summary_stats(question)
+        }
         # multiple choice multiple answer
-        if (is_mc_multiple_answer(question)) {
+        else if (is_mc_multiple_answer(question)) {
           if (should_use_ofr) {
             question <-
               mc_multiple_answer_results(question, original_first_rows)

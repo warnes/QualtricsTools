@@ -45,6 +45,25 @@ is_matrix_multiple_answer <- function(question) {
   return(is_Matrix_Multiple_Answer)
 }
 
+#' Determine if a question is a text entry question with a numerical
+#' validation
+#'
+#' A question is considered a text entry with numeric validation if it
+#' is a `[['Payload']][['QuestionType']] == "TE"` question with
+#' `[['Payload']][['Validation']][['Settings']][['Type']] == "ContentType"
+#' and `[['Payload']][['Validation']][['Settings']][['ContentType']] ==
+#' "ValidNumber"
+#'
+#' @param question The question parameter is a single question from a qualtrics survey.
+#' @return The return value of this is a boolean, true if it is one of these kinds of
+#' questions and false otherwise.
+is_text_entry_numeric <- function(question){
+  is_textentry = (question[['Payload']][['QuestionType']] == "TE")
+  has_content_validation = (question[['Payload']][['Validation']][['Settings']][['Type']] == "ContentType" )
+  has_numerical_validation = (question[['Payload']][['Validation']][['Settings']][['ContentType']] == "ValidNumber" )
+  is_Text_Entry_With_Numeric_Validation <- isTRUE(is_textentry && has_numerical_validation && has_content_validation )
+  return(is_Text_Entry_With_Numeric_Validation)
+}
 
 #' Determine if a question is a single answer question
 #'

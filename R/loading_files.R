@@ -93,13 +93,19 @@ ask_for_csv <- function(responsesfile, headerrows) {
         x <- gsub("'\\}$", "", x, perl=TRUE)
       })
     }
-
+#removes headerrows
     responses <- responses[headerrows:nrow(responses),]
+    #removes empty entries
     responses <- responses[apply(responses, 1, function(x) any(x != "")),]
     responses <- as.data.frame(apply(responses, 2, trimws),stringsAsFactors = FALSE)
     return(list(responses, original_first_rows))
 }
 
+reorganise_data_table <- function(responses, original_first_rows){
+
+
+
+}
 
 #' Validate Data Export Tag Uniqueness
 #'

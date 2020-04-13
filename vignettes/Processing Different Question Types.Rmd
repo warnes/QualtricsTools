@@ -1,0 +1,67 @@
+---
+title: "Generating Summary Statistics"
+vignette: >
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteIndexEntry{The-QSF-Structure}
+  %\usepackage[utf8]{inputenc}
+---
+
+This docuent outlines the way QulatricsTools processes the different question types used in surveys. Processing here refers to how responses are tabled, summarised, and presented depending on their type. 
+
+# # Text Entry w\ Numerical Validation
+
+Purpose: Used to record responses where only integers are desired such as 'number of schools applied to:' or 'number of training hours:'
+
+QSF Structure: 
+Within the sturcture, we note that [['PayLoad']][['Validation']][['Settings']][['Type']] is no longer set to 'None'. Depending on the kind of validation this is toggled on, and is this case it is set to 'ContentType', and that 'ContentType' is set to 'ValidNumber'. 
+
+<table style="width:100%">
+  <tr>
+    <th><img width=150px src="https://i.imgur.com/bosYALL.png"></th>
+    <th><img width=200px src="https://i.imgur.com/DPxE6lb.png"></th>
+  </tr>
+</table> 
+
+
+```{r message=FALSE, warning=FALSE, cache=FALSE, results='hide'}
+library(QualtricsTools)
+devtools::load_all('.')
+library(XML)
+requireNamespace("XML")
+surveysdir = "C:/Users/deyut/Documents/Aonkon- Qualtrics/QualtricsTools/data/Sample Surveys/"
+  qsf_path = file.path(surveysdir, "Dummy Enhancement Sample Survey/Dummy_Survey_to_Test.qsf")
+  csv_path = file.path(surveysdir, "Dummy Enhancement Sample Survey/Dummy_Survey_to_Test.csv")
+get_setup(qsf_path, csv_path, headerrows = 3)
+demoquestion<- find_question(questions, "Q4")
+```
+
+When each question is passed into process_question_results() for results generation, we identify this question type with the function is_TE_numerical() - which checks for the QSF attributes mentioned above. 
+
+```{r}
+is_TE_numerical(demoquestion)
+```
+
+When returned TRUE, we pass the demoquestion into the generate_summary_stats() function. 
+This function returns the question after appending a Results table of the appropriate style. 
+
+This function has two parameters: the question and flag to indicate the style of the table. The function calculates summary statistics for the data contained in the data frame of [['Responses']], after cleaning for NULL values and converting all values to integer. 
+
+The styling flag called horizontal_table is set to FALSE by default, and we may call the function without it's mention to get a vertical styled table as such: 
+```{r}
+demoquestion<-generate_summary_stats(demoquestion)
+demoquestion[['Table']]
+````
+And when we set horizontal table to TRUE, we get a table styled like this: 
+```{r}
+demoquestion<-generate_summary_stats(demoquestion, horizontal_table=TRUE)
+demoquestion[['Table']]
+````
+
+When we process all the questions and make_results, the table appears as such in the word doc: 
+<table style="width:100%">
+  <tr>
+    <th><img width=300px src=https://i.imgur.com/HqEHLzj.png"></th>
+  </tr>
+</table> 
+
+The numbers are calculated using R base functions, with the possibility of more being added. 
