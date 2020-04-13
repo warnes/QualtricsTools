@@ -60,7 +60,7 @@ test_that(
     # Process the question and insert results tables into it.
     Q11 <- process_question_results(Q11, original_first_rows)
 
-    # Check that the previously computed results and new results match.
+    # No tables should be generated and if this true, the test passes.
     expect_true(!("Table" %in% names(Q11)))
   }
 )
