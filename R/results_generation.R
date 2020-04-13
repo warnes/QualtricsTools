@@ -181,70 +181,78 @@ question_variable_to_choice_text <- function(question, choice, use_recode_values
 #' @param question This is the question which has been checked to contain
 #' Text Entry data with Numerical verification. This TE question will now
 #' be processed to give a summary stats table and not an appendice.
-#' @param horizontal_table This variable indicated whether the summary statistics
-#' table should be presented with each statistic in a separate column. By default it
-#' is set to FALSE.
+#' @param orientation Specification to display summary statistics in rows ("vertical")
+#' or columns ("horizontal"). Default is set to vertical.
 #' @return A question with a ['Table'] appended to it where the summary stats are
 #' present
 
 generate_summary_stats <-
   function(question, orientation = "vertical") {
+    #Check that orientation is either vertical or horizontal; otherwise, stop execution
+    if (! orientation %in% c("vertical", "horizontal")) {
+      stop("Orientation must be either vertical or horizontal")
+    }
     # Assign the data frame of responses to entries
     entries <- question[['Responses']]
     # Checking whether Responses is single column of data and exiting function if not.
+    #Add a note that question results could not be processed; if notes already exist,
+    #append to the existing list of qtNotes
     if (ncol(as.data.frame(entries))!= 1){
-      if (!'qtNotes' %in% names(question))
-        question[['qtNotes']] <- list()
-      question[['qtNotes']] <-
-        c(question[['qtNotes']], "This question could not be automatically processed due to incorrect number of response columns. Please check vignette for generate_summary_statistics")
+      question <- rlist::list.append(question,
+                                     qt_notes = dplyr::if_else("qtNotes" %in% names(question),
+                                                               list(append(question[["qtNotes"]],
+                                                                           "This question requires one column of numeric text entry responses to generate summary statistics. Please check your results and try again.")),
+                                                               list("This question requires one column of numeric text entry responses to generate summary statistics. Please check your results and try again.")))
       return(question)
     }
     # Converting to character to avoid factors, and filtering all unwanted entries
     entries <- as.character(unlist(entries))
     entries <- entries[ which( !entries %in% c(NA, "-99", "\\s+", "") )]
-    # Converting all entries to numeric and exiting function with error note if conversion
-    # fails on any of the elements
+    # Converting all entries to numeric
     entries <- as.numeric(entries)
-    # Checking for strings present in data and exiting function if TRUE
+    # Any character values would have been converted to NA
+    # Check for N/A values; if they exist, add a note to qtNotes indicating that
+    # the question data needs to be cleaned of text values before processing
     if (any(is.na(entries))){
-      if (!'qtNotes' %in% names(question))
-        question[['qtNotes']] <- list()
-      question[['qtNotes']] <-
-        c(question[['qtNotes']],"This question could not be automatically processed due to inconsistent response data. Please check vignette for generate_summary_statistics")
+      question <- rlist::list.append(question,
+                                     qt_notes = dplyr::if_else("qtNotes" %in% names(question),
+                                                               list(append(question[["qtNotes"]],
+                                                                           "Summary statistics for this question could not be processed due to non-numeric response data. Please clean the data and try again.")),
+                                                               list("Summary statistics for this question could not be processed due to non-numeric response data. Please clean the data and try again.")))
       return(question)
     }
     # Generating Tables with summary statistics
-    # Calcuate the stats
-    NumberOfEntries <- length(entries)
-    Mean <- round(mean(entries), digits=2)
-    Median <-  round(median(entries), digits=2)
-    StandardDev <- round(sd(entries), digits = 2)
-    Minimum <- min(entries)
-    Maximum <- max(entries)
+    # Calcuate the stats and convert the values to character so we won't lose any digits later on
+    NumberOfEntries <- format(length(entries))
+    Mean <- format(mean(entries), digits=2)
+    Median <-  format(median(entries), digits=2)
+    StandardDev <- format(sd(entries), digits = 2, nsmall=2)
+    Minimum <- format(min(entries), digits=2)
+    Maximum <- format(max(entries), digits = 2)
 
-    # If horizontal representation is preffered
+    results_table <- data.frame("Statistic" = c("N", "Mean", "Median",
+                                                "Standard Deviation", "Minimum", "Maximum"),
+                                "Value" = c(NumberOfEntries, Mean, Median,
+                                            StandardDev,
+                                            Minimum, Maximum))
+
+    #If orientation is set to "horizontal", transpose the table and set column names
+
+    # If orientation is 'horizontal', set up summary statistics as columns
     if (orientation == "horizontal"){
-      results_table <- data.frame("",NumberOfEntries,Mean,Median,StandardDev,Minimum,Maximum, row.names=NULL)
-      # setting up column names in new data frame
-      colnames(results_table) <- c("", "N", "Mean", "Median", "Standard Deviation",
-                                   "Minimum", "Maximum")
-    }
-    # If the default, vertical representation is preferred
-    else{
-      # setting up a column of statistics names
-      Summary_Statistics <- c("N", "Mean", "Median", "Standard Deviation", "Minimum", "Maximum")
-      # setting up a column containing all the calculated stats
-      Numbers<- c(NumberOfEntries, Mean, Median, StandardDev, Minimum, Maximum)
-      # creating a data frame with the two columns
-      results_table <- data.frame(Summary_Statistics, Numbers)
-      # setting up column names
-      colnames(results_table)[1] <- "Summary Statistics"
-      colnames(results_table)[2] <- ""
+      row.names(results_table) <- results_table[["Statistic"]]
+      #Now transpose the Value column only; remove the row name
+      results_table <- data.frame(t(results_table['Value']), row.names=NULL)
 
     }
-
-  # appending dataframe with all stats to question
+    # appending dataframe with all stats to question
     question[['Table']] <- results_table
+    #Add a note that summary statistics dat amust be cleaned before processing
+    # question <- rlist::list.append(question,
+    #                               qt_notes = dplyr::if_else("qtNotes" %in% names(question),
+    #                                                         list(append(question[["qtNotes"]],
+    #                                                                     "Note: Summary Statistic data must be cleaned before processing.")),
+    #                                                         list("Note: Summary Statistic data must be cleaned before processing.")))
     question[['qtNotes']] <- "Note: Data must be cleaned before processing summary statistics."
     return(question)
   }

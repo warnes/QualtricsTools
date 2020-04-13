@@ -44,3 +44,24 @@ test_that(
   }
 )
 
+# Dummy Enchancement Sample Survey: Q11
+test_that(
+  "Test that text_entry_numerical_results is correct for Q16 in the Dummy Enhancement Sample Survey",
+  {
+    # Load the question, without the results tables, for processing.
+    Q11 <- readRDS(
+      file.path(
+        find.package('QualtricsTools'),
+        'data/Sample Surveys/Dummy Enhancement Sample Survey/RDS',
+        'Q11.rds'
+      )
+    )
+
+    # Process the question and insert results tables into it.
+    Q11 <- process_question_results(Q11, original_first_rows)
+
+    # Check that the previously computed results and new results match.
+    expect_true(!("Table" %in% names(Q11)))
+  }
+)
+

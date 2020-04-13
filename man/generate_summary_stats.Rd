@@ -11,9 +11,8 @@ generate_summary_stats(question, orientation = "vertical")
 Text Entry data with Numerical verification. This TE question will now
 be processed to give a summary stats table and not an appendice.}
 
-\item{horizontal_table}{This variable indicated whether the summary statistics
-table should be presented with each statistic in a separate column. By default it
-is set to FALSE.}
+\item{orientation}{Specification to display summary statistics in rows ("vertical")
+or columns ("horizontal"). Default is set to vertical.}
 }
 \value{
 A question with a ['Table'] appended to it where the summary stats are
