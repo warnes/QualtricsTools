@@ -132,7 +132,7 @@ question_description <- function(question) {
   #                 automatically processed."
   if ("Payload" %in% names(question)) {
     if (!"Table" %in% names(question) &&
-        question[['Payload']][['QuestionType']] == "TE") {
+        is_text_entry_appendix(question)) {
       description <- c(
         description,
         paste0(
@@ -282,7 +282,7 @@ text_appendices_table <-
     #
     # For each block, a block description is inserted as an <h5> header.
     # For each question with coded comments, the coded comments are inserted
-    # if the number of comments is greater than the n_threshold parameter
+    # if the number of comments is greater than or equal to the n_threshold parameter
     # and the question was not flagged with question[['qtSkip']]=TRUE.
     # If the question was not flagged with question[['verbatimSkip']]=TRUE,
     # then determine the appropriate function of table_text_entry,
@@ -317,7 +317,7 @@ text_appendices_table <-
                 nrow_comments = nrow(question[['CodedComments']][[k]][[2]])
                 n_responses = question[['CodedComments']][[k]][[2]][[nrow_comments, 2]]
                 n_responses = as.integer(n_responses)
-                if (n_responses > n_threshold) {
+                if (n_responses >= n_threshold) {
                   tables <- c(
                     tables,
                     table_html_coded_comments(question,
@@ -346,8 +346,8 @@ text_appendices_table <-
                              function(x)
                                grepl("TEXT", x)))
 
-              # Text Entry Text Appendices
-              if (question[['Payload']][['QuestionType']] == "TE") {
+              # Text Entry Text Appendices (excluding the text entried with numerical validation,since we longer generate appendices for them)
+              if (is_text_entry_appendix(question)){
 
                 # Clean Responses. Remove any responses which are -99 or
                 # empty for an entire text entry question.
