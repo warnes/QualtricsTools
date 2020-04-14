@@ -128,7 +128,8 @@ valid_questions_blocks_from_survey <- function(survey) {
 #' HTML and CSS, human readable question type, user notes, and skip logic.
 add_question_detail <- function(questions, blocks, qtNotesList){
   #Now clean question text using clean_html_and_css
-  questions <- purrr::map(questions, ~ append(.x,list("QuestionTextClean" = clean_html_and_css(.x[["Payload"]][["QuestionText"]]))))
+  questions <- purrr::map(questions,
+                          ~ clean_question_text(.x) )
   #Add the Qualtrics question type; this is for reference and won't be used in results
   questions <- purrr::map(questions, ~append(.x, list("Qualtrics_qtype" = .x[["Payload"]][["QuestionType"]])))
   #Add human readable question type to each question; this can be edited if we want
@@ -167,6 +168,20 @@ split_sbs_questions_blocks <- function(questions, blocks) {
   return(list("questions" = questions, "blocks" = blocks))
 }
 
+
+#' Clean Question Text
+#'
+#' Clean Question Text from the QuestionText Element of Payload and return a question
+#' with added cleanQuestionText
+#'
+#' Given a question that includes a Payload element with QuestionText, clean the Question Text
+#' of HTML and CSS and return the question with element QuestionTextClean added to the payload.
+#' @param question A survey question with Payload element
+#' @return The question with QuestionTextClean added to the Payload
+clean_question_text <- function(question) {
+  question[['Payload']][['QuestionTextClean']] <- clean_html_and_css(question[['Payload']][['QuestionText']])
+  return(question)
+}
 
 
 #' Determine the question type from the QSF
@@ -305,8 +320,8 @@ split_side_by_side_q <- function(question) {
   #Extract the question text from the main part of the question
   #If we've already run the other parts of the question, this will be the clean question text
   #If not, pull the original question text
-  mainq_text <- dplyr::if_else("QuestionTextClean" %in% names(question),
-                               question[["QuestionTextClean"]],
+  mainq_text <- dplyr::if_else("QuestionTextClean" %in% names(question[['Payload']]),
+                               question[['Payload']][["QuestionTextClean"]],
                                question[["Payload"]][["QuestionText"]])
 
   mainq_exporttag <- mainq[['Payload']][["DataExportTag"]]
@@ -324,14 +339,17 @@ split_side_by_side_q <- function(question) {
   #Pull qtNotes from the original question and append them to each item
   #Add an additional note that this was split from a side-by-side question
   split_q <- purrr::map(split_q,
-                        ~ rlist::list.append(.x,qt_notes = dplyr::if_else("qtNotes" %in% names(mainq),
+                        ~ rlist::list.append(.x,qtNotes = dplyr::if_else("qtNotes" %in% names(mainq),
                                                                           list(append(mainq[["qtNotes"]],
                                                                                       "This question was split from a side-by-side question.")),
                                                                           list("This question was split from a side-by-side question."))))
   #Add clean question text to the side-by-side question element
-  split_q <- purrr::map(split_q,
-                        ~ rlist::list.append(.x, QuestionTextClean = stringr::str_c(mainq_text, "---",
-                                                                                    .x[["Payload"]][["QuestionText"]])))
+
+  for (i in 1:length(split_q)) {
+    split_q[[i]][['Payload']][['QuestionTextClean']] <- stringr::str_c(mainq_text, "---",
+                                                            clean_html_and_css(split_q[[i]][["Payload"]][["QuestionText"]]))
+  }
+
   #Add QualtricsQtype for the side by side; prepend with "SBS" to indicate this came from a side-by-side question
   split_q <- purrr::map(split_q,
                         ~ rlist::list.append(.x, Qualtrics_qtype = paste0("SBS_",.x[["Payload"]][["QuestionType"]])))
@@ -547,25 +565,6 @@ link_responses_to_questions <-
   }
 
 
-#' Create Cleaned Question Text
-#'
-#' This function loops through every question and applies the clean_html_and_css function to
-#' the QuestionText and then saves the cleaned output to QuestionTextClean.
-#'
-#' @param questions A list of questions extracted from a Qualtrics QSF file. Use
-#' questions_from_survey() to get them from an imported survey.
-#'
-#' @return A question which now includes in its Payload a QuestionTextClean
-#' element, a copy of the QuestionText but cleaned of any HTML tags and HTML entities.
-clean_question_text <- function(question) {
-
-  question[['Payload']][['QuestionTextClean']] <-
-      clean_html_and_css(question[['Payload']][['QuestionText']])
-
-  return(question)
-}
-
-
 #' Clean HTML and CSS from a string
 #'
 #' This function uses regex extensively to clean HTML and CSS out of a given text block.
@@ -654,14 +653,14 @@ create_question_dictionary <- function(blocks, flow) {
       blocks[[i]][['BlockElements']][[j]][['Payload']][['SubSelector']] <-
         ""
     }
-    if (! "QuestionTextClean" %in% names(blocks[[i]][['BlockElements']][[j]]) &
+    if (! "QuestionTextClean" %in% names(blocks[[i]][['BlockElements']][[j]][['Payload']]) &
         "QuestiontypeHuman" %in% names(blocks[[i]][['BlockElements']][[j]])) {
       stop("Questions do not contain clean question text and human readable question type.
            Please reprocess your questions and try again.")
     }
     return(c(
       blocks[[i]][['BlockElements']][[j]][['Payload']][['DataExportTag']],
-      blocks[[i]][['BlockElements']][[j]][['QuestionTextClean']],
+      blocks[[i]][['BlockElements']][[j]][['Payload']][['QuestionTextClean']],
       blocks[[i]][['BlockElements']][[j]][['Payload']][['QuestionType']],
       blocks[[i]][['BlockElements']][[j]][['Payload']][['Selector']],
       blocks[[i]][['BlockElements']][[j]][['Payload']][['SubSelector']],
@@ -1503,7 +1502,7 @@ create_response_column_dictionary <-
             # Question Response Column:
             names(question[['Responses']])[[response_column]],
             # Question Stem:
-            question[['QuestionTextClean']],
+            question[['Payload']][['QuestionTextClean']],
             # Question Choice:
             choice_text,
             # Question Type 1:
