@@ -166,7 +166,7 @@ question <- questions[[3]]
 # Delete the table - I wanna generate it myself
 question$Table = NULL
 
-question <- mc_multiple_answer_results(question, original_first_rows, sort_by = "Choices_Alpha")
+question <- mc_multiple_answer_results(question, original_first_rows, sort_by = "Ahhh")
 question$Table
 ```
 

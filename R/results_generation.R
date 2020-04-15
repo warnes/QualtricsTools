@@ -271,9 +271,13 @@ mc_single_answer_results <-
 #' @inheritParams mc_single_answer_results
 #' @param sort_by This determines how the data table is sorted. It is automatically set to
 #' sort by N then by Choices alphebetically, but if you want to only sort by Choices alphebetically,
-#' simply set sort_by = "Choices_Alpha". If you don't want the table to be sorted, set sort_by = "NA".
+#' simply set sort_by = "Choices_Alpha". If you would rather the table be sorted by choice order, set sort_by = "NA".
 mc_multiple_answer_results <-
   function(question, original_first_rows, sort_by = "N") {
+    if(sort_by != "N" && sort_by != "Choices_Alpha" && sort_by != "NA"){
+      stop(paste(question[['Payload']][['DataExportTag']], "had an incorect sort_by argument used. Results could not be proccessed."))
+    }
+    
     # save the original responses
     orig_responses <- question[['Responses']]
 
@@ -338,10 +342,7 @@ mc_multiple_answer_results <-
       })))
 
 
-    # calculate the percent for each column:
-    # if it's an NA-column use the total denominator,
-    # if it's not an NA-column, but the question has NA options, use the valid denominator
-    # if the question has no NA choices, use the total_denominator
+    # calculate the percent for each column using the total_denominator
     Percent <- lapply(1:length(N), function(x) {
         percent0(N[[x]] / total_denominator)
     })
@@ -358,31 +359,19 @@ mc_multiple_answer_results <-
     Percent <- unlist(Percent, use.names = FALSE)
     
     
-    # construct and return the output data frame
-    results_table <-
-      data.frame(N, Percent, choices, row.names = NULL, stringsAsFactors = FALSE)
-
-    # Sort the data table descending by N then by choices or by choices, depending on the user
-    if(sort_by == "N"){
-      results_table <- dplyr::arrange(results_table, -N, choices)
-    }else if(sort_by == "Choices_Alpha"){
-      results_table <- dplyr::arrange(results_table, choices)
-    }
-
     
     
-    # Determine if the question has recode values greater than 900 or a recode value
-    # of -1 indicating it is an NA that we should sort to the bottom
-    if ('RecodeValues' %in% names(question[['Payload']]) && 
-        length(question[["Payload"]][["Choices"]])) {
+    # Determine if the question has recode values greater than 900 indicating it is 
+    # an NA that we should sort to the bottom
+    if ('RecodeValues' %in% names(question[['Payload']])) {
       sort_na <- any(question[['Payload']][['RecodeValues']] >= 900)
     } else
       sort_na <- FALSE
     
     
     if (sort_na) {
-      recode_values <- question$Payload$RecodeValues
-      choiceorder <- question$Payload$ChoiceOrder
+      recode_values <- question[['Payload']][['RecodeValues']]
+      choiceorder <- question[['Payload']][['ChoiceOrder']]
       
       # Sort by Choice Order this will match the choice order in the table
       recode_values <- recode_values[choiceorder]
@@ -413,10 +402,20 @@ mc_multiple_answer_results <-
       na_results_table <- dplyr::arrange(na_results_table, recode_values)
       
       results_table <- rbind(reg_results_table, na_results_table)
-      results_table$recode_values <- NULL
+      results_table[['recode_values']] <- NULL
+    } else{
+      
+      # construct and return the output data frame for the normal data that doesn't have any NA
+      results_table <-
+        data.frame(N, Percent, choices, row.names = NULL, stringsAsFactors = FALSE)
+      
+      # Sort the data table descending by N then by choices or by choices, depending on the user
+      if(sort_by == "N"){
+        results_table <- dplyr::arrange(results_table, -N, choices)
+      }else if(sort_by == "Choices_Alpha"){
+        results_table <- dplyr::arrange(results_table, choices)
+      }
     }
-
-
    
     # Remove choices as the name of the third column
     colnames(results_table)[3] <- ""
