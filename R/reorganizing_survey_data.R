@@ -338,11 +338,15 @@ split_side_by_side_q <- function(question) {
   split_q <- purrr::map(split_q, ~ list("Payload" = .x))
   #Pull qtNotes from the original question and append them to each item
   #Add an additional note that this was split from a side-by-side question
-  split_q <- purrr::map(split_q,
-                        ~ rlist::list.append(.x,qtNotes = dplyr::if_else("qtNotes" %in% names(mainq),
-                                                                          list(append(mainq[["qtNotes"]],
-                                                                                      "This question was split from a side-by-side question.")),
-                                                                          list("This question was split from a side-by-side question."))))
+  for (i in 1:length(split_q)) {
+    split_q[[i]][['qtNotes']] <- if ("qtNotes" %in% names(mainq)) {
+      append(mainq[["qtNotes"]],
+             "This question was split from a side-by-side question.")
+    } else {list("This question was split from a side-by-side question.")}
+    }
+
+
+  split_q <- purrr::map(split_q, ~ .x)
   #Add clean question text to the side-by-side question element
 
   for (i in 1:length(split_q)) {
