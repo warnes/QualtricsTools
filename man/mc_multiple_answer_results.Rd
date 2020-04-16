@@ -20,7 +20,7 @@ truncated), and a row with QID based column names.}
 
 \item{sort_by}{This determines how the data table is sorted. It is automatically set to
 sort by N then by Choices alphebetically, but if you want to only sort by Choices alphebetically,
-simply set sort_by = "Choices". If you don't want the table to be sorted, set sort_by = "NA".}
+simply set sort_by = "Choices_Alpha". If you would rather the table be sorted by choice order, set sort_by = "NA".}
 }
 \description{
 The mc_multiple_answer_results function uses the definition of the choices in the QSF file

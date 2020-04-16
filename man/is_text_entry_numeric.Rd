@@ -11,8 +11,7 @@ is_text_entry_numeric(question)
 \item{question}{The question parameter is a single question from a qualtrics survey.}
 }
 \value{
-The return value of this is a boolean, true if it is one of these kinds of
-questions and false otherwise.
+Boolean value indicating whether the quest is text entry questions with numeric validation
 }
 \description{
 A question is considered a text entry with numeric validation if it

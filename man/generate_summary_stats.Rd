@@ -9,7 +9,7 @@ generate_summary_stats(question, orientation = "vertical")
 \arguments{
 \item{question}{This is the question which has been checked to contain
 Text Entry data with Numerical verification. This TE question will now
-be processed to give a summary stats table and not an appendice.}
+be processed to give a summary stats table and not an appendix.}
 
 \item{orientation}{Specification to display summary statistics in rows ("vertical")
 or columns ("horizontal"). Default is set to vertical.}
@@ -21,6 +21,6 @@ present
 \description{
 This function uses the data frame of responses that
 have been linked to a question to generate summary statistics using
-basic R functions mean(), median(), min(), max(), sd(). It creates a
-new data frame with colnames and the stats then appends it to question['Table'].
+basic R functions for mean, median, min, max, standard deviation. It creates a
+new data frame of summary statistics and appends it to question['Table'] element.
 }
