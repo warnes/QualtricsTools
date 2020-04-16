@@ -355,10 +355,10 @@ mc_single_answer_results <-
 #' @inheritParams mc_single_answer_results
 #' @param sort_by This determines how the data table is sorted. It is automatically set to
 #' sort by N then by Choices alphebetically, but if you want to only sort by Choices alphebetically,
-#' simply set sort_by = "Choices_Alpha". If you would rather the table be sorted by choice order, set sort_by = "NA".
+#' simply set sort_by = "choices_alpha". If you would rather the table be sorted by choice order, set sort_by = "choices_order.
 mc_multiple_answer_results <-
   function(question, original_first_rows, sort_by = "N") {
-    if(sort_by != "N" && sort_by != "Choices_Alpha" && sort_by != "NA"){
+    if(! sort_by %in% c("N", "choices_alpha", "choices_order")){
       stop(paste(question[['Payload']][['DataExportTag']], "had an incorect sort_by argument used. Results could not be proccessed."))
     }
     
@@ -476,7 +476,7 @@ mc_multiple_answer_results <-
       # Sort the regular data table descending by N then by choices or by choices, depending on the user
       if(sort_by == "N"){
         reg_results_table <- dplyr::arrange(reg_results_table, -N, choices)
-      }else if(sort_by == "Choices_Alpha"){
+      }else if(sort_by == "choices_alpha"){
         reg_results_table <- dplyr::arrange(reg_results_table, choices)
       }
       
@@ -496,7 +496,7 @@ mc_multiple_answer_results <-
       # Sort the data table descending by N then by choices or by choices, depending on the user
       if(sort_by == "N"){
         results_table <- dplyr::arrange(results_table, -N, choices)
-      }else if(sort_by == "Choices_Alpha"){
+      }else if(sort_by == "choices_alpha"){
         results_table <- dplyr::arrange(results_table, choices)
       }
     }

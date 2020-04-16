@@ -326,7 +326,7 @@ test_that(
     )  
     
     # Process the question and insert results tables into it.
-    Q_no_Table <- mc_multiple_answer_results(Q_no_Table, original_first_rows, sort_by = "Choices_Alpha")
+    Q_no_Table <- mc_multiple_answer_results(Q_no_Table, original_first_rows, sort_by = "choices_alpha")
     
     # Load the previously computed results table.
     Q_with_table <-  readRDS(
@@ -356,7 +356,7 @@ test_that(
     )  
     
     # Process the question and insert results tables into it.
-    Q_no_Table <- mc_multiple_answer_results(Q_no_Table, original_first_rows, sort_by = "Choice_Order")
+    Q_no_Table <- mc_multiple_answer_results(Q_no_Table, original_first_rows, sort_by = "choices_order")
     
     # Load the previously computed results table.
     Q_with_table <-  readRDS(
