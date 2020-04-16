@@ -244,3 +244,132 @@ test_that(
                   all(names(Q12[['Table']]) == names(Q12_results_table)))
   }
 )
+
+
+#################
+#  Tests for the Sorting Enhancement
+##################
+
+### Load the original first rows for the Dummy Enhancement Survey
+original_first_rows <- readRDS(
+  file.path(here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", 
+                       "RDS - MCMA_Sort", "original_first_rows.rds"))
+)
+
+
+# Dummy Enhancement Sample Survey question without recode: Sort by N then Choices
+test_that(
+  "Test that mc_multiple_answer_results is correct for a MCMA question without recode values, sorted by N then Choices",
+  {
+    # Load the question, without the results tables, for processing.
+    Q_no_Table <- readRDS(
+      file.path(here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", 
+                           "RDS - MC_with_NA", "No_recode_NO_Table.rds"))
+    )  
+    
+    # Process the question and insert results tables into it.
+    Q_no_Table <- process_question_results(Q_no_Table, original_first_rows)
+    
+    # Load the previously computed results table.
+    Q_with_table <-  readRDS(
+      file.path(here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", 
+                           "RDS - MCMA_Sort", "No_recode_Table.rds")
+      )
+    )
+    Q_with_table <- as.data.frame(Q_with_table)
+    
+    # Check that the previously computed results and new results match.
+    expect_true(all(Q_no_Table[['Table']][['N']] == Q_with_table[['N']]) &&
+                  all(Q_no_Table[['Table']][['Percent']] == Q_with_table[['Percent']]) &&
+                  all(names(Q_no_Table[['Table']]) == names(Q_with_table)))
+  }
+)
+
+
+# Dummy Enhancement Sample Survey question with recode: Sort by N then Choices
+test_that(
+  "Test that mc_multiple_answer_results is correct for a MCMA question with recode values, sorted by N then Choices",
+  {
+    # Load the question, without the results tables, for processing.
+    Q_no_Table <- readRDS(
+      file.path(here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", 
+                           "RDS - MC_with_NA", "Recode_900_NO_Table.rds"))
+    )  
+    
+    # Process the question and insert results tables into it.
+    Q_no_Table <- process_question_results(Q_no_Table, original_first_rows)
+    
+    # Load the previously computed results table.
+    Q_with_table <-  readRDS(
+      file.path(here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", 
+                           "RDS - MCMA_Sort", "Recode_900_Table.rds")
+      )
+    )
+    Q_with_table <- as.data.frame(Q_with_table)
+    
+    # Check that the previously computed results and new results match.
+    expect_true(all(Q_no_Table[['Table']][['N']] == Q_with_table[['N']]) &&
+                  all(Q_no_Table[['Table']][['Percent']] == Q_with_table[['Percent']]) &&
+                  all(names(Q_no_Table[['Table']]) == names(Q_with_table)))
+  }
+)
+
+
+# Dummy Enhancement Sample Survey question with recode: Sort by Choices_Alpha
+test_that(
+  "Test that mc_multiple_answer_results is correct for a MCMA question with recode values, sorted by Choices_Alpha",
+  {
+    # Load the question, without the results tables, for processing.
+    Q_no_Table <- readRDS(
+      file.path(here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", 
+                           "RDS - MC_with_NA", "Recode_900_NO_Table.rds"))
+    )  
+    
+    # Process the question and insert results tables into it.
+    Q_no_Table <- mc_multiple_answer_results(Q_no_Table, original_first_rows, sort_by = "Choices_Alpha")
+    
+    # Load the previously computed results table.
+    Q_with_table <-  readRDS(
+      file.path(here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", 
+                           "RDS - MCMA_Sort", "Recode_Choice_Table.rds")
+      )
+    )
+    Q_with_table <- as.data.frame(Q_with_table)
+    
+    # Check that the previously computed results and new results match.
+    expect_true(all(Q_no_Table[['Table']][['N']] == Q_with_table[['N']]) &&
+                  all(Q_no_Table[['Table']][['Percent']] == Q_with_table[['Percent']]) &&
+                  all(names(Q_no_Table[['Table']]) == names(Q_with_table)))
+  }
+)
+
+
+
+# Dummy Enhancement Sample Survey question with recode: Sort by Choice Order
+test_that(
+  "Test that mc_multiple_answer_results is correct for a MCMA question with recode values, sorted by Choice Order",
+  {
+    # Load the question, without the results tables, for processing.
+    Q_no_Table <- readRDS(
+      file.path(here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", 
+                           "RDS - MC_with_NA", "Recode_900_NO_Table.rds"))
+    )  
+    
+    # Process the question and insert results tables into it.
+    Q_no_Table <- mc_multiple_answer_results(Q_no_Table, original_first_rows, sort_by = "Choice_Order")
+    
+    # Load the previously computed results table.
+    Q_with_table <-  readRDS(
+      file.path(here::here("data", "Sample Surveys", "Dummy Enhancement Sample Survey", 
+                           "RDS - MCMA_Sort", "Recode_Order_Table.rds")
+      )
+    )
+    Q_with_table <- as.data.frame(Q_with_table)
+    
+    # Check that the previously computed results and new results match.
+    expect_true(all(Q_no_Table[['Table']][['N']] == Q_with_table[['N']]) &&
+                  all(Q_no_Table[['Table']][['Percent']] == Q_with_table[['Percent']]) &&
+                  all(names(Q_no_Table[['Table']]) == names(Q_with_table)))
+  }
+)
+
