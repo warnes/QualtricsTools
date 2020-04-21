@@ -1,6 +1,5 @@
 # Load the package as it is and load tidyverse
 devtools::load_all(".")
-library(tidyverse)
 
 # Get stuff in from the files from the survey
 get_setup(
