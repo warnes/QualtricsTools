@@ -1,0 +1,32 @@
+---
+title: "Scratch_Work"
+author: "Matthew Hudes"
+date: "4/23/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+ 
+
+
+# Set up stuff
+
+```{r}
+devtools::load_all(".")
+app()
+
+```
+
+
+
+# Found this package called shinyFiles
+
+```{r}
+devtools::install_github("thomasp85/shinyFiles")
+
+library(shinyFiles)
+```
+

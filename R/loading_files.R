@@ -11,7 +11,7 @@ requireNamespace("rjson")
 #'
 #' @return The return value is the responses data frame
 load_csv_data <- function(file2, file1, headerrows) {
-    if (is.null(file2) && is.null(file1)) {
+    if (plyr::empty(file2) && plyr::empty(file1)) {
       responses <- list(sample_responses, sample_original_first_rows)
     } else if (is.null(file2)) {
       responses <- NULL
@@ -34,7 +34,7 @@ load_csv_data <- function(file2, file1, headerrows) {
 #' @return The return value is the survey list object
 
 load_qsf_data <- function(file1) {
-    if (is.null(file1)) {
+    if (plyr::empty(file1)) {
         survey <- sample_survey
     } else {
         survey <- ask_for_qsf(file1[['datapath']])

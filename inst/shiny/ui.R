@@ -5,14 +5,16 @@ sidebar <- dashboardSidebar(
     menuItem("File Uploading",
              icon=icon("upload"),
            selected=TRUE,
-             fileInput('file1',
-                       'Choose QSF Survey File',
-                       accept=c('text/qsf', 'text/plain', '.qsf')
-             ),
-             fileInput('file2',
-                       'Choose CSV Response Set File',
-                       accept=c('text/csv', 'text/comma-separated-values', '.csv')
-             ),
+             shinyFilesButton('file1', "Browse...", "Choose QSF Survey File", multiple = FALSE),
+             shinyFilesButton('file2', "Browse...", "Choose CSV Response Set File", multiple = FALSE),
+             # fileInput('file1',
+             #           'Choose QSF Survey File',
+             #           accept=c('text/qsf', 'text/plain', '.qsf')
+             # ),
+             # fileInput('file2',
+             #           'Choose CSV Response Set File',
+             #           accept=c('text/csv', 'text/comma-separated-values', '.csv')
+             # ),
              div(class="sidebar-text",
                  HTML("QualtricsTools requires data be exported with the <a href='https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Appendix-of-Qualtrics-Terms#legacy-and-insights-data', target='_blank'>Legacy Exporter</a>.")),
              checkboxInput("insights_or_not", "Unchecked Legacy View Results (3 header rows & QIDs)?", value = TRUE, width = NULL)
@@ -42,6 +44,7 @@ body <- dashboardBody(
       tabBox( width = NULL,
               tabPanel(h5("results tables"),
                        uiOutput("uncodeable_message"),
+                       verbatimTextOutput("test"),
                        uiOutput("results_tables")
                       ),
               tabPanel(h5("question dictionary"),
@@ -76,6 +79,7 @@ body <- dashboardBody(
                 # This is HTML for creating an invisible table for a clean layout
                 # of the download buttons for each of the frequency results tables,
                 # question dictionary, text appendices, and display logic.
+                textInput("file_name", "Enter the name of your file:"),
                 HTML("<br><table style='width: 100%;'> <tr> <td>"),
                 selectInput("rt_format", "Format for Results Tables:",
                             choices = c("docx", "html", "md", "pdf", "xls"),
