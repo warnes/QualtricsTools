@@ -9,6 +9,7 @@ shinyServer(function(input, output) {
   # users specify questions to be included and excluded.
   values <- reactiveValues(unselected_questions = c())
 
+
   # The survey_and_responses reactive block reads the input files
   # and loads them as the survey and responses. It validates that there
   # are no duplicate data export tags in the survey, and it returns a
@@ -18,7 +19,7 @@ shinyServer(function(input, output) {
   # 3. the original_first_rows.
   survey_and_responses <- reactive({
 
-    survey <- load_qsf_data(input[['file1']])
+    survey <- load_qsf_data(input$file1)
 
     # If there are questions which are unselected, meaning they've been set to
     # be excluded, go through the survey and mark these questions with the
@@ -461,13 +462,13 @@ shinyServer(function(input, output) {
   download_names <- reactive({
     dnames <- list()
     dnames['results_tables'] <-
-      paste0("results_tables.", input[['rt_format']])
+      paste0(input$file_name, "_results_tables.", input[['rt_format']])
     dnames['qdict'] <-
-      paste0('question_dictionary.', input[['qd_format']])
+      paste0(input$file_name, '_question_dictionary.', input[['qd_format']])
     dnames['text_appendices'] <-
-      paste0('text_appendices.', input[['ta_format']])
+      paste0(input$file_name, '_text_appendices.', input[['ta_format']])
     dnames['display_logic'] <-
-      paste0('display_logic.', input[['dl_format']])
+      paste0(input$file_name, '_display_logic.', input[['dl_format']])
     return(dnames)
   })
 
@@ -532,7 +533,7 @@ shinyServer(function(input, output) {
   # Download Zip Button
   output[['downloadZip']] <- downloadHandler(
     filename = function() {
-      paste("QT Survey Output", "zip", sep = ".")
+      paste(input$file_name, "_Survey_Output", ".zip")
     },
     content = function(fname) {
       fs <- c()
@@ -582,7 +583,7 @@ shinyServer(function(input, output) {
   # Download Split Reports and Text Appendices
   output[['downloadSplit']] <- downloadHandler(
     filename = function() {
-      paste("QT Split Reports and Appendices", "zip", sep = ".")
+      paste(input$file_name, " Split Reports and Appendices", ".zip")
     },
     content = function(fname) {
       fs <- c()
@@ -601,7 +602,7 @@ shinyServer(function(input, output) {
               ),
               file_name = paste0(
                 "results_tables_",
-                i,
+                split_blocks[[i]][['split_group']],
                 ".",
                 gsub(".*\\.", "", download_names()['results_tables'], perl = TRUE)
               ),
@@ -619,7 +620,7 @@ shinyServer(function(input, output) {
               ),
               file_name = paste0(
                 "text_appendices_",
-                i,
+                split_blocks[[i]][['split_group']],
                 ".",
                 gsub(".*\\.", "", download_names()['text_appendices'], perl = TRUE)
               ),
@@ -633,6 +634,7 @@ shinyServer(function(input, output) {
     },
     contentType = "application/zip"
   )
+
 
 
   ########## Stop Button

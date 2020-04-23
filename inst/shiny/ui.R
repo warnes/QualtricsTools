@@ -42,6 +42,7 @@ body <- dashboardBody(
       tabBox( width = NULL,
               tabPanel(h5("results tables"),
                        uiOutput("uncodeable_message"),
+                       verbatimTextOutput("test"),
                        uiOutput("results_tables")
                       ),
               tabPanel(h5("question dictionary"),
@@ -76,6 +77,7 @@ body <- dashboardBody(
                 # This is HTML for creating an invisible table for a clean layout
                 # of the download buttons for each of the frequency results tables,
                 # question dictionary, text appendices, and display logic.
+                textInput("file_name", "Enter the name of your file:"),
                 HTML("<br><table style='width: 100%;'> <tr> <td>"),
                 selectInput("rt_format", "Format for Results Tables:",
                             choices = c("docx", "html", "md", "pdf", "xls"),
