@@ -18,7 +18,6 @@ shinyServer(function(input, output) {
   # 2. the responses, and
   # 3. the original_first_rows.
   survey_and_responses <- reactive({
-
     survey <- load_qsf_data(input$file1)
 
     # If there are questions which are unselected, meaning they've been set to
