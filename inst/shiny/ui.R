@@ -54,6 +54,9 @@ body <- dashboardBody(
                        ),
               tabPanel(h5("display logic"),
                        uiOutput("display_logic")
+                       ),
+              tabPanel(h5("coded comment appendices"),
+                       uiOutput("coded_comments")
                        )
               )
       )
@@ -120,6 +123,19 @@ body <- dashboardBody(
                 h3('Ignore Survey Flow'),
                 checkboxInput("ignoreflow", "Check this box if you would like the report to render without reordering
                               the questions according to the survey's ordering.", FALSE)
+            ),
+            sidebarPanel(
+              h3("Comment Coding Options"),
+              radioButtons("comment_choices", "Generate Coded Comments?",
+                           c("No",
+                             "Regular Coded Comments" = "regular",
+                             "Split Coded Comments" = "split"),
+                           selected = "No"),
+              radioButtons("code_type", "Code Type?",
+                           c("NVivo format" = "nvivo",
+                             "FileMaker Pro Format" = "fmp")),
+              numericInput("n_threshold", "N Threshold", 15, min = 1, max = 100),
+              shinyDirButton("sheets_dir", "Folder select", "Sheets Folder: "),
             )
           )
    ))

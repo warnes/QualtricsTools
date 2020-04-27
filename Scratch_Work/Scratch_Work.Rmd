@@ -30,3 +30,41 @@ devtools::install_github("thomasp85/shinyFiles")
 library(shinyFiles)
 ```
 
+
+
+
+# Reviewing comment coding
+
+```{r}
+
+get_setup(qsf_path = here::here("data", "Sample Surveys", "Better Sample Survey", "Better_Sample_Survey.qsf"),
+          csv_path = here::here("data", "Sample Surveys", "Better Sample Survey", "Better_Sample_Survey.csv"),
+          headerrows = 3)
+
+## Old formatt:
+make_coded_comments(
+    sheets_dir = here::here("data", "Sample Surveys", "Comment Coding", "Coded Comments"),
+    output_dir = here::here("Scratch_Work", "Example Coded Comments"),
+    filename = "Testing Comment Coding.docx",
+    n_threshold = 2,
+    code_type = "fmp")
+
+
+## Using Nvivo
+make_coded_comments(
+    sheets_dir = here::here("data", "Sample Surveys", "Better Sample Survey", "Comment Coding NVivo"),
+    output_dir = here::here("Scratch_Work", "Example Coded Comments"),
+    filename = "Testing Nvivo Comment Coding.docx",
+    n_threshold = 2)
+
+
+## Split
+make_split_coded_comments(
+    sheets_dir = here::here("data", "Sample Surveys", "Comment Coding", "Coded Comments"),
+    output_dir = here::here("Scratch_Work", "Example Coded Comments"),
+    n_threshold = 2,
+    split_by = c("q5_position")
+)
+
+
+```
