@@ -331,17 +331,25 @@ shinyServer(function(input, output) {
   # Here is the back end for the folder selectors for codded comments:
   roots=c(wd='C:\\')
   shinyDirChoose(input, "sheets_dir", roots = roots)
+
   # Generate the coded comments, if the user wants coded comments.
   coded_comments <- reactive({
     if(input$comment_choices == "No"){
       paste("Shiny is not currently set to generate codded comments for this survey")
-    } else if(input$comment_choices == "regular"){
+    } else if(input$comment_choices == "Yes"){
       sheets_dir <- parseDirPath(roots, input$sheets_dir)
       coded_sheets <- directory_get_coded_comment_sheets(sheets_dir, code_type = input$code_type)
 
+      original_first_rows <- survey_and_responses()[[3]]
+
+      original_first_row <- original_first_rows[1, ]
+
+      survey <- survey_and_responses()[[1]]
+
       if (is.null(coded_sheets)) {
         paste("Please fix errors before attempting again")
-      } else{
+      } else if (is.null(choose_split_block())){
+        blocks <- processed_questions_and_blocks()[[2]]
         comment_tables <-
           format_coded_comment_sheets(coded_comment_sheets = coded_sheets, code_type = input$code_type)
         blocks <-
@@ -377,83 +385,93 @@ shinyServer(function(input, output) {
         #   file_name = filename,
         #   output_dir = output_dir
         # )
-      }
-    } else if(input$comment_choices == "split"){
-      responses <- survey_and_responses()[[2]]
-      blocks <- processed_questions_and_blocks()[[2]]
-      split_cols <- input[['split_response_columns']]
-      responses <- create_merged_response_column(
-        response_columns = split_cols,
-        col_name = paste0(c("split", split_cols), collapse = " "),
-        survey_responses = responses,
-        question_blocks = blocks
-      )
+        } else{
+          blocks <- processed_questions_and_blocks()[[2]]
+          blocks <- choose_split_block()
+          questions <- processed_questions_and_blocks()[[1]]
+          if (input[['insights_or_not']] == TRUE)
+            headerrows <- 3
+          if (input[['insights_or_not']] == FALSE)
+            headerrows <- 2
 
-      # # Merges the selected columns into one name
-      # responses <-
-      #   create_merged_response_column(split_by, split_string, blocks, responses)
-
-      sheets_dir <- parseDirPath(roots, input$sheets_dir)
-      coded_sheets <- directory_get_coded_comment_sheets(sheets_dir, code_type = input$code_type)
-
-      if (is.null(coded_sheets)) {
-        paste("Please fix errors before attempting again")
-      } else{
-        split_comment_tables <-
-          format_and_split_comment_sheets(coded_sheets, responses, col_name = paste0(c("split", split_cols), collapse = " "), code_type = input$code_type)
-
-        split_blocks <-
-          split_respondents(
-            response_column = paste0(c("split", split_cols), collapse = " "),
-            responses = responses,
-            survey = survey,
-            blocks = blocks,
-            questions = questions,
-            headerrows = headerrows,
-            already_loaded = FALSE,
-            original_first_rows
+          responses <- survey_and_responses()[[2]]
+          split_cols <- input[['split_response_columns']]
+          responses <- create_merged_response_column(
+            response_columns = split_cols,
+            col_name = paste0(c("split", split_cols), collapse = " "),
+            survey_responses = responses,
+            question_blocks = blocks
           )
 
-        split_blocks <-
-          insert_split_survey_comments(split_blocks,
-                                       split_comment_tables,
-                                       paste0(c("split", split_cols), collapse = " "),
-                                       original_first_rows)
+          # # Merges the selected columns into one name
+          # responses <-
+          #   create_merged_response_column(split_by, split_string, blocks, responses)
 
-        #Used with html_2_pandoc below to keeps the flow of the survey consistent with the output
-        flow = flow_from_survey(survey)
+          split_comment_tables <-
+            format_and_split_comment_sheets(coded_sheets, responses,
+                                            split_column = paste0(c("split", split_cols), collapse = " "), code_type = input$code_type)
 
-        return(c(
-          blocks_header_to_html(split_blocks[[i]]),
-          text_appendices_table(
-            blocks = split_blocks[[i]],
-            original_first_row = original_first_rows,
-            flow = flow,
-            n_threshold = n_threshold
-          )))
-        # #Appends .docx to the file names collected by splitting the data to output them as Word Documents
-        # filenames <- sapply(split_blocks, function(x)
-        #   x$split_group)
-        # filenames <- sapply(filenames, function(x)
-        #   paste0(x, '.docx'))
-        #
-        # #Outputs the data to word documents using html_2_pandoc
-        # return_list <- c()
-        # for (i in 1:length(filenames)) {
-        #   outpath <- html_2_pandoc(
-        #     html =
-        #     ),
-        #     file_name = filenames[[i]],
-        #     output_dir = output_dir
-        #   )
-        #   return_list <- c(return_list, outpath)
-        # }
-        # return(return_list)
+          split_blocks <-
+            split_respondents(
+              response_column = paste0(c("split", split_cols), collapse = " "),
+              responses = responses,
+              survey = survey,
+              blocks = blocks,
+              questions = questions,
+              headerrows = headerrows,
+              already_loaded = FALSE,
+              original_first_rows
+            )
+
+          split_blocks <-
+            insert_split_survey_comments(split_blocks,
+                                         split_comment_tables,
+                                         paste0(c("split", split_cols), collapse = " "),
+                                         original_first_rows)
+
+          #Used with html_2_pandoc below to keeps the flow of the survey consistent with the output
+          flow = flow_from_survey(survey)
+
+          return_list <- c()
+          for(i in 1:length(split_blocks)){
+           results <- c(
+              blocks_header_to_html(split_blocks[[i]]),
+              text_appendices_table(
+                blocks = split_blocks[[i]],
+                original_first_row = original_first_rows,
+                flow = flow,
+                n_threshold = input$n_threshold
+              ))
+            return_list <- c(return_list, results)
+          }
+
+          return(
+            return_list
+            )
+          # #Appends .docx to the file names collected by splitting the data to output them as Word Documents
+          # filenames <- sapply(split_blocks, function(x)
+          #   x$split_group)
+          # filenames <- sapply(filenames, function(x)
+          #   paste0(x, '.docx'))
+          #
+          # #Outputs the data to word documents using html_2_pandoc
+          # return_list <- c()
+          # for (i in 1:length(filenames)) {
+          #   outpath <- html_2_pandoc(
+          #     html =
+          #     ),
+          #     file_name = filenames[[i]],
+          #     output_dir = output_dir
+          #   )
+          #   return_list <- c(return_list, outpath)
+          # }
+          # return(return_list)
+
+
+        }
+
       }
-
-
-    }
-  })
+   })
 
   # The include_exclude_dict constructs a dataframe with some HTML in its leftmost column
   # to add checkboxes to each row. The complete_question_dictionary is filtered for the columns
