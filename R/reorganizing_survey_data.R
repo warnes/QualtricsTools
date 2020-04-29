@@ -453,6 +453,19 @@ insert_questions_into_block <- function(block,questions) {
   return(block)
 }
 
+#' Iterate over blocks and insert questions to each
+#'
+#' This iterates over a list of blocks and inserts questions to each of the survey blocks.
+#' @param blocks A list of survey blocks
+#' @param questions A list of questions
+#' @return A list of blocks with the questions inserted into the appropriate block elements
+
+insert_questions_into_blocks <- function(questions, blocks) {
+  blocks <- purrr::map(blocks, ~ insert_questions_into_block(block = .x, questions = questions))
+  return (blocks)
+}
+
+
 #' Link Responses to Questions
 #'
 #' The columns of the response data must be matched up to their corresponding
