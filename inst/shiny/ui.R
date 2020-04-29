@@ -5,14 +5,12 @@ sidebar <- dashboardSidebar(
     menuItem("File Uploading",
              icon=icon("upload"),
            selected=TRUE,
-             fileInput('file1',
-                       'Choose QSF Survey File',
-                       accept=c('text/qsf', 'text/plain', '.qsf')
-             ),
-             fileInput('file2',
-                       'Choose CSV Response Set File',
-                       accept=c('text/csv', 'text/comma-separated-values', '.csv')
-             ),
+             textInput("root", "Please enter your project folder root:"),
+             h5(strong("Choose QSF Survey File:")),
+             shinyFilesButton('file1', "Browse...", "Choose QSF Survey File", multiple = FALSE),
+             h5(strong("Choose CSV Response Set File:")),
+             shinyFilesButton('file2', "Browse...", "Choose CSV Response Set File", multiple = FALSE),
+
              div(class="sidebar-text",
                  HTML("QualtricsTools requires data be exported with the <a href='https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Appendix-of-Qualtrics-Terms#legacy-and-insights-data', target='_blank'>Legacy Exporter</a>.")),
              checkboxInput("insights_or_not", "Unchecked Legacy View Results (3 header rows & QIDs)?", value = TRUE, width = NULL)
@@ -99,12 +97,19 @@ body <- dashboardBody(
                             width='90%'),
                 HTML("</td> <td>"),
                 downloadButton('downloadTextAppendices', '', class="btn-primary"),
+
                 HTML("</td> </tr> <tr> <td>"),
                 selectInput("dl_format", "Format for Display Logic:",
                             choices = c("docx", "html", "md", "pdf", "xls"),
                             width='90%'),
                 HTML("</td> <td>"),
                 downloadButton('downloadDisplayLogic', '', class="btn-primary"),
+                HTML("</td> </tr> <tr> <td>"),
+                selectInput("cc_format", "Format for Comment Coded:",
+                            choices = c("docx", "html", "md", "pdf", "xls"),
+                            width='90%'),
+                HTML("</td> <td>"),
+                downloadButton('downloadCodedCommentAppendices', '', class="btn-primary"),
                 HTML("</td> </tr> </table>")
               ),
 
@@ -134,7 +139,8 @@ body <- dashboardBody(
                            c("NVivo format" = "nvivo",
                              "FileMaker Pro Format" = "fmp")),
               numericInput("n_threshold", "N Threshold", 15, min = 1, max = 100),
-              shinyDirButton("sheets_dir", "Folder select", "Sheets Folder: "),
+              h5(strong("Sheets Folder Selector:")),
+              shinyDirButton(id = "sheets_dir", label = "Folder select", title = "Sheets Folder Selector"),
             )
           )
    ))

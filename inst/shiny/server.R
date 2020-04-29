@@ -10,6 +10,37 @@ shinyServer(function(input, output) {
   values <- reactiveValues(unselected_questions = c())
 
 
+  # Here is the back end for the file selectors:
+  qsfupdateRoots <- function(Roots) {
+    print(Roots)
+    shinyFiles::shinyFileChoose(input, 'file1', roots = Roots, filetypes=c('qsf'),
+                                defaultPath='', defaultRoot='wd')
+  }
+
+  observe({
+    if(is.null(input$root)){
+      qsfupdateRoots(c(wd='C:\\'))
+    } else{
+      qsfupdateRoots(c(wd = input$root))
+    }
+
+  })
+
+  csvupdateRoots <- function(Roots) {
+    print(Roots)
+    shinyFiles::shinyFileChoose(input, 'file2', roots=Roots, filetypes=c('csv'),
+                                defaultPath='', defaultRoot='wd')
+  }
+
+  observe({
+    if(is.null(input$root)){
+      csvupdateRoots(c(wd='C:\\'))
+    } else{
+      csvupdateRoots(c(wd = input$root))
+    }
+
+  })
+
   # The survey_and_responses reactive block reads the input files
   # and loads them as the survey and responses. It validates that there
   # are no duplicate data export tags in the survey, and it returns a
@@ -18,7 +49,17 @@ shinyServer(function(input, output) {
   # 2. the responses, and
   # 3. the original_first_rows.
   survey_and_responses <- reactive({
-    survey <- load_qsf_data(input$file1)
+    if(is.null(input$root)){
+      qsf_path <- parseFilePaths(roots=c(wd='C:\\'), input$file1)
+      csv_path <- parseFilePaths(roots=c(wd='C:\\'), input$file2)
+    } else{
+      qsf_path <- parseFilePaths(roots=c(wd = input$root), input$file1)
+      csv_path <- parseFilePaths(roots=c(wd = input$root), input$file2)
+    }
+
+
+
+    survey <- load_qsf_data(qsf_path)
 
     # If there are questions which are unselected, meaning they've been set to
     # be excluded, go through the survey and mark these questions with the
@@ -59,7 +100,7 @@ shinyServer(function(input, output) {
 
     # load_csv_data returns a pair of two elements, the responses and
     # the original_first_rows.
-    responses <- load_csv_data(input$file2, input$file1, headerrows)
+    responses <- load_csv_data(csv_path, qsf_path, headerrows)
     original_first_rows <- responses[[2]]
     responses <- responses[[1]]
 
@@ -327,17 +368,29 @@ shinyServer(function(input, output) {
   })
 
 
-  # shinyDirButton("sheets_dir", "Folder select", "Sheets Folder: "
   # Here is the back end for the folder selectors for codded comments:
-  roots=c(wd='C:\\')
-  shinyDirChoose(input, "sheets_dir", roots = roots)
+  updateRoots <- function(Roots) {
+    print(Roots)
+    shinyFiles::shinyDirChoose(input = input, "sheets_dir",
+                                roots = Roots)
+  }
+
+  observe({
+    if(is.null(input$root)){
+          updateRoots(c(wd='C:\\'))
+        } else{
+          updateRoots(c(wd = input$root))
+        }
+
+  })
 
   # Generate the coded comments, if the user wants coded comments.
   coded_comments <- reactive({
     if(input$comment_choices == "No"){
       paste("Shiny is not currently set to generate codded comments for this survey")
     } else if(input$comment_choices == "Yes"){
-      sheets_dir <- parseDirPath(roots, input$sheets_dir)
+
+      sheets_dir <- parseDirPath(roots = c(wd = input$root), input$sheets_dir)
       coded_sheets <- directory_get_coded_comment_sheets(sheets_dir, code_type = input$code_type)
 
       original_first_rows <- survey_and_responses()[[3]]
@@ -386,68 +439,89 @@ shinyServer(function(input, output) {
         #   output_dir = output_dir
         # )
         } else{
-          blocks <- processed_questions_and_blocks()[[2]]
           blocks <- choose_split_block()
-          questions <- processed_questions_and_blocks()[[1]]
-          if (input[['insights_or_not']] == TRUE)
-            headerrows <- 3
-          if (input[['insights_or_not']] == FALSE)
-            headerrows <- 2
 
-          responses <- survey_and_responses()[[2]]
-          split_cols <- input[['split_response_columns']]
-          responses <- create_merged_response_column(
-            response_columns = split_cols,
-            col_name = paste0(c("split", split_cols), collapse = " "),
-            survey_responses = responses,
-            question_blocks = blocks
-          )
-
-          # # Merges the selected columns into one name
-          # responses <-
-          #   create_merged_response_column(split_by, split_string, blocks, responses)
-
-          split_comment_tables <-
-            format_and_split_comment_sheets(coded_sheets, responses,
-                                            split_column = paste0(c("split", split_cols), collapse = " "), code_type = input$code_type)
-
-          split_blocks <-
-            split_respondents(
-              response_column = paste0(c("split", split_cols), collapse = " "),
-              responses = responses,
-              survey = survey,
+          comment_tables <-
+            format_coded_comment_sheets(coded_comment_sheets = coded_sheets, code_type = input$code_type)
+          blocks <-
+            insert_coded_comments(
               blocks = blocks,
-              questions = questions,
-              headerrows = headerrows,
-              already_loaded = FALSE,
-              original_first_rows
+              original_first_rows = original_first_rows,
+              coded_comments = comment_tables
             )
 
-          split_blocks <-
-            insert_split_survey_comments(split_blocks,
-                                         split_comment_tables,
-                                         paste0(c("split", split_cols), collapse = " "),
-                                         original_first_rows)
-
-          #Used with html_2_pandoc below to keeps the flow of the survey consistent with the output
+          # Used with html_2_pandoc below to keeps the flow of the survey consistent with the output
           flow = flow_from_survey(survey)
 
-          return_list <- c()
-          for(i in 1:length(split_blocks)){
-           results <- c(
-              blocks_header_to_html(split_blocks[[i]]),
-              text_appendices_table(
-                blocks = split_blocks[[i]],
-                original_first_row = original_first_rows,
-                flow = flow,
-                n_threshold = input$n_threshold
-              ))
-            return_list <- c(return_list, results)
-          }
-
-          return(
-            return_list
+          return(c(
+            blocks_header_to_html(blocks),
+            text_appendices_table(
+              blocks = blocks,
+              original_first_row = original_first_rows,
+              flow = flow,
+              n_threshold = input$n_threshold
             )
+          ))
+          # questions <- processed_questions_and_blocks()[[1]]
+          # if (input[['insights_or_not']] == TRUE)
+          #   headerrows <- 3
+          # if (input[['insights_or_not']] == FALSE)
+          #   headerrows <- 2
+          #
+          # responses <- survey_and_responses()[[2]]
+          # split_cols <- input[['split_response_columns']]
+          # responses <- create_merged_response_column(
+          #   response_columns = split_cols,
+          #   col_name = paste0(c("split", split_cols), collapse = " "),
+          #   survey_responses = responses,
+          #   question_blocks = blocks
+          # )
+          #
+          # # # Merges the selected columns into one name
+          # # responses <-
+          # #   create_merged_response_column(split_by, split_string, blocks, responses)
+          #
+          # split_comment_tables <-
+          #   format_and_split_comment_sheets(coded_sheets, responses,
+          #                                   split_column = paste0(c("split", split_cols), collapse = " "), code_type = input$code_type)
+          #
+          # split_blocks <-
+          #   split_respondents(
+          #     response_column = paste0(c("split", split_cols), collapse = " "),
+          #     responses = responses,
+          #     survey = survey,
+          #     blocks = blocks,
+          #     questions = questions,
+          #     headerrows = headerrows,
+          #     already_loaded = FALSE,
+          #     original_first_rows
+          #   )
+          #
+          # split_blocks <-
+          #   insert_split_survey_comments(split_blocks,
+          #                                split_comment_tables,
+          #                                paste0(c("split", split_cols), collapse = " "),
+          #                                original_first_rows)
+          #
+          # #Used with html_2_pandoc below to keeps the flow of the survey consistent with the output
+          # flow = flow_from_survey(survey)
+          #
+          # return_list <- c()
+          # for(i in 1:length(split_blocks)){
+          #  results <- c(
+          #     blocks_header_to_html(split_blocks[[i]]),
+          #     text_appendices_table(
+          #       blocks = split_blocks[[i]],
+          #       original_first_row = original_first_rows,
+          #       flow = flow,
+          #       n_threshold = input$n_threshold
+          #     ))
+          #   return_list <- c(return_list, results)
+          # }
+          #
+          # return(
+          #   return_list
+          #   )
           # #Appends .docx to the file names collected by splitting the data to output them as Word Documents
           # filenames <- sapply(split_blocks, function(x)
           #   x$split_group)
@@ -618,6 +692,8 @@ shinyServer(function(input, output) {
       paste0(input$file_name, '_text_appendices.', input[['ta_format']])
     dnames['display_logic'] <-
       paste0(input$file_name, '_display_logic.', input[['dl_format']])
+    dnames['coded_comments'] <-
+      paste0(input$file_name, '_coded_comments.', input[['cc_format']])
     return(dnames)
   })
 
@@ -679,6 +755,22 @@ shinyServer(function(input, output) {
     }
   )
 
+  # Download Coded Comments
+  output[['downloadCodedCommentAppendices']] <- downloadHandler(
+    filename = function() {
+      download_names()[['coded_comments']]
+    },
+    content = function(file) {
+      pandoc_output = html_2_pandoc(
+        html = coded_comments(),
+        file_name = as.character(download_names()['coded_comments']),
+        format = gsub(".*\\.", "", download_names()['coded_comments'], perl =
+                        TRUE)
+      )
+      file.copy(pandoc_output, file)
+    }
+  )
+
   # Download Zip Button
   output[['downloadZip']] <- downloadHandler(
     filename = function() {
@@ -693,12 +785,13 @@ shinyServer(function(input, output) {
         format = gsub(".*\\.", "", download_names()['results_tables'], perl =
                         TRUE)
       )
+      q_dictionary_name <- paste(input$file_name, "_question_dictionary.csv")
       write.csv(
         question_dictionary(),
         row.names = FALSE,
-        file = file.path(tmpdir, "question_dictionary.csv")
+        file = file.path(tmpdir, q_dictionary_name)
       )
-      qd_csv <- file.path(tmpdir, "question_dictionary.csv")
+      qd_csv <- file.path(tmpdir, q_dictionary_name)
       dl_docx <- html_2_pandoc(
         html = display_logic(),
         file_name = as.character(download_names()['display_logic']),
@@ -711,6 +804,14 @@ shinyServer(function(input, output) {
         format = gsub(".*\\.", "", download_names()['text_appendices'], perl =
                         TRUE)
       )
+      if(input$comment_choices == "Yes"){
+        cc_docx <- html_2_pandoc(
+          html = coded_comments(),
+          file_name = as.character(download_names()['coded_comments']),
+          format = gsub(".*\\.", "", download_names()['coded_comments'], perl =
+                          TRUE)
+        )
+      }
 
       # repath the CSV in case it needs it for a Windows path
       # https://www.r-bloggers.com/stop-fiddling-around-with-copied-paths-in-windows-r/
@@ -720,6 +821,9 @@ shinyServer(function(input, output) {
       fs <- c(fs, file = qd_csv)
       fs <- c(fs, file = dl_docx)
       fs <- c(fs, file = ta_docx)
+      if(input$comment_choices == "Yes"){
+        fs <- c(fs, file = cc_docx)
+      }
       if (file.exists(paste0(fname, ".zip")))
         file.rename(paste0(fname, ".zip"), fname)
       zip(zipfile = fname,
@@ -776,6 +880,25 @@ shinyServer(function(input, output) {
               format = gsub(".*\\.", "", download_names()['text_appendices'], perl =
                               TRUE)
             ))
+
+
+        fs <-
+          c(fs,
+            html_2_pandoc(
+              html = c(
+                blocks_header_to_html(split_blocks[[i]]),
+                text_appendices_table(split_blocks[[i]], original_first_row, flow, n_threshold = input$n_threshold)
+              ),
+              file_name = paste0(
+                "comment_coded_appendices_",
+                split_blocks[[i]][['split_group']],
+                ".",
+                gsub(".*\\.", "", download_names()['coded_comments'], perl = TRUE)
+              ),
+              format = gsub(".*\\.", "", download_names()['coded_comments'], perl =
+                              TRUE)
+            ))
+
       }
       zip(zipfile = fname,
           files = fs,
