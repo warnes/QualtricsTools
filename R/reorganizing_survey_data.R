@@ -51,8 +51,15 @@ get_reorganized_questions_and_blocks <- function(survey,
                                            original_first_rows = original_first_rows)
   #Generate a results table for each question
   questions <- generate_results(questions, original_first_rows = original_first_rows)
+
   #Now insert questions into blocks
   blocks <- purrr::map(blocks, ~ insert_questions_into_block(block = .x, questions = questions))
+
+  # insert the header into the blocks
+  blocks[['header']] <- c(paste0("Survey Name: ",
+                                 survey[['SurveyEntry']][['SurveyName']]),
+                          paste0("Number of Respondents: ",
+                                 nrow(responses)))
 
   return(list("questions" = questions, "blocks" = blocks))
 
