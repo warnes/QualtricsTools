@@ -18,8 +18,8 @@ shinyServer(function(input, output) {
   }
 
   observe({
-    if(is.null(input$root)){
-      qsfupdateRoots(c(wd='C:\\'))
+    if(input$root == ""){
+      qsfupdateRoots(c(wd='c:\\'))
     } else{
       qsfupdateRoots(c(wd = input$root))
     }
@@ -33,8 +33,8 @@ shinyServer(function(input, output) {
   }
 
   observe({
-    if(is.null(input$root)){
-      csvupdateRoots(c(wd='C:\\'))
+    if(input$root == ""){
+      csvupdateRoots(c(wd='c:\\'))
     } else{
       csvupdateRoots(c(wd = input$root))
     }
@@ -52,9 +52,13 @@ shinyServer(function(input, output) {
     if(is.null(input$root)){
       qsf_path <- shinyFiles::parseFilePaths(roots=c(wd='C:\\'), input$file1)
       csv_path <- shinyFiles::parseFilePaths(roots=c(wd='C:\\'), input$file2)
+      print(qsf_path)
+      print(csv_path)
     } else{
       qsf_path <- shinyFiles::parseFilePaths(roots=c(wd = input$root), input$file1)
       csv_path <- shinyFiles::parseFilePaths(roots=c(wd = input$root), input$file2)
+      print(qsf_path)
+      print(csv_path)
     }
 
 
@@ -376,7 +380,7 @@ shinyServer(function(input, output) {
   }
 
   observe({
-    if(is.null(input$root)){
+    if(input$root == ""){
           updateRoots(c(wd='C:\\'))
         } else{
           updateRoots(c(wd = input$root))
