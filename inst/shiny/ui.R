@@ -7,9 +7,9 @@ sidebar <- dashboardSidebar(
            selected=TRUE,
              textInput("root", "Please enter your project folder root:"),
              h5(strong("Choose QSF Survey File:")),
-             shinyFilesButton('file1', "Browse...", "Choose QSF Survey File", multiple = FALSE),
+             shinyFiles::shinyFilesButton('file1', "Browse...", "Choose QSF Survey File", multiple = FALSE),
              h5(strong("Choose CSV Response Set File:")),
-             shinyFilesButton('file2', "Browse...", "Choose CSV Response Set File", multiple = FALSE),
+             shinyFiles::shinyFilesButton('file2', "Browse...", "Choose CSV Response Set File", multiple = FALSE),
 
              div(class="sidebar-text",
                  HTML("QualtricsTools requires data be exported with the <a href='https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Appendix-of-Qualtrics-Terms#legacy-and-insights-data', target='_blank'>Legacy Exporter</a>.")),
@@ -140,7 +140,7 @@ body <- dashboardBody(
                              "FileMaker Pro Format" = "fmp")),
               numericInput("n_threshold", "N Threshold", 15, min = 1, max = 100),
               h5(strong("Sheets Folder Selector:")),
-              shinyDirButton(id = "sheets_dir", label = "Folder select", title = "Sheets Folder Selector"),
+              shinyFiles::shinyDirButton(id = "sheets_dir", label = "Folder select", title = "Sheets Folder Selector"),
             )
           )
    ))

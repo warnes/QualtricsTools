@@ -29,7 +29,8 @@ Imports:
     shinydashboard,
     tidyr,
     xtable,
-    XML
+    XML,
+    shinyFiles
 Suggests: 
     testthat,
     knitr,

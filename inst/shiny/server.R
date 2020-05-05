@@ -50,11 +50,11 @@ shinyServer(function(input, output) {
   # 3. the original_first_rows.
   survey_and_responses <- reactive({
     if(is.null(input$root)){
-      qsf_path <- parseFilePaths(roots=c(wd='C:\\'), input$file1)
-      csv_path <- parseFilePaths(roots=c(wd='C:\\'), input$file2)
+      qsf_path <- shinyFiles::parseFilePaths(roots=c(wd='C:\\'), input$file1)
+      csv_path <- shinyFiles::parseFilePaths(roots=c(wd='C:\\'), input$file2)
     } else{
-      qsf_path <- parseFilePaths(roots=c(wd = input$root), input$file1)
-      csv_path <- parseFilePaths(roots=c(wd = input$root), input$file2)
+      qsf_path <- shinyFiles::parseFilePaths(roots=c(wd = input$root), input$file1)
+      csv_path <- shinyFiles::parseFilePaths(roots=c(wd = input$root), input$file2)
     }
 
 
@@ -390,7 +390,7 @@ shinyServer(function(input, output) {
       paste("Shiny is not currently set to generate codded comments for this survey")
     } else if(input$comment_choices == "Yes"){
 
-      sheets_dir <- parseDirPath(roots = c(wd = input$root), input$sheets_dir)
+      sheets_dir <- shinyFiles::parseDirPath(roots = c(wd = input$root), input$sheets_dir)
       coded_sheets <- directory_get_coded_comment_sheets(sheets_dir, code_type = input$code_type)
 
       original_first_rows <- survey_and_responses()[[3]]
