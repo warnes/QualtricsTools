@@ -68,3 +68,35 @@ make_split_coded_comments(
 
 
 ```
+
+
+
+
+## Seeing how qtSkip and stuff works
+```{r}
+
+get_setup(qsf_path = here::here("data", "Sample Surveys", "Better Sample Survey", "Better_Sample_Survey.qsf"),
+          csv_path = here::here("data", "Sample Surveys", "Better Sample Survey", "Better_Sample_Survey.csv"),
+          headerrows = 3)
+
+questions[[find_question_index(questions, "q1_recent")]][['qtSkip']] <- TRUE
+
+blocks <- questions_into_blocks(questions, blocks)
+
+
+make_results_tables(output_dir= here::here("Scratch_Work"))
+make_text_appendices(output_dir=here::here("Scratch_Work"))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+

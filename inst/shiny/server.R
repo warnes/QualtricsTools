@@ -12,7 +12,6 @@ shinyServer(function(input, output) {
 
   # Here is the back end for the file selectors:
   qsfupdateRoots <- function(Roots) {
-    print(Roots)
     shinyFiles::shinyFileChoose(input, 'file1', roots = Roots, filetypes=c('qsf'),
                                 defaultPath='', defaultRoot='wd')
   }
@@ -27,7 +26,6 @@ shinyServer(function(input, output) {
   })
 
   csvupdateRoots <- function(Roots) {
-    print(Roots)
     shinyFiles::shinyFileChoose(input, 'file2', roots=Roots, filetypes=c('csv'),
                                 defaultPath='', defaultRoot='wd')
   }
@@ -52,13 +50,9 @@ shinyServer(function(input, output) {
     if(is.null(input$root)){
       qsf_path <- shinyFiles::parseFilePaths(roots=c(wd='C:\\'), input$file1)
       csv_path <- shinyFiles::parseFilePaths(roots=c(wd='C:\\'), input$file2)
-      print(qsf_path)
-      print(csv_path)
     } else{
       qsf_path <- shinyFiles::parseFilePaths(roots=c(wd = input$root), input$file1)
       csv_path <- shinyFiles::parseFilePaths(roots=c(wd = input$root), input$file2)
-      print(qsf_path)
-      print(csv_path)
     }
 
 
@@ -74,6 +68,13 @@ shinyServer(function(input, output) {
             survey[['SurveyElements']][[i]][['Payload']][['DataExportTag']] %in% values[['unselected_questions']]) {
           survey[['SurveyElements']][[i]][['qtSkip']] <- TRUE
         }
+      }
+    }
+
+    # Exclude verbatim responses if the user wants
+    if(input$include_verbatim == "No"){
+      for (i in 1:length(survey[['SurveyElements']])){
+        survey[['SurveyElements']][[i]][['verbatimSkip']] <- TRUE
       }
     }
 
@@ -374,7 +375,6 @@ shinyServer(function(input, output) {
 
   # Here is the back end for the folder selectors for codded comments:
   updateRoots <- function(Roots) {
-    print(Roots)
     shinyFiles::shinyDirChoose(input = input, "sheets_dir",
                                 roots = Roots)
   }
@@ -595,6 +595,7 @@ shinyServer(function(input, output) {
   # and for each of the input[['selected_questions']] we remove them from the
   # values[['unselected_questions']] if they appear there.
   observeEvent(input$submit, {
+    print(input[['unselected_questions']])
     for (q in input[['unselected_questions']]) {
       if (! q %in% values[['unselected_questions']]) {
         values[['unselected_questions']] <- c(values[['unselected_questions']], q)
@@ -606,6 +607,7 @@ shinyServer(function(input, output) {
         values[['unselected_questions']] <- values[['unselected_questions']][-index]
       }
     }
+    print(values[['unselected_questions']])
   })
 
   # Output each tabpanels' corresponding HTML contents generated above

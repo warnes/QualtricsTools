@@ -139,6 +139,9 @@ body <- dashboardBody(
                            c("NVivo format" = "nvivo",
                              "FileMaker Pro Format" = "fmp")),
               numericInput("n_threshold", "N Threshold", 15, min = 1, max = 100),
+              radioButtons("include_verbatim", "Include Verbatim Coments In Appendices?",
+                           c("Yes", "No"),
+                           selected = "Yes"),
               h5(strong("Sheets Folder Selector:")),
               shinyFiles::shinyDirButton(id = "sheets_dir", label = "Folder select", title = "Sheets Folder Selector"),
             )
