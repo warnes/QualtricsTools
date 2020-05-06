@@ -370,7 +370,7 @@ split_side_by_side_q <- function(question) {
   #Add clean question text to the side-by-side question element
 
   for (i in 1:length(split_q)) {
-    split_q[[i]][['Payload']][['QuestionTextClean']] <- stringr::str_c(mainq_text, "---",
+    split_q[[i]][['Payload']][['QuestionTextClean']] <- stringr::str_c(mainq_text, " -",
                                                             clean_html_and_css(split_q[[i]][["Payload"]][["QuestionText"]]))
   }
 
