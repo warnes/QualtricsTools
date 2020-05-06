@@ -1,6 +1,6 @@
 options(shiny.maxRequestSize = 30 * 1024 ^ 2)
 
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
 
   # reactiveValues are values which, similar to the input values,
   # cause any reactive block which depends on them to recalculate its output.
@@ -12,13 +12,14 @@ shinyServer(function(input, output) {
 
   # Here is the back end for the file selectors:
   qsfupdateRoots <- function(Roots) {
-    shinyFiles::shinyFileChoose(input, 'file1', roots = Roots, filetypes=c('qsf'),
-                                defaultPath='', defaultRoot='wd')
+    shinyFiles::shinyFileChoose(input, 'file1', roots = Roots, filetypes=c('qsf'), session = session)
   }
 
   observe({
     if(input$root == ""){
-      qsfupdateRoots(c(wd='c:\\'))
+      volumes <- shinyFiles::getVolumes()() # this gets the directory at the base of your computer.
+      print(volumes)
+      qsfupdateRoots(volumes)
     } else{
       qsfupdateRoots(c(wd = input$root))
     }
@@ -26,13 +27,13 @@ shinyServer(function(input, output) {
   })
 
   csvupdateRoots <- function(Roots) {
-    shinyFiles::shinyFileChoose(input, 'file2', roots=Roots, filetypes=c('csv'),
-                                defaultPath='', defaultRoot='wd')
+    shinyFiles::shinyFileChoose(input, 'file2', roots=Roots, filetypes=c('csv'), session = session)
   }
 
   observe({
     if(input$root == ""){
-      csvupdateRoots(c(wd='c:\\'))
+      volumes <- shinyFiles::getVolumes()() # this gets the directory at the base of your computer.
+      csvupdateRoots(volumes)
     } else{
       csvupdateRoots(c(wd = input$root))
     }
@@ -47,9 +48,10 @@ shinyServer(function(input, output) {
   # 2. the responses, and
   # 3. the original_first_rows.
   survey_and_responses <- reactive({
-    if(is.null(input$root)){
-      qsf_path <- shinyFiles::parseFilePaths(roots=c(wd='C:\\'), input$file1)
-      csv_path <- shinyFiles::parseFilePaths(roots=c(wd='C:\\'), input$file2)
+    if(input$root == ""){
+      volumes <- shinyFiles::getVolumes()() # this gets the directory at the base of your computer.
+      qsf_path <- shinyFiles::parseFilePaths(roots = volumes, input$file1)
+      csv_path <- shinyFiles::parseFilePaths(roots= volumes, input$file2)
     } else{
       qsf_path <- shinyFiles::parseFilePaths(roots=c(wd = input$root), input$file1)
       csv_path <- shinyFiles::parseFilePaths(roots=c(wd = input$root), input$file2)
@@ -105,7 +107,9 @@ shinyServer(function(input, output) {
 
     # load_csv_data returns a pair of two elements, the responses and
     # the original_first_rows.
-    responses <- load_csv_data(csv_path, qsf_path, headerrows)
+    try({
+      responses <- load_csv_data(csv_path, qsf_path, headerrows)
+    }, silent = TRUE)
     original_first_rows <- responses[[2]]
     responses <- responses[[1]]
 
@@ -376,12 +380,14 @@ shinyServer(function(input, output) {
   # Here is the back end for the folder selectors for codded comments:
   updateRoots <- function(Roots) {
     shinyFiles::shinyDirChoose(input = input, "sheets_dir",
-                                roots = Roots)
+                                roots = Roots, session = session, restrictions = system.file(package = "base"))
   }
 
   observe({
     if(input$root == ""){
-          updateRoots(c(wd='C:\\'))
+          volumes <- shinyFiles::getVolumes()() # this gets the directory at the base of your computer.
+          print(volumes)
+          updateRoots(volumes)
         } else{
           updateRoots(c(wd = input$root))
         }
@@ -394,7 +400,13 @@ shinyServer(function(input, output) {
       paste("Shiny is not currently set to generate codded comments for this survey")
     } else if(input$comment_choices == "Yes"){
 
-      sheets_dir <- shinyFiles::parseDirPath(roots = c(wd = input$root), input$sheets_dir)
+      if(input$root == ""){
+        roots <- shinyFiles::getVolumes()() # this gets the directory at the base of your computer.
+      } else{
+        roots <- c(wd = input$root)
+      }
+
+      sheets_dir <- shinyFiles::parseDirPath(roots = roots, input$sheets_dir)
       coded_sheets <- directory_get_coded_comment_sheets(sheets_dir, code_type = input$code_type)
 
       original_first_rows <- survey_and_responses()[[3]]
