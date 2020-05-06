@@ -53,7 +53,7 @@ get_reorganized_questions_and_blocks <- function(survey,
   questions <- generate_results(questions, original_first_rows = original_first_rows)
 
   #Now insert questions into blocks
-  blocks <- purrr::map(blocks, ~ insert_questions_into_block(block = .x, questions = questions))
+  blocks <- insert_questions_into_blocks(questions = questions, blocks = blocks)
 
   # insert the header into the blocks
   blocks[['header']] <- c(paste0("Survey Name: ",
@@ -97,11 +97,23 @@ valid_questions_blocks_from_survey <- function(survey) {
 
   #Remove trash block based on the "Type" element of the block
   blocks_notrash <- purrr::keep(blocks_all, ~ .x[["Type"]]!= "Trash")
-  #Name the BlockElements (quesiton items) within the blocks
-  blocks_notrash <- purrr::map(blocks_notrash,
-                               ~ purrr::modify_at(.x, "BlockElements",
-                                                  ~ purrr::set_names(.x, purrr::map_chr(.x, ~ stringr::str_c(.x[["QuestionID"]],
-                                                                                                             .x[["Type"]],sep="-")))))
+
+  #Remove any BlockElements that are NOT survey questions
+  #We do this by applying a function over the blocks and keeping the block elements from each block of type "Question"
+  blocks_notrash <- lapply(blocks_notrash, function(x) {
+    if ("BlockElements" %in% names(x)) {
+      if (length(x) > 0) {
+        x[["BlockElements"]] <- purrr::keep(x[["BlockElements"]], ~ .x[["Type"]]=="Question")
+        return(x)
+      }
+    }
+  })
+
+  #Name the BlockElements (question items) within the blocks
+  blocks_notrash <- lapply(blocks_notrash, function(x) {
+    names(x[['BlockElements']]) <- paste0(purrr::map_chr(x[['BlockElements']], "QuestionID"), "-", purrr::map_chr(x[['BlockElements']], "Type"))
+    return(x)
+  })
 
   #Extract a list of questions, SurveyElements that have Element "SQ"
   questions <- purrr::keep(survey_elements, ~ .x[["Element"]]=="SQ")
@@ -221,7 +233,7 @@ qtype_human <- function(question) {
 #' Generate a list of user notes
 #'
 #' Each list element is named with the
-#' parent question export tag and contains the survey note text prepended with "User note: "
+#' parent question export tag and contains the survey note text prepended with "User Note: "
 #'
 #' @inheritParams get_reorganized_questions_and_blocks
 #'
@@ -242,8 +254,8 @@ note_text_from_survey <- function(survey) {
   #Now we want to pluck only the messages, which is the text of the note
   user_notes_text <- purrr::map(user_notes_text, ~ purrr::map(.x, ~ purrr::pluck(.x,"Message")))
   user_notes_text <- purrr::map(user_notes_text, ~ purrr::flatten(.x))
-  #Prepend each note with the "User note: " text tag
-  user_notes_text <- purrr::map(user_notes_text, ~ purrr::map(.x,~stringr::str_c("User note: ",.x)))
+  #Prepend each note with the "User Note: " text tag
+  user_notes_text <- purrr::map(user_notes_text, ~ purrr::map(.x,~stringr::str_c("User Note: ",.x)))
   return(user_notes_text)
 }
 
@@ -275,7 +287,8 @@ insert_skiplogic_into_questions <- function(questions,blocks) {
         if(has_skip_logic) {
           skip_logic <- be[["SkipLogic"]]
           #Add display logic to the question
-          questions <- purrr::modify_at(questions,which(be[["QuestionID"]]==purrr::map_chr(questions,"PrimaryAttribute")), ~rlist::list.append(.x,SkipLogic = skip_logic))
+          questions <- purrr::modify_at(questions,which(be[["QuestionID"]]==purrr::map_chr(questions,"PrimaryAttribute")),
+                                        ~rlist::list.append(.x,SkipLogic = skip_logic))
         }
       }
       return(questions)
