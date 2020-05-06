@@ -25,7 +25,9 @@ app()
 # Found this package called shinyFiles
 
 ```{r}
-devtools::install_github("thomasp85/shinyFiles")
+devtools::install_github("thomasp85/shinyFiles", force = TRUE)
+
+#devtools::install_github("Matthewh19/shinyFiles", ref = "Pencil_Paste_Work", force = TRUE)
 
 library(shinyFiles)
 ```

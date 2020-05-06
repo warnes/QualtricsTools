@@ -11,32 +11,28 @@ shinyServer(function(input, output, session) {
 
 
   # Here is the back end for the file selectors:
-  qsfupdateRoots <- function(Roots) {
-    shinyFiles::shinyFileChoose(input, 'file1', roots = Roots, filetypes=c('qsf'), session = session)
-  }
 
   observe({
     if(input$root == ""){
       volumes <- shinyFiles::getVolumes()() # this gets the directory at the base of your computer.
-      print(volumes)
-      qsfupdateRoots(volumes)
+      roots <- c(volumes)
     } else{
-      qsfupdateRoots(c(wd = input$root))
+      print(input$root)
+      roots <- c(project_root = input$root)
+      print(roots)
     }
+    shinyFiles::shinyFileChoose(input, 'file1', roots = roots, filetypes=c('qsf'), session = session)
 
   })
 
-  csvupdateRoots <- function(Roots) {
-    shinyFiles::shinyFileChoose(input, 'file2', roots=Roots, filetypes=c('csv'), session = session)
-  }
-
   observe({
     if(input$root == ""){
       volumes <- shinyFiles::getVolumes()() # this gets the directory at the base of your computer.
-      csvupdateRoots(volumes)
+      roots <- c(volumes)
     } else{
-      csvupdateRoots(c(wd = input$root))
+      roots <- c(project_root = input$root)
     }
+    shinyFiles::shinyFileChoose(input, 'file2', roots=roots, filetypes=c('csv'), session = session)
 
   })
 
@@ -53,8 +49,8 @@ shinyServer(function(input, output, session) {
       qsf_path <- shinyFiles::parseFilePaths(roots = volumes, input$file1)
       csv_path <- shinyFiles::parseFilePaths(roots= volumes, input$file2)
     } else{
-      qsf_path <- shinyFiles::parseFilePaths(roots=c(wd = input$root), input$file1)
-      csv_path <- shinyFiles::parseFilePaths(roots=c(wd = input$root), input$file2)
+      qsf_path <- shinyFiles::parseFilePaths(roots=c(project_root = input$root), input$file1)
+      csv_path <- shinyFiles::parseFilePaths(roots=c(project_root = input$root), input$file2)
     }
 
 
@@ -380,17 +376,20 @@ shinyServer(function(input, output, session) {
   # Here is the back end for the folder selectors for codded comments:
   updateRoots <- function(Roots) {
     shinyFiles::shinyDirChoose(input = input, "sheets_dir",
-                                roots = Roots, session = session, restrictions = system.file(package = "base"))
+                               roots = Roots, session = session, restrictions = system.file(package = "base"))
   }
 
   observe({
     if(input$root == ""){
-          volumes <- shinyFiles::getVolumes()() # this gets the directory at the base of your computer.
-          print(volumes)
-          updateRoots(volumes)
-        } else{
-          updateRoots(c(wd = input$root))
+      volumes <- shinyFiles::getVolumes()() # this gets the directory at the base of your computer.
+      # updateRoots(volumes)
+      roots <- c(volumes)
+      } else{
+        # updateRoots(c(wd = input$root, volumes))
+        roots <- c(project_root = input$root)
         }
+    shinyFiles::shinyDirChoose(input = input, "sheets_dir",
+                               roots = roots, session = session, restrictions = system.file(package = "base"))
 
   })
 
@@ -403,7 +402,7 @@ shinyServer(function(input, output, session) {
       if(input$root == ""){
         roots <- shinyFiles::getVolumes()() # this gets the directory at the base of your computer.
       } else{
-        roots <- c(wd = input$root)
+        roots <- c(project_root = input$root)
       }
 
       sheets_dir <- shinyFiles::parseDirPath(roots = roots, input$sheets_dir)
