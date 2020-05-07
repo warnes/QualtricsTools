@@ -143,7 +143,7 @@ body <- dashboardBody(
                            c("Yes", "No"),
                            selected = "Yes"),
               h5(strong("Sheets Folder Selector:")),
-              shinyFiles::shinyDirButton(id = "sheets_dir", label = "Folder select", title = "Sheets Folder Selector"),
+              shinyFiles::shinyDirButton(id = 'sheets_dir', label = "Folder select", title = "Sheets Folder Selector"),
             )
           )
    ))

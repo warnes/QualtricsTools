@@ -12,28 +12,14 @@ shinyServer(function(input, output, session) {
 
   # Here is the back end for the file selectors:
 
-  observe({
+  Theroots <- reactive({
     if(input$root == ""){
       volumes <- shinyFiles::getVolumes()() # this gets the directory at the base of your computer.
-      roots <- c(volumes)
+      Theroots <- c(volumes)
     } else{
-      print(input$root)
-      roots <- c(project_root = input$root)
-      print(roots)
+      Theroots <- c(project_root = input$root)
     }
-    shinyFiles::shinyFileChoose(input, 'file1', roots = roots, filetypes=c('qsf'), session = session)
-
-  })
-
-  observe({
-    if(input$root == ""){
-      volumes <- shinyFiles::getVolumes()() # this gets the directory at the base of your computer.
-      roots <- c(volumes)
-    } else{
-      roots <- c(project_root = input$root)
-    }
-    shinyFiles::shinyFileChoose(input, 'file2', roots=roots, filetypes=c('csv'), session = session)
-
+    return(Theroots)
   })
 
   # The survey_and_responses reactive block reads the input files
@@ -44,16 +30,12 @@ shinyServer(function(input, output, session) {
   # 2. the responses, and
   # 3. the original_first_rows.
   survey_and_responses <- reactive({
-    if(input$root == ""){
-      volumes <- shinyFiles::getVolumes()() # this gets the directory at the base of your computer.
-      qsf_path <- shinyFiles::parseFilePaths(roots = volumes, input$file1)
-      csv_path <- shinyFiles::parseFilePaths(roots= volumes, input$file2)
-    } else{
-      qsf_path <- shinyFiles::parseFilePaths(roots=c(project_root = input$root), input$file1)
-      csv_path <- shinyFiles::parseFilePaths(roots=c(project_root = input$root), input$file2)
-    }
+    shinyFiles::shinyFileChoose(input, 'file1', roots = Theroots(), filetypes=c('qsf'), session = session)
+    qsf_path <- shinyFiles::parseFilePaths(roots = Theroots(), input$file1)
 
 
+    shinyFiles::shinyFileChoose(input, 'file2', roots = Theroots(), filetypes=c('csv'), session = session)
+    csv_path <- shinyFiles::parseFilePaths(roots = Theroots(), input$file2)
 
     survey <- load_qsf_data(qsf_path)
 
@@ -373,25 +355,33 @@ shinyServer(function(input, output, session) {
   })
 
 
-  # Here is the back end for the folder selectors for codded comments:
-  updateRoots <- function(Roots) {
-    shinyFiles::shinyDirChoose(input = input, "sheets_dir",
-                               roots = Roots, session = session, restrictions = system.file(package = "base"))
-  }
+  # observe({
+  #   print(Theroots())
+  #   shinyFiles::shinyDirChoose(input = input, 'sheets_dir',
+  #                              roots = Theroots(), session = session)
+  # })
 
-  observe({
-    if(input$root == ""){
-      volumes <- shinyFiles::getVolumes()() # this gets the directory at the base of your computer.
-      # updateRoots(volumes)
-      roots <- c(volumes)
-      } else{
-        # updateRoots(c(wd = input$root, volumes))
-        roots <- c(project_root = input$root)
-        }
-    shinyFiles::shinyDirChoose(input = input, "sheets_dir",
-                               roots = roots, session = session, restrictions = system.file(package = "base"))
-
-  })
+  # updateRoots <- function(Roots) {
+  #   shinyFiles::shinyDirChoose(input = input, "sheets_dir",
+  #                              roots = Roots)
+  # }
+  #
+  # observe({
+  #   if(input$root == ""){
+  #     volumes <- shinyFiles::getVolumes()() # this gets the directory at the base of your computer.
+  #     updateRoots(c(volumes))
+  #   } else{
+  #     str <- input$root
+  #     print(str)
+  #     print(paste("Here is str: ", str))
+  #     str <- gsub('\\\\', '/', str)
+  #     print(str)
+  #     print(paste("Here is str repathed: ", str))
+  #     updateRoots(c(project_root = str))
+  #   }
+  #
+  #
+  # })
 
   # Generate the coded comments, if the user wants coded comments.
   coded_comments <- reactive({
@@ -399,13 +389,14 @@ shinyServer(function(input, output, session) {
       paste("Shiny is not currently set to generate codded comments for this survey")
     } else if(input$comment_choices == "Yes"){
 
-      if(input$root == ""){
-        roots <- shinyFiles::getVolumes()() # this gets the directory at the base of your computer.
-      } else{
-        roots <- c(project_root = input$root)
-      }
+      shinyFiles::shinyDirChoose(input = input, 'sheets_dir',
+                                 roots = Theroots(), session = session)
 
-      sheets_dir <- shinyFiles::parseDirPath(roots = roots, input$sheets_dir)
+      print(paste("Root: ", Theroots()))
+      print(paste("Sheets dir input: ", input$sheets_dir))
+      sheets_dir <- shinyFiles::parseDirPath(roots = Theroots(), input$sheets_dir)
+      print(paste("sheets dir: ", sheets_dir))
+
       coded_sheets <- directory_get_coded_comment_sheets(sheets_dir, code_type = input$code_type)
 
       original_first_rows <- survey_and_responses()[[3]]
