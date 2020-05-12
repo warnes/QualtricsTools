@@ -27,7 +27,7 @@ test_that("Notes are inserted into questions by insert_notes_into_questions", {
   user_notes_exist_in_questions <-
     length(which(sapply(questions, function(x) {
       'qtNotes' %in% names(x) &&
-        grepl("User note", x[['qtNotes']])
+        grepl("User Note", x[['qtNotes']])
     }))) > 0
   expect_true(user_notes_exist_in_questions)
 })
