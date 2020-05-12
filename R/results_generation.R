@@ -208,6 +208,16 @@ generate_summary_stats <-
     entries <- as.character(unlist(entries))
     # Filter out NA, -99 (seen but unanswered), and any "" or blank space
     entries <- entries[! purrr::map_lgl(entries, ~ is.na(.x) || stringr::str_detect(.x, "^-99$|^\\s*$"))]
+    #check to make sure that there are entries; if there are no entries, add a note that
+    #' there were no responses to this question. If there are no responses,
+    #' add a note and return the question without a table.
+    if (length(entries)==0) {question[["qtNotes"]] <- if ("qtNotes" %in% names(question)){
+      append(question[["qtNotes"]],
+             "Note: No respondents answered this question")
+    } else {list("Note: No respondents answered this question.")}
+    return(question)
+    }
+
     # Converting all entries to numeric; suppress warnings so it will not print in the console
       #if values are converted to NA
     entries <- suppressWarnings(as.numeric(entries))
@@ -361,7 +371,7 @@ mc_multiple_answer_results <-
     if(! sort_by %in% c("N", "choices_alpha", "choices_order")){
       stop(paste(question[['Payload']][['DataExportTag']], "had an incorect sort_by argument used. Results could not be proccessed."))
     }
-    
+
     # save the original responses
     orig_responses <- question[['Responses']]
 
@@ -436,63 +446,63 @@ mc_multiple_answer_results <-
     choices <-
       lapply(names(N), function(choice)
         question_variable_to_choice_text(question, choice, use_recode_values = FALSE))
-    
+
     # make sure that these are flat lists
     choices <- unlist(choices, use.names = FALSE)
     N <- unlist(N, use.names = FALSE)
     Percent <- unlist(Percent, use.names = FALSE)
-    
-    
-    
-    
-    # Determine if the question has recode values greater than 900 indicating it is 
+
+
+
+
+    # Determine if the question has recode values greater than 900 indicating it is
     # an NA that we should sort to the bottom
     if ('RecodeValues' %in% names(question[['Payload']])) {
       sort_na <- any(question[['Payload']][['RecodeValues']] >= 900)
     } else
       sort_na <- FALSE
-    
-    
+
+
     if (sort_na) {
       recode_values <- question[['Payload']][['RecodeValues']]
       choiceorder <- question[['Payload']][['ChoiceOrder']]
-      
+
       # Sort by Choice Order this will match the choice order in the table
       recode_values <- recode_values[choiceorder]
-      
-      
+
+
       # Make sure the list of recode values is flat and is stored as a numbers
       recode_values <- unlist(recode_values, use.names = FALSE)
       recode_values <- as.numeric(recode_values)
-      
+
       # construct and return the output data frame with recode values
       results_table <-
         data.frame(N, Percent, choices, recode_values, row.names = NULL)
-      
+
       reg_results_table <- dplyr::filter(results_table, recode_values < 900)
       na_results_table <- dplyr::filter(results_table, recode_values >= 900)
-      
-      
+
+
       # Sort the regular data table descending by N then by choices or by choices, depending on the user
       if(sort_by == "N"){
         reg_results_table <- dplyr::arrange(reg_results_table, -N, choices)
       }else if(sort_by == "choices_alpha"){
         reg_results_table <- dplyr::arrange(reg_results_table, choices)
       }
-      
-      
-      # Sort the NA data table first by Recode value, then descending by N then by choices or 
+
+
+      # Sort the NA data table first by Recode value, then descending by N then by choices or
       # by choices, depending on the user
       na_results_table <- dplyr::arrange(na_results_table, recode_values)
-      
+
       results_table <- rbind(reg_results_table, na_results_table)
       results_table[['recode_values']] <- NULL
     } else{
-      
+
       # construct and return the output data frame for the normal data that doesn't have any NA
       results_table <-
         data.frame(N, Percent, choices, row.names = NULL, stringsAsFactors = FALSE)
-      
+
       # Sort the data table descending by N then by choices or by choices, depending on the user
       if(sort_by == "N"){
         results_table <- dplyr::arrange(results_table, -N, choices)
@@ -500,7 +510,7 @@ mc_multiple_answer_results <-
         results_table <- dplyr::arrange(results_table, choices)
       }
     }
-   
+
     # Remove choices as the name of the third column
     colnames(results_table)[3] <- ""
 
@@ -510,11 +520,11 @@ mc_multiple_answer_results <-
     # add a note for the denominators used in the question
     if (!('qtNotes' %in% names(question)))
       question[['qtNotes']] <- list()
-   
+
     question[['qtNotes']] <-
       c(question[['qtNotes']], paste0('Denominator Used: ',
                                       toString(total_denominator)))
-    
+
 
     return(question)
   }
