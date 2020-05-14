@@ -457,7 +457,7 @@ split_block_elements <- function(block,sbs_question_qids) {
 #' @return The single survey block with question elements updated to include the full question. In the setup process,
 #' BlockElements within the blocks that correspond to survey questions are initially named with question QIDs. This function
 #' renames the Block Elements with question Data Export Tags corresponding to the question list.
-insert_questions_into_block <- function(block,questions) {
+insert_questions_into_block <- function(questions, block) {
   if ("BlockElements" %in% names(block)) {
     block[["BlockElements"]] <- purrr::modify_if(block[["BlockElements"]],
                                                  ~.x[["Type"]]=="Question",
@@ -1443,7 +1443,7 @@ split_respondents <-
       split_questions[[i]] <-
         generate_results(split_questions[[i]], original_first_rows)
       split_blocks[[i]] <-
-        insert_questions_into_blocks(split_questions[[i]], split_blocks[[i]])
+        insert_questions_into_blocks(questions = split_questions[[i]], blocks = split_blocks[[i]])
       split_blocks[[i]][['header']] <-
         c(
           split_blocks[[i]][['header']],
@@ -1662,7 +1662,7 @@ create_question_dictionary_from_qsf <- function(qsf_path) {
   #Revise the blocks to create space for elements split from side-by-side questions
   blocks <- purrr::map(blocks, ~ split_block_elements(.x,sbs_question_qids))
   #Now insert questions into blocks
-  blocks <- purrr::map(blocks, ~ insert_questions_into_block(block = .x, questions = questions))
+  blocks <- insert_questions_into_blocks(blocks = blocks, questions = questions)
 
 
   # survey <- ask_for_qsf(qsf_path)

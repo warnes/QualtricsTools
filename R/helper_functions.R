@@ -370,10 +370,16 @@ sample_survey=TRUE parameter."
     original_first_rows <- sample_original_first_rows
   }
 
-  questions_and_blocks <-
-    get_reorganized_questions_and_blocks(survey, responses, original_first_rows)
-  questions <- questions_and_blocks[[1]]
-  blocks <- questions_and_blocks[[2]]
+  if (already_loaded==TRUE && exists('survey', where = globalenv()) &&
+      exists('responses', where = globalenv())) {
+    questions <- get("questions", envir = globalenv())
+    blocks <- get("blocks", envir = globalenv())
+  } else {
+    questions_and_blocks <-
+      get_reorganized_questions_and_blocks(survey, responses, original_first_rows)
+    questions <- questions_and_blocks[[1]]
+    blocks <- questions_and_blocks[[2]]
+    }
 
   # insert a header into the blocks
   blocks[['header']] <- c(paste0("Survey Name: ",
