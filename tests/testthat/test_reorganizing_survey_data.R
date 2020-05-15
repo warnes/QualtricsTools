@@ -8,10 +8,10 @@ test_that("Test that blocks_from_survey returns a list with elements which each 
   qsf_path = file.path(surveysdir, "/Better Sample Survey/Better_Sample_Survey.qsf")
   headerrows <- 3
   survey <- ask_for_qsf(qsf_path)
-  blocks <- blocks_from_survey(survey)
-  all_blocks_contain_type <- all(sapply(blocks, function(x) "Type" %in% names(x)))
-  all_blocks_contain_ID <- all(sapply(blocks, function(x) "ID" %in% names(x)))
-  all_blocks_contain_description <- all(sapply(blocks, function(x) "Description" %in% names(x)))
+  blocks <- valid_questions_blocks_from_survey(survey)[['blocks']]
+  all_blocks_contain_type <- all(sapply(blocks, function(x) !is.null(x) & "Type" %in% names(x)))
+  all_blocks_contain_ID <- all(sapply(blocks, function(x) ! is.null(x) & "ID" %in% names(x)))
+  all_blocks_contain_description <- all(sapply(blocks, function(x) !is.null(x) & "Description" %in% names(x)))
   expect_true(all(c(all_blocks_contain_ID, all_blocks_contain_type, all_blocks_contain_description)))
   })
 
@@ -19,7 +19,7 @@ test_that("Test that blocks_from_survey returns a list with elements which each 
 test_that("Notes are inserted into questions by insert_notes_into_questions", {
   qsf_path <- file.path(surveysdir, "User Notes Survey/Notes_Survey.qsf")
   survey <- ask_for_qsf(qsf_path)
-  blocks <- blocks_from_survey(survey)
+  #blocks <- valid_questions_blocks_from_survey(survey)[['blocks']]
   # insert_notes_into_questions is performed by get_reorganized_questions_and_blocks
   questions_and_blocks <- get_reorganized_questions_and_blocks(survey=survey, responses=data.frame(), original_first_rows=data.frame())
   questions <- questions_and_blocks[[1]]

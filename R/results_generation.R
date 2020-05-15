@@ -198,16 +198,26 @@ generate_summary_stats <-
     #Add a note that question results could not be processed; if notes already exist,
     #append to the existing list of qtNotes
     if (ncol(as.data.frame(entries))!= 1){
-      question[["qtNotes"]] <- dplyr::if_else("qtNotes" %in% names(question),
-                                            list(append(question[["qtNotes"]],
-                                                        "This question requires one column of numeric text entry responses to generate summary statistics. Please check your results and try again.")),
-                                            list("This question requires one column of numeric text entry responses to generate summary statistics. Please check your results and try again."))
+      question[["qtNotes"]] <- if ("qtNotes" %in% names(question)){
+        append(question[["qtNotes"]],
+               "Note: This question requires one column of numeric text entry responses to generate summary statistics. Please check your results and try again.")
+        } else {list("Note: This question requires one column of numeric text entry responses to generate summary statistics. Please check your results and try again.")}
       return(question)
     }
     # Converting to character to avoid factors
     entries <- as.character(unlist(entries))
     # Filter out NA, -99 (seen but unanswered), and any "" or blank space
     entries <- entries[! purrr::map_lgl(entries, ~ is.na(.x) || stringr::str_detect(.x, "^-99$|^\\s*$"))]
+    #check to make sure that there are entries; if there are no entries, add a note that
+    #' there were no responses to this question. If there are no responses,
+    #' add a note and return the question without a table.
+    if (length(entries)==0) {question[["qtNotes"]] <- if ("qtNotes" %in% names(question)){
+      append(question[["qtNotes"]],
+             "Note: No respondents answered this question")
+    } else {list("Note: No respondents answered this question.")}
+    return(question)
+    }
+
     # Converting all entries to numeric; suppress warnings so it will not print in the console
       #if values are converted to NA
     entries <- suppressWarnings(as.numeric(entries))
@@ -215,10 +225,10 @@ generate_summary_stats <-
     # Check for N/A values; if they exist, add a note to qtNotes indicating that
     # the question data needs to be cleaned of text values before processing
     if (any(is.na(entries))){
-      question[["qtNotes"]] <- dplyr::if_else("qtNotes" %in% names(question),
-                                             list(append(question[["qtNotes"]],
-                                                         "Summary statistics for this question could not be processed due to non-numeric response data. Please clean the data and try again.")),
-                                             list("Summary statistics for this question could not be processed due to non-numeric response data. Please clean the data and try again."))
+      question[["qtNotes"]] <- if("qtNotes" %in% names(question)){
+        append(question[["qtNotes"]],
+               "Note: Summary statistics for this question could not be processed due to non-numeric response data. Please clean the data and try again.")
+      } else {list("Note: Summary statistics for this question could not be processed due to non-numeric response data. Please clean the data and try again.")}
       return(question)
     }
     # Generating Tables with summary statistics
@@ -248,10 +258,10 @@ generate_summary_stats <-
     # appending dataframe with all stats to question
     question[['Table']] <- results_table
     #Add a note that summary statistics dat amust be cleaned before processing
-    question[["qtNotes"]] <- dplyr::if_else("qtNotes" %in% names(question),
-                                                            list(append(question[["qtNotes"]],
-                                                                        "Note: Summary Statistic data must be cleaned before processing.")),
-                                                            list("Note: Summary Statistic data must be cleaned before processing."))
+    question[["qtNotes"]] <- if("qtNotes" %in% names(question)){
+      append(question[["qtNotes"]],
+             "Note: Summary Statistic data must be cleaned before processing.")
+    } else {list("Note: Summary Statistic data must be cleaned before processing.")}
     return(question)
   }
 
@@ -361,7 +371,7 @@ mc_multiple_answer_results <-
     if(! sort_by %in% c("N", "choices_alpha", "choices_order")){
       stop(paste(question[['Payload']][['DataExportTag']], "had an incorect sort_by argument used. Results could not be proccessed."))
     }
-    
+
     # save the original responses
     orig_responses <- question[['Responses']]
 
@@ -436,63 +446,63 @@ mc_multiple_answer_results <-
     choices <-
       lapply(names(N), function(choice)
         question_variable_to_choice_text(question, choice, use_recode_values = FALSE))
-    
+
     # make sure that these are flat lists
     choices <- unlist(choices, use.names = FALSE)
     N <- unlist(N, use.names = FALSE)
     Percent <- unlist(Percent, use.names = FALSE)
-    
-    
-    
-    
-    # Determine if the question has recode values greater than 900 indicating it is 
+
+
+
+
+    # Determine if the question has recode values greater than 900 indicating it is
     # an NA that we should sort to the bottom
     if ('RecodeValues' %in% names(question[['Payload']])) {
       sort_na <- any(question[['Payload']][['RecodeValues']] >= 900)
     } else
       sort_na <- FALSE
-    
-    
+
+
     if (sort_na) {
       recode_values <- question[['Payload']][['RecodeValues']]
       choiceorder <- question[['Payload']][['ChoiceOrder']]
-      
+
       # Sort by Choice Order this will match the choice order in the table
       recode_values <- recode_values[choiceorder]
-      
-      
+
+
       # Make sure the list of recode values is flat and is stored as a numbers
       recode_values <- unlist(recode_values, use.names = FALSE)
       recode_values <- as.numeric(recode_values)
-      
+
       # construct and return the output data frame with recode values
       results_table <-
         data.frame(N, Percent, choices, recode_values, row.names = NULL)
-      
+
       reg_results_table <- dplyr::filter(results_table, recode_values < 900)
       na_results_table <- dplyr::filter(results_table, recode_values >= 900)
-      
-      
+
+
       # Sort the regular data table descending by N then by choices or by choices, depending on the user
       if(sort_by == "N"){
         reg_results_table <- dplyr::arrange(reg_results_table, -N, choices)
       }else if(sort_by == "choices_alpha"){
         reg_results_table <- dplyr::arrange(reg_results_table, choices)
       }
-      
-      
-      # Sort the NA data table first by Recode value, then descending by N then by choices or 
+
+
+      # Sort the NA data table first by Recode value, then descending by N then by choices or
       # by choices, depending on the user
       na_results_table <- dplyr::arrange(na_results_table, recode_values)
-      
+
       results_table <- rbind(reg_results_table, na_results_table)
       results_table[['recode_values']] <- NULL
     } else{
-      
+
       # construct and return the output data frame for the normal data that doesn't have any NA
       results_table <-
         data.frame(N, Percent, choices, row.names = NULL, stringsAsFactors = FALSE)
-      
+
       # Sort the data table descending by N then by choices or by choices, depending on the user
       if(sort_by == "N"){
         results_table <- dplyr::arrange(results_table, -N, choices)
@@ -500,7 +510,7 @@ mc_multiple_answer_results <-
         results_table <- dplyr::arrange(results_table, choices)
       }
     }
-   
+
     # Remove choices as the name of the third column
     colnames(results_table)[3] <- ""
 
@@ -510,11 +520,11 @@ mc_multiple_answer_results <-
     # add a note for the denominators used in the question
     if (!('qtNotes' %in% names(question)))
       question[['qtNotes']] <- list()
-   
+
     question[['qtNotes']] <-
       c(question[['qtNotes']], paste0('Denominator Used: ',
                                       toString(total_denominator)))
-    
+
 
     return(question)
   }
@@ -1178,6 +1188,24 @@ process_question_results <-
       should_use_ofr <- TRUE
     } else
       should_use_ofr <- FALSE
+
+    #Remove notes that were generated from previous results processing
+    #This checks to see if a note exists that came from one of the results generation functions.
+    if (! is.null(question[['qtNotes']]) && length(question[['qtNotes']])>0) {
+      qtNotes_orig <- question[['qtNotes']]
+      qtNotes <- list()
+      for (i in length(qtNotes_orig)) {
+        if (! stringr::str_detect(qtNotes_orig[[i]], "^Denominator Used: ") |
+            stringr::str_detect(qtNotes_orig[[i]], "^Valid Denominator: ") |
+            stringr::str_detect(qtNotes_orig[[i]], "^Note: This question requires one column of numeric text entry") |
+            stringr::str_detect(qtNotes_orig[[i]], "^Note: No respondents answered this question") |
+            stringr::str_detect(qtNotes_orig[[i]], "^Note: Summary statistics for this question could not be processed") |
+            stringr::str_detect(qtNotes_orig[[i]], "^Note: Summary Statistic data must be cleaned before processing.") ){
+          qtNotes <- append(qtNotes, qtNotes_orig[[i]])
+        }
+      question[['qtNotes']] <- qtNotes
+      }
+    }
 
     # Only process questions which have results
     if (is.null(question[['Responses']])) {

@@ -8,11 +8,17 @@ create_question_dictionary(blocks, flow)
 }
 \arguments{
 \item{blocks}{The blocks provided to this function must include questions inserted into
-the BlockElements. Create the list of blocks from a survey with blocks_from_survey(),
-and with questions on hand, insert them into the blocks with questions_into_blocks().}
+the BlockElements. Extract the list of block and the list of questions from the survey
+with `valid_questions_blocks_from_survey` and add necessary information with `add_question_detail`,
+then insert questions into the blocks
+with `insert_questions_into_blocks`.
+
+Question dictionaries require that each question already have items for QuestionTextClean
+and human readable question type. If you have not already prepared questions and blocks for
+this, use `question_dictionary_from_qsf` to generate a question dictionary from the QSF directly.}
 
 \item{flow}{A list of strings identifying the blocks in the order that they appear
-within the survey.}
+within the survey. Extract this form the survey QSF with `flow_from_survey`.}
 }
 \value{
 A data frame with a row for each question describing the question's details.

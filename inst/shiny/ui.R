@@ -46,7 +46,7 @@ body <- dashboardBody(
                       ),
               tabPanel(h5("question dictionary"),
                        checkboxInput("uncodeable-only", "Only Uncodeable Questions", value = FALSE, width = NULL),
-                       dataTableOutput("question_dictionary")
+                       DT::dataTableOutput("question_dictionary")
                        ),
               tabPanel(h5("text appendices"),
                        uiOutput("text_appendices")
@@ -65,7 +65,7 @@ body <- dashboardBody(
             actionButton("selectAll", "Unselect/Select All"),
             actionButton("submit", "Apply"),
             HTML("<br><br>"),
-              dataTableOutput("select_qdict")
+              DT::dataTableOutput("select_qdict")
               )
   )),
   tabItem(tabName = "more_options",

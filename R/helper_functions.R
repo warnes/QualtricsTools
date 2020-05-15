@@ -370,10 +370,16 @@ sample_survey=TRUE parameter."
     original_first_rows <- sample_original_first_rows
   }
 
-  questions_and_blocks <-
-    get_reorganized_questions_and_blocks(survey, responses, original_first_rows)
-  questions <- questions_and_blocks[[1]]
-  blocks <- questions_and_blocks[[2]]
+  if (already_loaded==TRUE && exists('survey', where = globalenv()) &&
+      exists('responses', where = globalenv())) {
+    questions <- get("questions", envir = globalenv())
+    blocks <- get("blocks", envir = globalenv())
+  } else {
+    questions_and_blocks <-
+      get_reorganized_questions_and_blocks(survey, responses, original_first_rows)
+    questions <- questions_and_blocks[[1]]
+    blocks <- questions_and_blocks[[2]]
+    }
 
   # insert a header into the blocks
   blocks[['header']] <- c(paste0("Survey Name: ",
@@ -570,27 +576,15 @@ blocks_header_to_html <- function(blocks) {
 
 #' Count the Number of Blocks
 #'
-#' Since the blocks list is used to transport some additional information
-#' beyond the contents of the survey questions, this function is here to
-#' help in counting how many valid question blocks there are.
-#' Any real question blocks will be enumerated (aka numbered) in R, as opposed to the
-#' content that's been added which will be named (with a string). This means that when
-#' looking at the names of the blocks list, the integer values or the values which
-#' have no name are the question blocks, and the values which have names are the
-#' information added by the QualtricsTools functions. This function counts up the former.
+#' Previously this was used to count the number of valid question blocks.
+#' It relied on having real question blocks indexed by R instead of named.
+#' This function has now been updated to just return the length of block elements.
+#' In the future, it may be updated to return the number of VALID blocks as needed.
 #'
 #' @param blocks A list of blocks
-#' @return the number of question blocks
+#' @return length of blocks; includes added elements, e.g. header
 number_of_blocks <- function(blocks) {
-  if (is.null(names(blocks))) {
-    return(length(blocks))
-  } else {
-    as_ints <- sapply(names(blocks), function(x) {
-      (!is.na(suppressWarnings(as.integer(x)))) || (x == "")
-    })
-    block_length <- length(which(as_ints))
-    return(block_length)
-  }
+  return(length(blocks))
 }
 
 #' Generate a List of Questions from Those Contained in the Blocks

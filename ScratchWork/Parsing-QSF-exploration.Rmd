@@ -1,0 +1,303 @@
+---
+title: "Parsing the Qualtrics QSF"
+author: "Emma Morgan"
+date: "3/25/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+devtools::install_github("emma-morgan/QualtricsTools", ref="qsf_parse")
+library(QualtricsTools)
+```
+
+## Spring 2020 Updates to parsing the QSF to set up QualtricsTools work
+
+Part of the QualtricsTools enhancement project has been to update the method of parsing the QSF. This involved changing the workhorse function get_reorganized_questions_and_blocks that is used in the setup process to pull questions from the QSF, clean text, add necessary information including question type, link responses to questions, generate results tables, and insert questions into blocks in preparation for creating summary reports results tables and appendices. This document does the following: 
+
+ * Outline the functions that have been added or revised as part of this project.
+ * Walk through an example of get_reorganized_questions_and_blocks
+ 
+## Updated or Added Functions
+
+### qtype_human
+
+This function returns a human readable question type based on a question's Payload information. In the setup and reogranization process, this is used intially with quesitons, then again when splitting side-by-side questions into their components. As a function, this allows us to expand easily to other questions types as QualtricsTools enhancements continue and we potentially add functionality for other question types (e.g. numeric text entry).
+
+Previously the function human_readable_qtype iterated through the list of questions and added an element "QuestionTypeHuman". This function takes a single question and returns the question type. It can be used with a for loop or mapper function as needed to append information.
+
+```{r qtype_human}
+qtype_human
+```
+
+
+### note_text_from_survey
+
+Give a Qualtrics survey read in from JSON .qsf using ask_for_qsf, extract the User Note survey elements. 
+these are identified as survey elements with Element "NT". The function creates a named list of these user notes 
+in which each element is named with the parent QID. Each list element is a list of user notes. If multiple 
+user notes exist in the survey, the list element for that question will have multiple elements. Each user note has been prepended with text "User note: "
+
+This replaces the function *notes_from_survey*.
+
+
+```{r note_text_from_survey}
+note_text_from_survey
+```   
+
+
+### insert_notes_into_questions
+
+Given a list of questions and the list of user notes created by *note_text_from_survey*, append the element "qtNotes" to questions that have a matching user note element in the list of notes. This is a revised version of an existing function.
+
+```{r insert_notes_into_questions}
+insert_notes_into_questions
+```
+
+### insert_skip_logic_into_questions
+
+Insert skip logic into questions. Skip logic is stored within a block's block elements.  This function iterates through the blocks. For each BlockElement within the block, it will determine whether skip logic exists. If the BlockElement has skip logic, it adds a SkipLogic element to the correspodning question in the list of questions.
+
+This function is new as part of the revised setup process.
+
+```{r insert_skiplogic_into_questions}
+insert_skiplogic_into_questions
+```
+
+### split_sbs_questions
+
+Given a list of questions, split side-by-side questions into their component questions. These are stored in the initial payload under the element "Additional Questions." This iterates over the list of survey questions and calls the function *split_side_by_side_q* for each side-by-side in the question list.
+
+This function is new. Previously this step was accomplished within *split_side_by_sides* along with splitting block elements. The revised version functionalizes splitting questions and blocks separately, then calls them with the wrapper function *split_sbs_questions_blocks*.
+
+```{r split_sbs_questions}
+split_sbs_questions
+```
+
+
+### split_side_by_side_q
+
+This function takes a single side by side question and splits it into its component questions. Each of the component questions is updated to have structure similar to initial Qualtrics questions. For this reason, the component questions have elements for Payload, QuestionTextClean, QuestionTypeHuman, Qualtrics_qtype, PrimaryAtribute. QuestionIDs are pulled from the additional question elements and "#" replaced with "_" character.
+
+This function is new. Previously this was done within a for loop of questions in the old *split_side_by_sides* function.
+
+
+```{r split_side_by_side_q}
+split_side_by_side_q
+```
+
+
+
+### split_block_elements
+
+This function iterates through a block and, where appropriate, splits the block element for a side-by-side question into separate elements for each component of the side-by-side. It takes as argument a list of blocks and the QIDs of side-by-side questions. This is called within the wrapper function split_sbs_questions_blocks, In this process, a list of side-by-side QIDs is derived using the list of questions. If used indpendently, QIDs will need to be passed to the function.
+
+This function is new. Previously this step was accomplished as part of the *split_side_by_sides* function.
+
+```{r split_block_elements}
+split_block_elements <- function(block,sbs_question_qids) {
+  if (! "BlockElements" %in% names(block)) {
+    return(block)
+  }
+  block_elements <- block[["BlockElements"]]
+  
+  #Create the elements that we will want to split
+  sbs_questions <- list()
+
+  for (i in 1:length(sbs_question_qids)) {
+    sbs_question_entry <- list(Type = "Question",
+                               QuestionID = names(sbs_question_qids)[[i]],
+                               ParentID = sbs_question_qids[[i]])
+    sbs_questions[[i]] <- sbs_question_entry
+  }
+  
+  for (element in block_elements) {
+    #Check that the element has a question ID, then check whether it's in the list
+    if ("QuestionID" %in% names(element) && 
+        element[["QuestionID"]] %in% map_chr(sbs_questions,"ParentID")) {
+      
+      qid_orig <- element[["QuestionID"]]
+      split_elements <- keep(sbs_questions, ~.x[["ParentID"]]==qid_orig) %>%
+        #Now name them with the Question ID
+        set_names(paste0(map_chr(., "QuestionID"),"-Question")) %>%
+        #And now remove the parent ID element
+        map(~rlist::list.remove(.x,"ParentID"))
+      
+      block_elements <- append(block_elements,
+                               split_elements,
+                               after = match(element[["QuestionID"]],str_replace(names(block_elements),"-Question$","")))
+    }
+  }
+  
+  #And now we want to remove those original question elements
+  block_elements <- discard(block_elements, ~.x[["QuestionID"]] %in% sbs_question_qids)
+  
+  block[["BlockElements"]] <- block_elements
+  return(block)
+  
+}
+```
+
+### insert_questions_into_blocks
+
+Given a single block and a list of questions, iterate through the BlockElements and insert questions into their appropriate place within the blocks. when we need to do this for all blocks, this should be called with a for loop or mapper function to iterate over blocks.
+
+This replaces the functionality of *insert_questions_into_blocks*. However, this revised version iterates over a single block and must be used with a mapper or for loop to insert questions into all blocks.
+
+
+
+```{r insert_questions_into_block}
+insert_questions_into_block
+```
+
+### get_reorganized_surveys_and_blocks
+
+This is a revised version of the function get_reorganized_quesitons_and_blocks. This takes as an arment the survey, responses, and original first row. It returns a list with two named elements, questions and blokcs. The list of questions has been have been pulled out of the survey. Trash questions are removed, HTML and CSS are cleaned from the question text, and the question information from the survey QSF has been augmented with human readable question type, responses, and notes. The list of blocks from the survey has been updated to have the qeustions inserted into block elements. The list of questions is named with the Question IDs for each element. In addition, the questions in the BlockElements are named with the Question ID (Data Export Tag).
+
+```{r get_reorganized_questions_and_blocks}
+get_reorganized_questions_and_blocks
+```
+
+###valid_questions_blocks_from_survey
+
+This is a new function that is called as a section of get_reorganized_surveys_and_blocks. The main reorganization function has been separated into three parts to more easily call these sections in other locations. This is the first of three sections. This takes as an arguement the Qualtrics survey parsed from the QSF. This survey arguement can be prepared using ask_for_qsf with the filepath to the QSF. The function return a named lists of questions and blocks extracted from the survey. Trash questions have been removed from both questions and blocks. Side-by-side questions have been split into their component parts. The next stage will be to add additional information to the question, then to link responses to quesitons and process results.
+
+```{r valid_questions_blocks_from_survye}
+valid_questions_blocks_from_survey
+```
+
+### add_question_detail
+
+This is a new function. It serves as Part 2 of the get_reorganized_questions_and_blocks. After extracting the valid questions and blocks from the survey with split side-by-side questions, this stage adds needed information to the Questions. It takes as argumenets the valid questions, valid blocks, and list of Qualtrics Notes. This cleans the question text and adds supplemental information regarding humanreadable question type, user notes, and skip logic.
+
+```{r add_question_detail}
+add_question_detail
+```
+
+### split_sbs_questions_blocks
+
+This is the third part of the revised survey reorganization function. It splits side-by-side questions into their componenet questions for processing with QualtricsTools. It also splits the survey question block elements into component parts to make space for questions to be inserted after results are processed.
+
+```{r split_sbs_questions_blocks}
+split_sbs_questions_blocks
+```
+
+
+### create_question_dictionary
+
+This is updated from the former function of the same name. The revised question reorganization function has been adjusted to insert QuestionTextClean and QuestionTypeHuman has elements of the question rather than elements of the question payload. Because the structure of questions has been updated, it was necessary to pull question informtion from the revised question elements rather than the payload.
+
+```{r create_question_dictionary}
+create_question_dictionary
+```
+
+### uncodeable_question_dictionary
+
+Similar to the question dictionary above, the revised question and block organization process changed the structure of the question elements. For this reason, the uncodable question dictionary needs to be created in a revised format.
+
+```{r uncodeable_question_dictionary}
+uncodeable_question_dictionary
+```
+
+## Sample: Get Reorganized Questions and Blocks
+
+This is a walk through of the process for getting reorganized questions and blocks. This uses the Better Sample Survey. The first part of get_setup reads in the qsf and csv to provide the necessary survey, original_first_rows, and responses.
+
+```{r load_better_sample_survey, include=FALSE}
+
+qsf_sample <- here::here("data","Sample Surveys", "Better Sample Survey", "Better_Sample_Survey.qsf")
+csv_sample <- here::here("data","Sample Surveys", "Better Sample Survey","Better_Sample_Survey.csv")
+survey <- rjson::fromJSON(file=qsf_sample)
+responses <- ask_for_csv(csv_sample,headerrows = 3)[[1]]
+original_first_rows <- ask_for_csv(csv_sample,headerrows = 3)[[2]]
+```
+
+Once these have been loaded, we enter get_reorganized_questions_and_blocks. This step will extract valid questions (those functions that are not trash questions) from the survey. It also pulls the blocks and removes the trash question elements. Below we illustrate how the question elements are named, how blocks elements are named, and what the question looks like that this point. Questions are named with their Data Export Tags (variable name roots). Blocks are named with descriptive text. Within blocks, the Block Elements for survey questions are named with QIDs.
+
+```{r sample_valid_questions_blocks}
+valid_q_b <- valid_questions_blocks_from_survey(survey)
+valid_questions <- valid_q_b[["questions"]]
+valid_blocks <- valid_q_b[["blocks"]]
+```
+
+Print names of valid_questions. Previous version of question organization did not name these elements, but now we can see that they are named.
+```{r}
+names(valid_questions)
+```
+
+Print names of elements of the first question. This will allow us to see what changes in the next step.
+```{r}
+names(valid_questions[[1]])
+```
+
+Print names of BlockElements from the first (and only) block in this survey. as we can see, these elements have now been named with QID and appended "-Question", but this could easily be updated or adjusted if desired.
+```{r}
+names(valid_blocks$`First Question Block`$BlockElements)
+```
+
+The next step in the revision process is to add_question_detail. This takes the Qualtrics User Notes list as an arguement, so we must first extract the notes from the survey. Printing the names of the first question element after this step shows that the function has added elements to the quesiton: QuestionTextClean, Qualtrics_qtype, QuestionTypeHuman.
+
+```{r}
+qtNotesList <- note_text_from_survey(survey)
+questions_added <- add_question_detail(valid_questions, valid_blocks, qtNotesList)
+names(questions_added[[1]])
+
+
+```
+
+The first question in the list does not include Qualtrics user notes or skip logic. However, we can see that these have been added in questions q2_favorite (skip logic) and q1_recent (user note).
+
+```{r}
+names(questions_added$q2_favorite)
+questions_added$QID1[["SkipLogic"]]
+names(questions_added$q1_recent)
+questions_added$QID4[["qtNotes"]]
+```
+
+After adding this extra information to the questions, the next step of the function is to split side-by-side questions. We can see that there are many side-by-side questions in this survey. This can be seen by mapping over the questions and pulling the Question Type Human
+
+```{r}
+purrr::map_chr(questions_added, "QuestionTypeHuman")
+```
+
+From this mapping it is clear that there are multiple side-by-side questions. After splitting side-by-sides, the side-by-side quesiton elements should be removed from the list and replaced with the split componenet questions.
+
+```{r}
+split_questions_blocks <- split_sbs_questions_blocks(questions_added, valid_blocks)
+split_questions <- split_questions_blocks[["questions"]]
+split_blocks <- split_questions_blocks[["blocks"]]
+names(split_questions)
+```
+
+The named elements of the quesiton list above show that the first three questions (Q10, Q11, Q12), which were all side-by-side, are now split inot their component questions. It can be shown that the blocks had something similar. At this point the block elements are still named with QIDs. These will be replaced with Data Export Tags in the last step of reorganizing_questions_and_blocks.
+
+```{r}
+names(split_blocks$`First Question Block`$BlockElements)
+```
+
+One could explore further to see that these split questions contain relevant information for future processing.
+
+The next steps of the function proceed as normal. Changes have not yet been made to linking responses or processing results. 
+
+```{r get-setup-long-exhaustive}
+#Clear the environment
+rm(list = ls())
+
+get_setup(qsf_path = here::here("data/Sample Surveys/Long Exhaustive Sample Survey/Long_Exhaustive_Sample_Survey.qsf"),
+          csv_path = here::here("data/Sample Surveys/Long Exhaustive Sample Survey/Long_Exhaustive_Sample_Survey.csv"),
+          headerrows = 3)
+
+```
+
+Here are the elements of our blocks with questions inserted and labeled by name.
+```{r}
+purrr::map(blocks, ~ if ('BlockElements' %in% names(.x)) {names(.x[['BlockElements']])})
+```
+
+
+We can similarly see that the question names exist as expected.
+
+```{r}
+names(questions)
+```
+
