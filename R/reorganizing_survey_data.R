@@ -1383,7 +1383,7 @@ split_respondents <-
       split_blocks[[i]][['split_group']] <-
         names(split_responses)[[i]]
     }
-
+    split_blocks <- purrr::set_names(split_blocks, split_responses)
     return(split_blocks)
   }
 
