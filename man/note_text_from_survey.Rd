@@ -16,5 +16,5 @@ This returns a list of user notes named with the parent question export tag.
 }
 \description{
 Each list element is named with the
-parent question export tag and contains the survey note text prepended with "User note: "
+parent question export tag and contains the survey note text prepended with "User Note: "
 }

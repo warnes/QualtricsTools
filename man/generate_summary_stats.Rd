@@ -17,6 +17,8 @@ or columns ("horizontal"). Default is set to vertical.}
 \value{
 A question with a ['Table'] appended to it where the summary stats are
 present
+there were no responses to this question. If there are no responses,
+add a note and return the question without a table.
 }
 \description{
 This function uses the data frame of responses that

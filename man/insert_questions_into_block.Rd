@@ -4,12 +4,12 @@
 \alias{insert_questions_into_block}
 \title{Insert questions into blocks}
 \usage{
-insert_questions_into_block(block, questions)
+insert_questions_into_block(questions, block)
 }
 \arguments{
-\item{block}{A single block from a Qualtrics survey}
-
 \item{questions}{A list of questions from a Qualtrics survey}
+
+\item{block}{A single block from a Qualtrics survey}
 }
 \value{
 The single survey block with question elements updated to include the full question. In the setup process,
