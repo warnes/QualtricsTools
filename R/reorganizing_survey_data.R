@@ -1122,83 +1122,6 @@ answers_from_response_column <-
   }
 
 
-#' Split Side-by-Side Questions into Multiple Questions
-#'
-#' This function updates both the list of questions and list of blocks from a survey
-#' to reflect a side-by-side question as multiple individual questions.
-#'
-#'
-#' @param questions A list of questions from a survey
-#' @param blocks A list of blocks from a survey
-#' @return A list of questions and a list of blocks with their SBS questions split
-#' into multiple questions
-split_side_by_sides <- function(questions, blocks) {
-  # loop through every question
-  for (i in length(questions):1) {
-    # if a question is a side-by-side question,
-    # use the 'NumberOfQuestions' element from its payload
-    # to determine how many questions to turn it into, and then
-    # fill those questions with the payload of the 'AdditionalQuestions'
-    # from the SBS question.
-    if (questions[[i]][['Payload']][['QuestionType']] == 'SBS') {
-      split_questions <- list()
-      for (j in 1:questions[[i]][['Payload']][['NumberOfQuestions']]) {
-        split_questions[[j]] <- list()
-        split_questions[[j]][['Payload']] <-
-          questions[[i]][['Payload']][['AdditionalQuestions']][[as.character(j)]]
-
-        # question text will include the SBS question's original question text and the
-        # specific question component's question text.
-        split_questions[[j]][['Payload']][['QuestionText']] <-
-          paste0(clean_html_and_css(questions[[i]][['Payload']][['QuestionText']]),
-                 "-",
-                 clean_html_and_css(questions[[i]][['Payload']][['AdditionalQuestions']][[as.character(j)]][['QuestionText']]))
-
-        # append a qtNote to split side-by-side questions
-        split_questions[[j]][['qtNotes']] <- list()
-        if ('qtNotes' %in% names(questions[[i]]))
-          split_questions[[j]][['qtNotes']] <- questions[[i]][['qtNotes']]
-        split_questions[[j]][['qtNotes']] <-
-          c(split_questions[[j]][['qtNotes']],
-            'This question was split from a side-by-side question.')
-      }
-
-      # use the SBS question's QuestionID to look up the question in the blocks
-      # and replace the original with the split question's QuestionIDs
-      orig_question_id <-
-        questions[[i]][['Payload']][['QuestionID']]
-      split_question_ids <-
-        lapply(split_questions, function(x)
-          x[['Payload']][['QuestionID']])
-      split_block_elements <-
-        lapply(split_question_ids, function(x)
-          list("Type" = "Question", "QuestionID" = x))
-      for (k in 1:length(blocks)) {
-        if ('BlockElements' %in% names(blocks[[k]])) {
-          for (j in 1:length(blocks[[k]][['BlockElements']])) {
-            block_elmt_question_id <-
-              blocks[[k]][['BlockElements']][[j]][['QuestionID']]
-            if (block_elmt_question_id == orig_question_id) {
-              blocks[[k]][['BlockElements']][[j]] <- NULL
-              blocks[[k]][['BlockElements']] <-
-                append(blocks[[k]][['BlockElements']], split_block_elements, after = (j -
-                                                                                        1))
-              break
-            }
-          }
-        }
-      }
-
-      questions[[i]] <- NULL
-      questions <-
-        append(questions, value = split_questions, after = (i - 1))
-    }
-  }
-
-  return(list(questions, blocks))
-}
-
-
 #' Return a list of a Question's Display Logic Components
 #'
 #' For each question, if they appear, go through the
@@ -1638,32 +1561,17 @@ create_response_column_dictionary <-
 create_question_dictionary_from_qsf <- function(qsf_path) {
   survey <- ask_for_qsf(qsf_path)
   valid_questions_blocks <- valid_questions_blocks_from_survey(survey)
-  questions <- valid_questions_blocks[["questions"]]
-  blocks <- valid_questions_blocks[["blocks"]]
-  #Now clean question text using clean_html_and_css
-  questions <- purrr::map(questions,~ clean_question_text(.x))
-  #Add the Qualtrics question type; this is for reference and won't be used in results
-  questions <- purrr::map(questions, ~append(.x, list("Qualtrics_qtype" = .x[["Payload"]][["QuestionType"]])))
-  #Add human readable question type to each question; this can be edited if we want
-  #We will want ot expand this as we keep going
-  #We will need to reclassify the question type when we split side-by-side!!
-  questions <- purrr::map(questions, ~append(.x,list("QuestionTypeHuman" = qtype_human(.x))))
-  #Insert user notes into questions as element "qtNotes"
-  #questions <- insert_notes_into_questions(questions, notes = qtNotesList)
-  #Insert skip logic into the questions
-  questions <- insert_skiplogic_into_questions(questions, blocks=blocks)
-  #Split side-by-side questions into their components
-  #first append side-by-side question components to the list,
-  #them remove the original side-by-side question elements
-  questions <- split_sbs_questions(questions)
-  #This is a named list where the name is the NEW split question ID and the element is the original QID
-  sbs_question_qids <- purrr::keep(questions,~"SBS_DataExportTag" %in% names(.x))
-  sbs_question_qids <- purrr::map(sbs_question_qids, "SBS_DataExportTag")
-  #Revise the blocks to create space for elements split from side-by-side questions
-  blocks <- purrr::map(blocks, ~ split_block_elements(.x,sbs_question_qids))
+  #Pull QualtricsTools notes from the list
+  qtNotesList <- note_text_from_survey(survey)
+  #Add clean question text and human readable question type
+  #Insert notes and skip logic into questions
+  questions <- add_question_detail(questions = questions, blocks = blocks, qtNotesList = qtNotesList)
+  #Split side-by-side questions into their components and create space for the split questions within these blocks.
+  split_questions_blocks <- split_sbs_questions_blocks(questions = questions, blocks = blocks)
+  questions <- split_questions_blocks[['questions']]
+  blocks <- split_questions_blocks[['blocks']]
   #Now insert questions into blocks
-  blocks <- insert_questions_into_blocks(blocks = blocks, questions = questions)
-
+  blocks <- insert_questions_into_blocks(questions = questions, blocks = blocks)
 
   # survey <- ask_for_qsf(qsf_path)
   # blocks <- blocks_from_survey(survey)
