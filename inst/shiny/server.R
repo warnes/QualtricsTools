@@ -321,7 +321,7 @@ shinyServer(function(input, output) {
       blocks <- valid_questions_blocks[["blocks"]]
       questions <- add_question_detail(questions = questions, blocks = blocks,
                                        qtNotesList = note_text_from_survey(survey))
-      blocks <- purrr::map(blocks, ~ insert_questions_into_block(block = .x, questions = questions))
+      blocks <- insert_questions_into_blocks(questions = questions, blocks = blocks)
       tabelize_display_logic(blocks, flow)
     }
   })
@@ -405,7 +405,7 @@ shinyServer(function(input, output) {
   output[['display_logic']] <-
     renderUI(div(HTML(display_logic()), class = "shiny-html-output"))
 
-  output[['select_qdict']] = DT::renderDataTable({
+  output[['select_qdict']] = renderDataTable({
     include_exclude_dict()
   }, options =
     list(

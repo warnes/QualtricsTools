@@ -65,7 +65,7 @@ body <- dashboardBody(
             actionButton("selectAll", "Unselect/Select All"),
             actionButton("submit", "Apply"),
             HTML("<br><br>"),
-              DT::dataTableOutput("select_qdict")
+              dataTableOutput("select_qdict")
               )
   )),
   tabItem(tabName = "more_options",
