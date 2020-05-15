@@ -200,8 +200,8 @@ generate_summary_stats <-
     if (ncol(as.data.frame(entries))!= 1){
       question[["qtNotes"]] <- if ("qtNotes" %in% names(question)){
         append(question[["qtNotes"]],
-               "This question requires one column of numeric text entry responses to generate summary statistics. Please check your results and try again.")
-        } else {list("This question requires one column of numeric text entry responses to generate summary statistics. Please check your results and try again.")}
+               "Note: This question requires one column of numeric text entry responses to generate summary statistics. Please check your results and try again.")
+        } else {list("Note: This question requires one column of numeric text entry responses to generate summary statistics. Please check your results and try again.")}
       return(question)
     }
     # Converting to character to avoid factors
@@ -227,8 +227,8 @@ generate_summary_stats <-
     if (any(is.na(entries))){
       question[["qtNotes"]] <- if("qtNotes" %in% names(question)){
         append(question[["qtNotes"]],
-               "Summary statistics for this question could not be processed due to non-numeric response data. Please clean the data and try again.")
-      } else {list("Summary statistics for this question could not be processed due to non-numeric response data. Please clean the data and try again.")}
+               "Note: Summary statistics for this question could not be processed due to non-numeric response data. Please clean the data and try again.")
+      } else {list("Note: Summary statistics for this question could not be processed due to non-numeric response data. Please clean the data and try again.")}
       return(question)
     }
     # Generating Tables with summary statistics
@@ -1188,6 +1188,24 @@ process_question_results <-
       should_use_ofr <- TRUE
     } else
       should_use_ofr <- FALSE
+
+    #Remove notes that were generated from previous results processing
+    #This checks to see if a note exists that came from one of the results generation functions.
+    if (! is.null(question[['qtNotes']]) && length('qtNotes')>0) {
+      qtNotes_orig <- question[['qtNotes']]
+      qtNotes <- list()
+      for (i in length(qtNotes_orig)) {
+        if (! stringr::str_detect(qtNotes_orig[[i]], "^Denominator Used: ") |
+            stringr::str_detect(qtNotes_orig[[i]], "^Valid Denominator: ") |
+            stringr::str_detect(qtNotes_orig[[i]], "^Note: This question requires one column of numeric text entry") |
+            stringr::str_detect(qtNotes_orig[[i]], "^Note: No respondents answered this question") |
+            stringr::str_detect(qtNotes_orig[[i]], "^Note: Summary statistics for this question could not be processed") |
+            stringr::str_detect(qtNotes_orig[[i]], "^Note: Summary Statistic data must be cleaned before processing.") ){
+          qtNotes <- append(qtNotes, qtNotes_orig[[i]])
+        }
+      question[['qtNotes']] <- qtNotes
+      }
+    }
 
     # Only process questions which have results
     if (is.null(question[['Responses']])) {
