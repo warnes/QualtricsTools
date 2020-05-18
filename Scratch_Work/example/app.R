@@ -21,10 +21,14 @@ ui <- fluidPage(
 server <- function(input, output, session) {
 
   Theroots <- reactive({
-    if(input$root == ""){
+    root <- input$root
+    #req(root, dir.exists(root))
+
+    if(length(root) == 0 || root == ""){
       volumes <- getVolumes()()
       Theroots <- c(volumes)
     } else{
+      req(root, dir.exists(root))
       Theroots <- c(project_root = input$root)
     }
     return(Theroots)

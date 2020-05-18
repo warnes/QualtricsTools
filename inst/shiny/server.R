@@ -382,6 +382,20 @@ shinyServer(function(input, output, session) {
   #
   #
   # })
+  
+  observeEvent(input$sheets_dir, {
+    if (input$sheets_dir > 0) {
+      # condition prevents handler execution on initial app launch
+      
+      # launch the directory selection dialog with initial path read from the widget
+      sheets_dir <- shinyDirectoryInput::choose.dir(default = shinyDirectoryInput::readDirectoryInput(session, 'sheets_dir'),
+                               caption = "Choose your comment coding folder...")
+      
+      # update the widget value
+      shinyDirectoryInput::updateDirectoryInput(session, 'sheets_dir', value = sheets_dir)
+      
+    }
+  })
 
   # Generate the coded comments, if the user wants coded comments.
   coded_comments <- reactive({
@@ -389,13 +403,16 @@ shinyServer(function(input, output, session) {
       paste("Shiny is not currently set to generate codded comments for this survey")
     } else if(input$comment_choices == "Yes"){
 
-      shinyFiles::shinyDirChoose(input = input, 'sheets_dir',
-                                 roots = Theroots(), session = session)
-
-      print(paste("Root: ", Theroots()))
-      print(paste("Sheets dir input: ", input$sheets_dir))
-      sheets_dir <- shinyFiles::parseDirPath(roots = Theroots(), input$sheets_dir)
-      print(paste("sheets dir: ", sheets_dir))
+      
+      
+      # shinyFiles::shinyDirChoose(input = input, 'sheets_dir',
+      #                            roots = Theroots(), session = session)
+      # 
+      # print(paste("Root: ", Theroots()))
+      # print(paste("Sheets dir input: ", input$sheets_dir))
+      # sheets_dir <- shinyFiles::parseDirPath(roots = Theroots(), input$sheets_dir)
+      # print(paste("sheets dir: ", sheets_dir))
+      sheets_dir <- shinyDirectoryInput::readDirectoryInput(session, 'sheets_dir')
 
       coded_sheets <- directory_get_coded_comment_sheets(sheets_dir, code_type = input$code_type)
 
@@ -697,7 +714,7 @@ shinyServer(function(input, output, session) {
     dnames['qdict'] <-
       paste0(input$file_name, '_question_dictionary.', input[['qd_format']])
     dnames['text_appendices'] <-
-      paste0(input$file_name, '_text_appendices.', input[['ta_format']])
+      paste0(input$file_name, '_verbatim_comment_appendices.', input[['ta_format']])
     dnames['display_logic'] <-
       paste0(input$file_name, '_display_logic.', input[['dl_format']])
     dnames['coded_comments'] <-
