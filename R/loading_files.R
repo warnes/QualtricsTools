@@ -13,7 +13,7 @@ requireNamespace("rjson")
 load_csv_data <- function(file2, file1, headerrows) {
     if (plyr::empty(file2) && plyr::empty(file1)) {
       responses <- list(sample_responses, sample_original_first_rows)
-    } else if (is.null(file2)) {
+    } else if (plyr::empty(file2)) {
       responses <- NULL
     } else {
         responses <- ask_for_csv(file2[['datapath']], headerrows)
@@ -58,6 +58,7 @@ ask_for_qsf <- function(surveyfile) {
         cat("Select Qualtrics Survey File:")
         surveyfile = file.choose()
     }
+
     survey = rjson::fromJSON(file=surveyfile)
 
     return(survey)

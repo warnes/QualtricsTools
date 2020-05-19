@@ -166,7 +166,16 @@ body <- dashboardBody(
                                   selected = "Yes")
                    ))
           )
-   ))
+   ),
+   tabItem(tabName = "faq",
+           fluidRow(
+             box(status = "info",
+                 width = 12,
+                 uiOutput('faqmarkdown')
+                 )
+           )
+   )
+  )
 )
 
 dashboardPage(

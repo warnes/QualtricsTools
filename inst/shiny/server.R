@@ -85,9 +85,8 @@ shinyServer(function(input, output, session) {
 
     # load_csv_data returns a pair of two elements, the responses and
     # the original_first_rows.
-    try({
-      responses <- load_csv_data(csv_path, qsf_path, headerrows)
-    }, silent = TRUE)
+    responses <- load_csv_data(csv_path, qsf_path, headerrows)
+
     original_first_rows <- responses[[2]]
     responses <- responses[[1]]
 
@@ -666,13 +665,15 @@ shinyServer(function(input, output, session) {
 
   # selectize response columns for splitting respondents
   output[['select_response_columns']] <- renderUI({
-    selectInput(
-      'split_response_columns',
-      'Response Columns',
-      colnames(survey_and_responses()[[2]]),
-      multiple = TRUE,
-      selectize = TRUE
-    )
+    if (length(survey_and_responses()) >= 3) {
+      selectInput(
+        'split_response_columns',
+        'Response Columns',
+        colnames(survey_and_responses()[[2]]),
+        multiple = TRUE,
+        selectize = TRUE
+      )
+    }
   })
 
   # select respondent group to view
@@ -933,6 +934,14 @@ shinyServer(function(input, output, session) {
   )
 
 
+
+  ################################
+  ## Load FAQ
+  ##############################
+  ## If you want to update the FAQ, go into the FAQ folder, edit the rmarkdown, and regenerate the HTML document
+  output$faqmarkdown <- renderUI({
+    shiny::includeHTML(here::here('FAQ', 'AppFAQ.html'))
+  })
 
   ########## Stop Button
   observe({
