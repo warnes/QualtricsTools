@@ -18,7 +18,7 @@ sidebar <- dashboardSidebar(
     menuItem("Processed Results", tabName="report", icon=icon("leanpub")),
     menuItem("Include/Exclude Responses", tabName="include_exclude", icon=icon("toggle-on")),
     menuItem("More Options", tabName="more_options", icon=icon("dashboard")),
-    menuItem("FAQ", tabName="faq", icon=icon("dashboard")),
+    menuItem("FAQ", tabName="faq", icon=icon("question-circle")),
 
     # empty h5 headers below are for spacing
     h5(""),
