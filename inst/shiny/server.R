@@ -382,18 +382,18 @@ shinyServer(function(input, output, session) {
   #
   #
   # })
-  
+
   observeEvent(input$sheets_dir, {
     if (input$sheets_dir > 0) {
       # condition prevents handler execution on initial app launch
-      
+
       # launch the directory selection dialog with initial path read from the widget
       sheets_dir <- shinyDirectoryInput::choose.dir(default = shinyDirectoryInput::readDirectoryInput(session, 'sheets_dir'),
                                caption = "Choose your comment coding folder...")
-      
+
       # update the widget value
       shinyDirectoryInput::updateDirectoryInput(session, 'sheets_dir', value = sheets_dir)
-      
+
     }
   })
 
@@ -403,11 +403,11 @@ shinyServer(function(input, output, session) {
       paste("Shiny is not currently set to generate codded comments for this survey")
     } else if(input$comment_choices == "Yes"){
 
-      
-      
+
+
       # shinyFiles::shinyDirChoose(input = input, 'sheets_dir',
       #                            roots = Theroots(), session = session)
-      # 
+      #
       # print(paste("Root: ", Theroots()))
       # print(paste("Sheets dir input: ", input$sheets_dir))
       # sheets_dir <- shinyFiles::parseDirPath(roots = Theroots(), input$sheets_dir)
@@ -614,7 +614,7 @@ shinyServer(function(input, output, session) {
   # and for each of the input[['selected_questions']] we remove them from the
   # values[['unselected_questions']] if they appear there.
   observeEvent(input$submit, {
-    print(input[['unselected_questions']])
+    #print(input[['unselected_questions']])
     for (q in input[['unselected_questions']]) {
       if (! q %in% values[['unselected_questions']]) {
         values[['unselected_questions']] <- c(values[['unselected_questions']], q)
@@ -626,7 +626,7 @@ shinyServer(function(input, output, session) {
         values[['unselected_questions']] <- values[['unselected_questions']][-index]
       }
     }
-    print(values[['unselected_questions']])
+    #print(values[['unselected_questions']])
   })
 
   # Output each tabpanels' corresponding HTML contents generated above

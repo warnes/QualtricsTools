@@ -18,6 +18,7 @@ sidebar <- dashboardSidebar(
     menuItem("Processed Results", tabName="report", icon=icon("leanpub")),
     menuItem("Include/Exclude Responses", tabName="include_exclude", icon=icon("toggle-on")),
     menuItem("More Options", tabName="more_options", icon=icon("dashboard")),
+    menuItem("FAQ", tabName="faq", icon=icon("dashboard")),
 
     # empty h5 headers below are for spacing
     h5(""),
@@ -43,19 +44,23 @@ body <- dashboardBody(
                        verbatimTextOutput("test"),
                        uiOutput("results_tables")
                       ),
+              tabPanel(h5("verbatim comment appendices"),
+                       uiOutput("text_appendices")
+              ),
+
+              tabPanel(h5("coded comment appendices"),
+                       uiOutput("coded_comments")
+              ),
+
               tabPanel(h5("question dictionary"),
                        checkboxInput("uncodeable-only", "Only Uncodeable Questions", value = FALSE, width = NULL),
                        dataTableOutput("question_dictionary")
                        ),
-              tabPanel(h5("verbatim comment appendices"),
-                       uiOutput("text_appendices")
-                       ),
+
               tabPanel(h5("display logic"),
                        uiOutput("display_logic")
-                       ),
-              tabPanel(h5("coded comment appendices"),
-                       uiOutput("coded_comments")
                        )
+
               )
       )
     )
@@ -76,7 +81,7 @@ body <- dashboardBody(
                    box(
                      status = "warning",
                      width = NULL,
-                     h1('Downloads'),
+                     h2('Downloads'),
                      # This is HTML for creating an invisible table for a clean layout
                      # of the download buttons for each of the frequency results tables,
                      # question dictionary, text appendices, and display logic.
@@ -99,7 +104,7 @@ body <- dashboardBody(
                                  width='90%'),
                      HTML("</td> <td>"),
                      downloadButton('downloadTextAppendices', '', class="btn-primary"),
-                     
+
                      HTML("</td> </tr> <tr> <td>"),
                      selectInput("dl_format", "Format for Display Logic:",
                                  choices = c("docx", "html", "md", "pdf", "xls"),
@@ -119,7 +124,7 @@ body <- dashboardBody(
                    box(
                      status = "info",
                      width = NULL,
-                     h1('Splitting Respondents'),
+                     h2('Splitting Respondents'),
                      HTML("Select the columns for which you'd like to split the respondents
                      into unique respondent groups"),
                      uiOutput("select_response_columns"),
@@ -128,22 +133,26 @@ body <- dashboardBody(
                      tableOutput('table_respondent_groups'),
                      downloadButton('downloadSplit', 'Download All Split Reports and Appendices', class="btn-primary")
                    ),
-                   
+
                    box(
                      status = "danger",
                      width = NULL,
-                     h3('Ignore Survey Flow'),
+                     h2('Ignore Survey Flow'),
                      checkboxInput("ignoreflow", "Check this box if you would like the report to render without reordering
                               the questions according to the survey's ordering.", FALSE)
-                     
+
                    )
-                   
+
                    ),
             column(width = 4,
                    box(
                      width = NULL,
                      status = "info",
-                     h3("Comment Coding Options"),
+                     h2("Comment Coding Options"),
+
+                     shinyDirectoryInput::directoryInput('sheets_dir', label = 'Sheets Folder Selector: '),
+                     # shinyFiles::shinyDirButton(id = 'sheets_dir', label = "Folder select", title = "Sheets Folder Selector"),
+
                      radioButtons("comment_choices", "Generate Coded Comments?",
                                   c("No",
                                     "Yes, Generate Coded Comment Appendices" = "Yes"),
@@ -154,9 +163,7 @@ body <- dashboardBody(
                      numericInput("n_threshold", "N Threshold", 15, min = 1, max = 100),
                      radioButtons("include_verbatim", "Include Verbatim Comments In Coded Appendices?",
                                   c("Yes", "No"),
-                                  selected = "Yes"),
-                     shinyDirectoryInput::directoryInput('sheets_dir', label = 'Sheets Folder Selector: ')
-                     # shinyFiles::shinyDirButton(id = 'sheets_dir', label = "Folder select", title = "Sheets Folder Selector"),
+                                  selected = "Yes")
                    ))
           )
    ))
