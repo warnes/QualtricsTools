@@ -30,7 +30,8 @@ Imports:
     tidyr,
     xtable,
     XML,
-    shinyFiles
+    shinyFiles,
+    shinyDirectoryInput
 Suggests: 
     testthat,
     knitr,
