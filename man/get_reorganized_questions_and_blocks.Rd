@@ -32,7 +32,9 @@ where applicable. The BlockElements of the list of Blocks
 from a survey originally only refer to questions
 by their DataExportTag. However, this is inconvenient
 because it adds an additional lookup step, and so they are
-replaced by the real objects here.
+replaced by the real objects here. Questions is a named list for which names
+are data export tags. Blocks containing questions have Block Elements for these
+questions named with the Data Export Tags.
 }
 \description{
 This function returns a list with two elements, where

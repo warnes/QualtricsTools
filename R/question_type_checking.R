@@ -45,6 +45,43 @@ is_matrix_multiple_answer <- function(question) {
   return(is_Matrix_Multiple_Answer)
 }
 
+#' Determine if a question is a text entry question with a numerical
+#' validation
+#'
+#' A question is considered a text entry with numeric validation if it
+#' is a `[['Payload']][['QuestionType']] == "TE"` question with
+#' `[['Payload']][['Validation']][['Settings']][['Type']] == "ContentType"
+#' and `[['Payload']][['Validation']][['Settings']][['ContentType']] ==
+#' "ValidNumber"
+#'
+#' @param question The question parameter is a single question from a qualtrics survey.
+#' @return Boolean value indicating whether the quest is text entry questions with numeric validation
+is_text_entry_numeric <- function(question){
+  is_text_entry_numeric <- question[['Payload']][['QuestionType']] == "TE" &&
+    #Check that it has content validation
+    ! is.null(question[['Payload']][['Validation']][['Settings']][['ContentType']]) &&
+    #Content Type validation is ValidNumber
+    question[['Payload']][['Validation']][['Settings']][['ContentType']] == "ValidNumber"
+
+  return(is_text_entry_numeric)
+}
+
+#' Determine if a question is text entry without numerical validation
+#'
+#' Text question without numerical validation should be reported as text appendices typically.
+#' questions with numeric validation are reported instead with summary statistics tables.
+#' Check here for standard appendix text entry
+#'
+#' @param question A question from a qualtrics survey that includes "Payload"
+#' @return Boolean value indicating whether this is a text entry question that should have an associated appendix
+is_text_entry_appendix <- function(question) {
+  #This needs to be text entry and either have null validation content type
+    #OR have content type that is not ValidNumber
+  is_text_entry_appendix <- question[['Payload']][['QuestionType']] == "TE" &&
+    (is.null(question[['Payload']][['Validation']][['Settings']][['ContentType']]) ||
+       question[['Payload']][['Validation']][['Settings']][['ContentType']] != "ValidNumber")
+  return(is_text_entry_appendix)
+}
 
 #' Determine if a question is a single answer question
 #'

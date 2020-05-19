@@ -15,7 +15,7 @@ an ordered list of display logic messages
 \description{
 For each question, if they appear, go through the
 Question's DisplayLogic, each Choice's DisplayLogic, and
-each Answer's DisplayLogic. For each of them, use clean_html
+each Answer's DisplayLogic. For each of them, use clean_html_and_css
 to format them, and then add them to the list. If a question
 has any of these display logic components, insert before
 adding any display logic a line detailing what part of the
