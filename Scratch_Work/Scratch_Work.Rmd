@@ -15,9 +15,11 @@ knitr::opts_chunk$set(echo = TRUE)
 # Set up stuff
 
 ```{r}
-devtools::load_all(".")
+# devtools::load_all(".")
 app()
 
+devtools::install_github("Matthewh19/QualtricsTools", ref = "More_Shiny_Work")
+library(QualtricsTools)
 ```
 
 
@@ -95,6 +97,39 @@ make_text_appendices(output_dir=here::here("Scratch_Work"))
 
 
 
+
+## Lets review the reshaping for Tableau stuff
+
+```{r}
+get_setup(qsf_path = here::here("data", "Sample Surveys", "Better Sample Survey", "Better_Sample_Survey.qsf"),
+          csv_path = here::here("data", "Sample Surveys", "Better Sample Survey", "Better_Sample_Survey.csv"),
+          headerrows = 3)
+
+lean_dict <- lean_responses(blocks, responses)
+qdict <- create_response_column_dictionary(blocks, original_first_rows[1,], flow_from_survey(survey))
+panel_df <- create_panel_data(c("V10", "q1_favorite"), responses, lean_dict, qdict)
+
+# Here we use fwrite over write.csv because fwrite takes advantage of a 
+# computer having multiple cores. The vast majority of modern computers do have
+# multiple cores, and so fwrite often performs significantly better than write.csv.
+# fwrite is from the data.table package which may need to be installed.
+
+if(!require('data.table')) { install.packages('data.table') } # Ensure data.table is installed.
+library('data.table') # Load data.table package for the fwrite function.
+fwrite(x = lean_dict, file = "C:/Users/username/Desktop/lean_dictionary.csv", row.names=FALSE)
+fwrite(x = qdict, file = "C:/Users/username/Desktop/question_dictionary.csv", row.names=FALSE)
+fwrite(x = panel_df, file = "C:/Users/username/Desktop/panel_data.csv", row.names=FALSE)
+
+# While we can use WriteXLS, fwrite and write.csv are more reliable options because 
+# Excel files can only support up to a finite number of rows where as CSVs are much less
+# limited in length. Here is an example of how to write an Excel file with three sheets containing 
+# each of these documents.
+if(!require('WriteXLS')) { install.packages('WriteXLS') } # Ensure WriteXLS is installed.    
+library(WriteXLS)    
+WriteXLS(c("lean_dict", "qdict", "panel_df"), ExcelFileName = "C:/Users/username/Desktop/example_long_and_lean.xls")
+
+
+```
 
 
 

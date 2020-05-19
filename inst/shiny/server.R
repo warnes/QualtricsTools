@@ -940,7 +940,7 @@ shinyServer(function(input, output, session) {
   ##############################
   ## If you want to update the FAQ, go into the FAQ folder, edit the rmarkdown, and regenerate the HTML document
   output$faqmarkdown <- renderUI({
-    shiny::includeHTML(here::here('FAQ', 'AppFAQ.html'))
+    shiny::includeHTML(here::here('data', 'FAQ', 'AppFAQ.html'))
   })
 
   ########## Stop Button
