@@ -31,7 +31,8 @@ Imports:
     xtable,
     XML,
     shinyFiles,
-    shinyDirectoryInput
+    shinyDirectoryInput,
+    rlist
 Suggests: 
     testthat,
     knitr,
