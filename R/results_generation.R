@@ -172,6 +172,100 @@ question_variable_to_choice_text <- function(question, choice, use_recode_values
 }
 
 
+#' Create Summary Statistics tables for numerical data only questions
+#' @name generate_summary_stats
+#' @description This function uses the data frame of responses that
+#' have been linked to a question to generate summary statistics using
+#' basic R functions for mean, median, min, max, standard deviation. It creates a
+#' new data frame of summary statistics and appends it to question['Table'] element.
+#' @param question This is the question which has been checked to contain
+#' Text Entry data with Numerical verification. This TE question will now
+#' be processed to give a summary stats table and not an appendix.
+#' @param orientation Specification to display summary statistics in rows ("vertical")
+#' or columns ("horizontal"). Default is set to vertical.
+#' @return A question with a ['Table'] appended to it where the summary stats are
+#' present
+
+generate_summary_stats <-
+  function(question, orientation = "vertical") {
+    #Check that orientation is either vertical or horizontal; otherwise, stop execution
+    if (! orientation %in% c("vertical", "horizontal")) {
+      stop("Orientation must be either vertical or horizontal")
+    }
+    # Assign the data frame of responses to entries
+    entries <- question[['Responses']]
+    # Checking whether Responses is single column of data and exiting function if not.
+    #Add a note that question results could not be processed; if notes already exist,
+    #append to the existing list of qtNotes
+    if (ncol(as.data.frame(entries))!= 1){
+      question[["qtNotes"]] <- if ("qtNotes" %in% names(question)){
+        append(question[["qtNotes"]],
+               "Note: This question requires one column of numeric text entry responses to generate summary statistics. Please check your results and try again.")
+        } else {list("Note: This question requires one column of numeric text entry responses to generate summary statistics. Please check your results and try again.")}
+      return(question)
+    }
+    # Converting to character to avoid factors
+    entries <- as.character(unlist(entries))
+    # Filter out NA, -99 (seen but unanswered), and any "" or blank space
+    entries <- entries[! purrr::map_lgl(entries, ~ is.na(.x) || stringr::str_detect(.x, "^-99$|^\\s*$"))]
+    #check to make sure that there are entries; if there are no entries, add a note that
+    #' there were no responses to this question. If there are no responses,
+    #' add a note and return the question without a table.
+    if (length(entries)==0) {question[["qtNotes"]] <- if ("qtNotes" %in% names(question)){
+      append(question[["qtNotes"]],
+             "Note: No respondents answered this question")
+    } else {list("Note: No respondents answered this question.")}
+    return(question)
+    }
+
+    # Converting all entries to numeric; suppress warnings so it will not print in the console
+      #if values are converted to NA
+    entries <- suppressWarnings(as.numeric(entries))
+    # Any character values would have been converted to NA
+    # Check for N/A values; if they exist, add a note to qtNotes indicating that
+    # the question data needs to be cleaned of text values before processing
+    if (any(is.na(entries))){
+      question[["qtNotes"]] <- if("qtNotes" %in% names(question)){
+        append(question[["qtNotes"]],
+               "Note: Summary statistics for this question could not be processed due to non-numeric response data. Please clean the data and try again.")
+      } else {list("Note: Summary statistics for this question could not be processed due to non-numeric response data. Please clean the data and try again.")}
+      return(question)
+    }
+    # Generating Tables with summary statistics
+    # Calcuate the stats and convert the values to character so we won't lose any digits later on
+    NumberOfEntries <- format(length(entries))
+    Mean <- format(mean(entries), digits=2)
+    Median <-  format(median(entries), digits=2)
+    StandardDev <- format(sd(entries), digits = 2, nsmall=2)
+    Minimum <- format(min(entries), digits=2)
+    Maximum <- format(max(entries), digits = 2)
+
+    results_table <- data.frame("Statistic" = c("N", "Mean", "Median",
+                                                "Standard Deviation", "Minimum", "Maximum"),
+                                "Value" = c(NumberOfEntries, Mean, Median,
+                                            StandardDev,
+                                            Minimum, Maximum))
+
+    #If orientation is set to "horizontal", transpose the table and set column names
+
+    # If orientation is 'horizontal', set up summary statistics as columns
+    if (orientation == "horizontal"){
+      row.names(results_table) <- results_table[["Statistic"]]
+      #Now transpose the Value column only; remove the row name
+      results_table <- data.frame(t(results_table['Value']), row.names=NULL)
+
+    }
+    # appending dataframe with all stats to question
+    question[['Table']] <- results_table
+    #Add a note that summary statistics dat amust be cleaned before processing
+    question[["qtNotes"]] <- if("qtNotes" %in% names(question)){
+      append(question[["qtNotes"]],
+             "Note: Summary Statistic data must be cleaned before processing.")
+    } else {list("Note: Summary Statistic data must be cleaned before processing.")}
+    return(question)
+  }
+
+
 #' Create the Results Table for a Multiple Choice Single Answer Question
 #'
 #' The mc_single_answer_results function uses the definition of the choices in the QSF file
@@ -269,8 +363,15 @@ mc_single_answer_results <-
 #' and their (if present) recoded values to determine how to table the results paired to that question.
 #'
 #' @inheritParams mc_single_answer_results
+#' @param sort_by This determines how the data table is sorted. It is automatically set to
+#' sort by N then by Choices alphebetically, but if you want to only sort by Choices alphebetically,
+#' simply set sort_by = "choices_alpha". If you would rather the table be sorted by choice order, set sort_by = "choices_order.
 mc_multiple_answer_results <-
-  function(question, original_first_rows) {
+  function(question, original_first_rows, sort_by = "N") {
+    if(! sort_by %in% c("N", "choices_alpha", "choices_order")){
+      stop(paste(question[['Payload']][['DataExportTag']], "had an incorect sort_by argument used. Results could not be proccessed."))
+    }
+
     # save the original responses
     orig_responses <- question[['Responses']]
 
@@ -328,26 +429,6 @@ mc_multiple_answer_results <-
       lapply(relevant_responses, function(x)
         sum(x != 0 & x != -99 & x != ""))
 
-    # determine if the question has any NA-type choices
-    if ('RecodeValues' %in% names(question[['Payload']])) {
-      has_na <- any(question[['Payload']][['RecodeValues']] < 0)
-    } else
-      has_na <- FALSE
-
-    # if the question has NA choices, calculate a valid_denominator
-    if (has_na) {
-      non_negative_columns <-
-        which(unlist(lapply(colnames(relevant_responses), function(x) {
-          question[['Payload']][['RecodeValues']][[x]] >= 0
-        })))
-      non_negative_responses <-
-        relevant_responses[non_negative_columns]
-      valid_denominator <-
-        length(which(apply(non_negative_responses, 1, function(x) {
-          !(all(x == -99) | all(x == "") | all(x == 0))
-        })))
-    }
-
     # calculate the total denominator
     total_denominator <-
       length(which(apply(relevant_responses, 1, function(x) {
@@ -355,20 +436,9 @@ mc_multiple_answer_results <-
       })))
 
 
-    # calculate the percent for each column:
-    # if it's an NA-column use the total denominator,
-    # if it's not an NA-column, but the question has NA options, use the valid denominator
-    # if the question has no NA choices, use the total_denominator
+    # calculate the percent for each column using the total_denominator
     Percent <- lapply(1:length(N), function(x) {
-      if (has_na &&
-          !names(N)[[x]] %in% colnames(non_negative_responses)) {
         percent0(N[[x]] / total_denominator)
-      } else if (has_na &&
-                 names(N)[[x]] %in% colnames(non_negative_responses)) {
-        percent0(N[[x]] / valid_denominator)
-      } else {
-        percent0(N[[x]] / total_denominator)
-      }
     })
 
     # Since we've already translated converted the choices from recode values to choice
@@ -382,29 +452,79 @@ mc_multiple_answer_results <-
     N <- unlist(N, use.names = FALSE)
     Percent <- unlist(Percent, use.names = FALSE)
 
-    # construct and return the output data frame
-    results_table <-
-      data.frame(N, Percent, choices, row.names = NULL)
+
+
+
+    # Determine if the question has recode values greater than 900 indicating it is
+    # an NA that we should sort to the bottom
+    if ('RecodeValues' %in% names(question[['Payload']])) {
+      sort_na <- any(question[['Payload']][['RecodeValues']] >= 900)
+    } else
+      sort_na <- FALSE
+
+
+    if (sort_na) {
+      recode_values <- question[['Payload']][['RecodeValues']]
+      choiceorder <- question[['Payload']][['ChoiceOrder']]
+
+      # Sort by Choice Order this will match the choice order in the table
+      recode_values <- recode_values[choiceorder]
+
+
+      # Make sure the list of recode values is flat and is stored as a numbers
+      recode_values <- unlist(recode_values, use.names = FALSE)
+      recode_values <- as.numeric(recode_values)
+
+      # construct and return the output data frame with recode values
+      results_table <-
+        data.frame(N, Percent, choices, recode_values, row.names = NULL)
+
+      reg_results_table <- dplyr::filter(results_table, recode_values < 900)
+      na_results_table <- dplyr::filter(results_table, recode_values >= 900)
+
+
+      # Sort the regular data table descending by N then by choices or by choices, depending on the user
+      if(sort_by == "N"){
+        reg_results_table <- dplyr::arrange(reg_results_table, -N, choices)
+      }else if(sort_by == "choices_alpha"){
+        reg_results_table <- dplyr::arrange(reg_results_table, choices)
+      }
+
+
+      # Sort the NA data table first by Recode value, then descending by N then by choices or
+      # by choices, depending on the user
+      na_results_table <- dplyr::arrange(na_results_table, recode_values)
+
+      results_table <- rbind(reg_results_table, na_results_table)
+      results_table[['recode_values']] <- NULL
+    } else{
+
+      # construct and return the output data frame for the normal data that doesn't have any NA
+      results_table <-
+        data.frame(N, Percent, choices, row.names = NULL, stringsAsFactors = FALSE)
+
+      # Sort the data table descending by N then by choices or by choices, depending on the user
+      if(sort_by == "N"){
+        results_table <- dplyr::arrange(results_table, -N, choices)
+      }else if(sort_by == "choices_alpha"){
+        results_table <- dplyr::arrange(results_table, choices)
+      }
+    }
+
+    # Remove choices as the name of the third column
     colnames(results_table)[3] <- ""
 
     # append the results table
     question[['Table']] <- results_table
 
     # add a note for the denominators used in the question
-    if ('qtNotes' %in% names(question))
+    if (!('qtNotes' %in% names(question)))
       question[['qtNotes']] <- list()
-    if (exists('valid_denominator')) {
-      question[['qtNotes']] <-
-        c(question[['qtNotes']], paste0('Valid Denominator Used: ',
-                                        toString(valid_denominator)))
-      question[['qtNotes']] <-
-        c(question[['qtNotes']], paste0('Total Denominator Used: ',
-                                        toString(total_denominator)))
-    } else {
-      question[['qtNotes']] <-
-        c(question[['qtNotes']], paste0('Denominator Used: ',
-                                        toString(total_denominator)))
-    }
+
+    question[['qtNotes']] <-
+      c(question[['qtNotes']], paste0('Denominator Used: ',
+                                      toString(total_denominator)))
+
 
     return(question)
   }
@@ -1069,6 +1189,24 @@ process_question_results <-
     } else
       should_use_ofr <- FALSE
 
+    #Remove notes that were generated from previous results processing
+    #This checks to see if a note exists that came from one of the results generation functions.
+    if (! is.null(question[['qtNotes']]) && length(question[['qtNotes']])>0) {
+      qtNotes_orig <- question[['qtNotes']]
+      qtNotes <- list()
+      for (i in length(qtNotes_orig)) {
+        if (! stringr::str_detect(qtNotes_orig[[i]], "^Denominator Used: ") |
+            stringr::str_detect(qtNotes_orig[[i]], "^Valid Denominator: ") |
+            stringr::str_detect(qtNotes_orig[[i]], "^Note: This question requires one column of numeric text entry") |
+            stringr::str_detect(qtNotes_orig[[i]], "^Note: No respondents answered this question") |
+            stringr::str_detect(qtNotes_orig[[i]], "^Note: Summary statistics for this question could not be processed") |
+            stringr::str_detect(qtNotes_orig[[i]], "^Note: Summary Statistic data must be cleaned before processing.") ){
+          qtNotes <- append(qtNotes, qtNotes_orig[[i]])
+        }
+      question[['qtNotes']] <- qtNotes
+      }
+    }
+
     # Only process questions which have results
     if (is.null(question[['Responses']])) {
       has_responses <- FALSE
@@ -1081,8 +1219,12 @@ process_question_results <-
 
 
       try({
+        # numerical text answer
+        if(is_text_entry_numeric(question)){
+          question <- generate_summary_stats(question)
+        }
         # multiple choice multiple answer
-        if (is_mc_multiple_answer(question)) {
+        else if (is_mc_multiple_answer(question)) {
           if (should_use_ofr) {
             question <-
               mc_multiple_answer_results(question, original_first_rows)

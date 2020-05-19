@@ -26,8 +26,14 @@ uploaded from a Qualtrics Survey File (QSF). Use
 ask_for_qsf() to create such a survey list object from a QSF file.}
 
 \item{blocks}{The blocks provided to this function must include questions inserted into
-the BlockElements. Create the list of blocks from a survey with blocks_from_survey(),
-and with questions on hand, insert them into the blocks with questions_into_blocks().}
+the BlockElements. Extract the list of block and the list of questions from the survey
+with `valid_questions_blocks_from_survey` and add necessary information with `add_question_detail`,
+then insert questions into the blocks
+with `insert_questions_into_blocks`.
+
+Question dictionaries require that each question already have items for QuestionTextClean
+and human readable question type. If you have not already prepared questions and blocks for
+this, use `question_dictionary_from_qsf` to generate a question dictionary from the QSF directly.}
 
 \item{already_loaded}{This can be set to TRUE to indicate that the survey and responses
 should be sourced from the global scope; in other words that the survey and its responses

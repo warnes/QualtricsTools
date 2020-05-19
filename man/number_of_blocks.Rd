@@ -10,15 +10,11 @@ number_of_blocks(blocks)
 \item{blocks}{A list of blocks}
 }
 \value{
-the number of question blocks
+length of blocks; includes added elements, e.g. header
 }
 \description{
-Since the blocks list is used to transport some additional information
-beyond the contents of the survey questions, this function is here to
-help in counting how many valid question blocks there are.
-Any real question blocks will be enumerated (aka numbered) in R, as opposed to the
-content that's been added which will be named (with a string). This means that when
-looking at the names of the blocks list, the integer values or the values which
-have no name are the question blocks, and the values which have names are the
-information added by the QualtricsTools functions. This function counts up the former.
+Previously this was used to count the number of valid question blocks.
+It relied on having real question blocks indexed by R instead of named.
+This function has now been updated to just return the length of block elements.
+In the future, it may be updated to return the number of VALID blocks as needed.
 }

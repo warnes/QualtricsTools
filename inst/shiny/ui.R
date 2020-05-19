@@ -54,7 +54,7 @@ body <- dashboardBody(
 
               tabPanel(h5("question dictionary"),
                        checkboxInput("uncodeable-only", "Only Uncodeable Questions", value = FALSE, width = NULL),
-                       dataTableOutput("question_dictionary")
+                       DT::dataTableOutput("question_dictionary")
                        ),
 
               tabPanel(h5("display logic"),
