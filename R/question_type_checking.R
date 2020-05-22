@@ -204,3 +204,21 @@ is_text_entry <- function(x) {
 is_matrix_question <- function(x) {
   return(x[['Payload']][['QuestionType']] == "Matrix")
 }
+
+
+#' Determine if a question has a single text entry component
+#'
+#' A question has a single text entry component if it is not a Text Entry Question
+#' (QuestionType != "TE") and the text string "TEXT" appears in the name of one response column.
+#'
+#' @param question The question parameter is a single question from a qualtrics survey.
+#'
+#' @return The return value of this is a boolean, TRUE if there is a single text entry
+#' component and FALSE otherwise.
+has_single_te_component <- function(question) {
+
+  if ("Payload" %in% names(question) &&
+      question[['Payload']][['QuestionType']] != "TE" &&
+      length(grep("TEXT", names(question[['Responses']]))) == 1) {TRUE}
+  else {FALSE}
+}

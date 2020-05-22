@@ -791,9 +791,9 @@ matrix_single_answer_results <-
 
     colnames(valid_responses) <-
       lapply(colnames(valid_responses), clean_html_and_css)
-    if (has_na)
+    if (has_na) {
       colnames(na_responses) <-
-      lapply(colnames(na_responses), clean_html_and_css)
+      lapply(colnames(na_responses), clean_html_and_css) }
 
     #Lines added from above to rename row values
     #EM insertion
@@ -818,9 +818,25 @@ matrix_single_answer_results <-
               which(question[['Payload']][['ChoiceDataExportTags']] == x)])
       }
 
-      choices <-
-        lapply(choices, function(x)
-          question[['Payload']][['Choices']][[x]][[1]])
+      #Add one version of choices if there is a single text entry component
+      if (has_single_te_component(question)) {
+        te_varname <- names(question$Responses)[[which(grepl("_TEXT$", names(question$Responses)))]]
+        choices <- lapply(choices, function(x)
+          if( "TextEntry" %in% names(question[['Payload']][['Choices']][[x]]) &&
+              question[['Payload']][['Choices']][[x]][['TextEntry']]=="true") {
+            paste0(question[['Payload']][['Choices']][[x]][[1]]," See Appendix ",te_varname)
+          } else {question[['Payload']][['Choices']][[x]][[1]]
+            })
+        #If it has a text entry component, the append 'See Appendix' with text entry name
+
+
+      } else {
+        choices <-
+          lapply(choices, function(x)
+              question[['Payload']][['Choices']][[x]][[1]])
+      }
+
+
       choices <- lapply(choices, clean_html_and_css)
       choices <- unlist(choices, use.names = FALSE)
     } else if(is_mc_single_answer(question) && has_na){
