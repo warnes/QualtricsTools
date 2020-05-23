@@ -507,9 +507,11 @@ choice_text_from_response_column <-
       return("")
     i <- question_indices[[1]]
     j <- question_indices[[2]]
+    question <- blocks[[i]][['BlockElements']][[j]]
     question_text <-
       blocks[[i]][['BlockElements']][[j]][['Payload']][['QuestionText']]
     question_text <- clean_html_and_css(question_text)
+    export_tag <- blocks[[i]][['BlockElements']][[j]][['Payload']][['DataExportTag']]
 
     # get the first-row-entry from the responses for the given response column,
     # count the number of dashes in the cleaned question text,
@@ -526,6 +528,16 @@ choice_text_from_response_column <-
     first_row_dashes <- gregexpr("-", first_row_entry)[[1]]
     first_row_dash_n <- length(which(first_row_dashes > 0))
 
+    #First check if we have a multiple choice multiple answer question AND
+    # original_first_rows contains QIDs. If yes, then we should be able to match
+    # the text more precisely
+    if (is_mc_multiple_answer(question) &&
+        any(stringr::str_detect(original_first_row[[response_column]], "^QID"))) {
+      choice_index <- stringr::str_extract(original_first_row[[response_column]][[2]], "\\d+(?=-TEXT$)")
+      choice_text <- question[['Payload']][['Choices']][[choice_index]][['Display']]
+      choice_text <- clean_html_and_css(choice_text)
+    }
+
     # if the number of dashes in the first-row-entry is the same as
     # the number of dashes in the question stem, then the choice text
     # for the response column can be set to blank.
@@ -534,12 +546,32 @@ choice_text_from_response_column <-
     # the choice text for that response column should be set to
     # the text of the first-row-entry after the appropriate
     # number of dashes
-    if (first_row_dash_n > stem_dash_n) {
+    else if (first_row_dash_n > stem_dash_n) {
       choice_text <-
         substr(first_row_entry,
                first_row_dashes[[stem_dash_n + 1]] + 1,
                nchar(first_row_entry))
       choice_text <- clean_html_and_css(choice_text)
+      #Next case is if we have a single text entry component for a multiple choice SA question
+      #If this is the case and we can print the text, then get the choice text
+    } else if (stringr::str_detect(response_column, "_TEXT$") &&
+               stringr::str_replace(response_column,"_TEXT$","")== export_tag){
+      #Get the choices for questions that have text entry components
+      question <- blocks[[i]][['BlockElements']][[j]]
+      te_component_index <- which(sapply(question[['Payload']][['Choices']],
+                                           function(x) ! is.null(x[['TextEntry']]) && x[['TextEntry']]=="true"))
+      if (length(te_component_index)==1) {
+        choice_text <- question[['Payload']][['Choices']][[te_component_index]][['Display']]
+      } else if (length(te_component_index)>1) {
+        #For multiple choice single answer questions with multiple text entry components,
+        #concatenate the choice text separated by semicolon
+        #this will be changed when we start using the data table export.
+        choice_text <- c()
+        for (t in te_component_index) {
+          choice_text <- c(choice_text, question[['Payload']][['Choices']][[t]][['Display']])
+        }
+        choice_text <- paste0(choice_text, collapse="; ")
+      }
 
     } else {
       choice_text <- ""

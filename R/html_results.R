@@ -401,9 +401,24 @@ text_appendices_table <-
 
                   # If there are no responses, use the table_no_respondents
                   # function to create a standardized no respondents table.
+                  # If there is only one column, pass the column name as the export tag;
+                  # Multiple text entry will be tagged with the question DataExportTag
                   if (nrow(text_responses) == 0) {
-                    tables <-
+                    if (ncol(text_responses)==1) {
+                      te_choice_tag <- names(text_responses)
+                      te_choice_text <-
+                        choice_text_from_response_column(te_choice_tag,
+                                                         original_first_rows,
+                                                         blocks)
+                      tables <-
+                        c(tables,
+                          table_no_respondents(question, e,
+                                               choice_tag = te_choice_tag,
+                                               choice_text = te_choice_text))
+                    } else {tables <-
                       c(tables, table_no_respondents(question, e))
+                    }
+
                     e <- e + 1
                     # Skip the rest of the loop, and iterate j to move onto the
                     # next question.
@@ -688,18 +703,33 @@ table_html_coded_comments <-
 #'
 #' @param question is the question for which the text appendix is being created.
 #' @param appendix_e is the number of the appendix in the text appendices report.
-table_no_respondents <- function(question, appendix_e) {
+#' @param te_component is a boolean indicating whether the responses are from a text entry component
+#' of a non-text entry question. If yes, the Export Tag and question text need to reflect the component
+#' rather than the overall question.
+table_no_respondents <- function(question, appendix_e, choice_tag, choice_text) {
+  if (! missing(choice_tag) && ! missing(choice_text)) {
+    export_tag = choice_tag
+    appendix_text <-
+      paste0(question[['Payload']][['QuestionTextClean']],
+             " -",
+             choice_text)
+  } else {
+    #If no export_tag has been passed to the function, pull export tag and question text from the question payload
+    export_tag <- question[['Payload']][['DataExportTag']]
+    appendix_text <- question[['Payload']][['QuestionTextClean']]
+  }
   No_Respondents <-
     c(
       paste0("Appendix ", appendix_lettering(appendix_e)),
-      question[['Payload']][['QuestionTextClean']],
+      appendix_text,
       "Verbatim responses -- these have not been edited in any way.",
       "",
       "No respondents answered this question"
     )
   No_Respondents <- as.data.frame(No_Respondents)
+
   colnames(No_Respondents)[1] <-
-    paste0('Export Tag: ', question[['Payload']][['DataExportTag']])
+    paste0('Export Tag: ', export_tag)
   tables <- list()
   tables <-
     c(tables, capture.output(

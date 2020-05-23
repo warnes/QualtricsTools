@@ -325,12 +325,12 @@ shinyServer(function(input, output, session) {
       if (input[['ignoreflow']] == FALSE) {
         return(c(
           blocks_header_to_html(blocks),
-          text_appendices_table(blocks, original_first_row, flow)
+          text_appendices_table(blocks, original_first_rows, flow)
         ))
       } else {
         return(c(
           blocks_header_to_html(blocks),
-          text_appendices_table(blocks, original_first_row)
+          text_appendices_table(blocks, original_first_rows)
         ))
       }
     }
@@ -895,7 +895,7 @@ shinyServer(function(input, output, session) {
             html_2_pandoc(
               html = c(
                 blocks_header_to_html(split_blocks[[i]]),
-                text_appendices_table(split_blocks[[i]], original_first_row, flow)
+                text_appendices_table(split_blocks[[i]], original_first_rows, flow)
               ),
               file_name = paste0(
                 "text_appendices_",
@@ -913,7 +913,7 @@ shinyServer(function(input, output, session) {
             html_2_pandoc(
               html = c(
                 blocks_header_to_html(split_blocks[[i]]),
-                text_appendices_table(split_blocks[[i]], original_first_row, flow, n_threshold = input$n_threshold)
+                text_appendices_table(split_blocks[[i]], original_first_rows, flow, n_threshold = input$n_threshold)
               ),
               file_name = paste0(
                 "comment_coded_appendices_",
