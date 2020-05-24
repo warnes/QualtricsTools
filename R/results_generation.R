@@ -125,7 +125,7 @@ question_variable_to_choice_text <- function(question, choice, use_recode_values
 
   # After reindexing if necessary, get the choice text corresponding to the
   # corresponding choice's index.
-  choice_text <- question[['Payload']][['Choices']][[choice_index]][[1]]
+  choice_text <- question[['Payload']][['Choices']][[choice_index]][['Display']]
 
   # Clean the choice text of HTML entities.
   choice_text <- clean_html_and_css(choice_text)
@@ -151,6 +151,13 @@ question_variable_to_choice_text <- function(question, choice, use_recode_values
     # data export tag.
     if (length(text_entry_column_names) == 1) {
       corresponding_export_tag <- text_entry_column_names[[1]]
+    }
+    #Now we need to deal with MCMA questions with recode values and multiple text entry components.
+    #Note: This might not work for headerrows = 2; I'm not sure how the varnames come out.
+    else if (is_mc_multiple_answer(question) && 'RecodeValues' %in% names(question[['Payload']])){
+      choice_and_TEXT <- paste0("_", question[['Payload']][['RecodeValues']][[choice]], "_TEXT$")
+      corresponding_export_tag <-
+        text_entry_column_names[[which(stringr::str_detect(text_entry_column_names, choice_and_TEXT))]]
     } else {
       choice_and_TEXT <- paste0("_", choice, "_", "TEXT")
       matching_text_entry_colnames <-
@@ -1212,11 +1219,17 @@ process_question_results <-
       qtNotes <- list()
       for (i in length(qtNotes_orig)) {
         if (! stringr::str_detect(qtNotes_orig[[i]], "^Denominator Used: ") |
-            stringr::str_detect(qtNotes_orig[[i]], "^Valid Denominator: ") |
-            stringr::str_detect(qtNotes_orig[[i]], "^Note: This question requires one column of numeric text entry") |
-            stringr::str_detect(qtNotes_orig[[i]], "^Note: No respondents answered this question") |
-            stringr::str_detect(qtNotes_orig[[i]], "^Note: Summary statistics for this question could not be processed") |
-            stringr::str_detect(qtNotes_orig[[i]], "^Note: Summary Statistic data must be cleaned before processing.") ){
+            stringr::str_detect(qtNotes_orig[[i]],
+                                "^Valid Denominator: ") |
+            stringr::str_detect(qtNotes_orig[[i]],
+                                "^Note: This question requires one column of numeric text entry") |
+            stringr::str_detect(qtNotes_orig[[i]],
+                                "^Note: No respondents answered this question") |
+            stringr::str_detect(qtNotes_orig[[i]],
+                                "^Note: Summary statistics for this question could not be processed") |
+            stringr::str_detect(qtNotes_orig[[i]],
+                                "^Note: Summary Statistic data must be cleaned before processing.")
+            ){
           qtNotes <- append(qtNotes, qtNotes_orig[[i]])
         }
       question[['qtNotes']] <- qtNotes
