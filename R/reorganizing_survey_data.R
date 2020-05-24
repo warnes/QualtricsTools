@@ -111,7 +111,8 @@ valid_questions_blocks_from_survey <- function(survey) {
 
   #Name the BlockElements (question items) within the blocks
   blocks_notrash <- lapply(blocks_notrash, function(x) {
-    names(x[['BlockElements']]) <- paste0(purrr::map_chr(x[['BlockElements']], "QuestionID"), "-", purrr::map_chr(x[['BlockElements']], "Type"))
+    names(x[['BlockElements']]) <- paste0(purrr::map_chr(x[['BlockElements']], "QuestionID"),
+                                          "-", purrr::map_chr(x[['BlockElements']], "Type"))
     return(x)
   })
 
@@ -119,8 +120,16 @@ valid_questions_blocks_from_survey <- function(survey) {
   questions <- purrr::keep(survey_elements, ~ .x[["Element"]]=="SQ")
   #Remove questions that are in the trash, as specified by "trash_questions
   questions <- purrr::discard(questions, ~ .x[["PrimaryAttribute"]] %in% trash_questions)
+  question_names <- purrr::map_chr(questions, ~ .x[['Payload']][['DataExportTag']])
+  #Check that there are no duplicate question names
+  if (any(duplicated(question_names))) {
+    duplicate_exporttags <- unique(question_names[which(duplicated(question_names))])
+    stop("The following Data Export Tags are duplicated in the survey.\n",
+                stringr::str_c(duplicate_exporttags, collapse = "; "),
+                "\nThese must be unique for the survey to process correctly.")
+  }
   #Rename quesions with their Data Export Tags (question variable name) instead of QID
-  questions <- purrr::set_names(questions, purrr::map_chr(questions, ~ .x[['Payload']][['DataExportTag']] ))
+  questions <- purrr::set_names(questions, question_names)
   #Rename the Block elements with variable names
 
   return(list("questions" = questions, "blocks"=blocks_notrash))
