@@ -1217,8 +1217,8 @@ process_question_results <-
     if (! is.null(question[['qtNotes']]) && length(question[['qtNotes']])>0) {
       qtNotes_orig <- question[['qtNotes']]
       qtNotes <- list()
-      for (i in length(qtNotes_orig)) {
-        if (! stringr::str_detect(qtNotes_orig[[i]], "^Denominator Used: ") |
+      for (i in 1:length(qtNotes_orig)) {
+        if (! (stringr::str_detect(qtNotes_orig[[i]], "^Denominator Used: ") |
             stringr::str_detect(qtNotes_orig[[i]],
                                 "^Valid Denominator: ") |
             stringr::str_detect(qtNotes_orig[[i]],
@@ -1228,7 +1228,7 @@ process_question_results <-
             stringr::str_detect(qtNotes_orig[[i]],
                                 "^Note: Summary statistics for this question could not be processed") |
             stringr::str_detect(qtNotes_orig[[i]],
-                                "^Note: Summary Statistic data must be cleaned before processing.")
+                                "^Note: Summary Statistic data must be cleaned before processing."))
             ){
           qtNotes <- append(qtNotes, qtNotes_orig[[i]])
         }
