@@ -508,7 +508,7 @@ shinyServer(function(input, output, session) {
 
     if (length(survey_and_responses()) >= 3 && input$gen_tableau == "Yes") {
       responses <- survey_and_responses()[[2]]
-      create_panel_data(input[['panel_columns']], responses, lean_responses(), tableau_qdict())
+      return(create_panel_data(input[['panel_columns']], responses, the_lean_responses(), tableau_qdict()))
     }
   })
 
@@ -581,7 +581,8 @@ shinyServer(function(input, output, session) {
       selectInput(
         "panel_columns",
         "Choose the Panel Columns: ",
-        colnames(survey_and_responses()[[2]]),
+        #ResponseID is included in Tableau reshaping by default and should not be listed
+        colnames(dplyr::select(survey_and_responses()[[2]],-ResponseID)),
         multiple = TRUE,
         selectize = TRUE
       )
