@@ -508,7 +508,7 @@ shinyServer(function(input, output, session) {
 
     if (length(survey_and_responses()) >= 3 && input$gen_tableau == "Yes") {
       responses <- survey_and_responses()[[2]]
-      create_panel_data(input[['panel_columns']], responses, lean_responses(), tableau_qdict())
+      return(create_panel_data(input[['panel_columns']], responses, the_lean_responses(), tableau_qdict()))
     }
   })
 
