@@ -1584,18 +1584,6 @@ create_question_dictionary_from_qsf <- function(qsf_path) {
   #Now insert questions into blocks
   blocks <- insert_questions_into_blocks(questions = questions, blocks = blocks)
 
-  # survey <- ask_for_qsf(qsf_path)
-  # blocks <- blocks_from_survey(survey)
-  # questions <- questions_from_survey(survey)
-  # questions <- remove_trash_questions(questions, blocks)
-  # blocks <- remove_trash_blocks(blocks)
-  # questions_and_blocks <- split_side_by_sides(questions, blocks)
-  # questions <- questions_and_blocks[[1]]
-  # blocks <- questions_and_blocks[[2]]
-  # questions <- clean_question_text(questions)
-  # questions <- human_readable_qtype(questions)
-  # blocks <- questions_into_blocks(questions, blocks)
-
   flow <- flow_from_survey(survey)
   qdict <- create_question_dictionary(blocks,flow)
   return(qdict)
