@@ -925,25 +925,6 @@ shinyServer(function(input, output, session) {
                               TRUE)
             ))
 
-<<<<<<< HEAD
-
-        fs <-
-          c(fs,
-            html_2_pandoc(
-              html = c(
-                blocks_header_to_html(split_blocks[[i]]),
-                text_appendices_table(split_blocks[[i]], original_first_rows, flow, n_threshold = input$n_threshold)
-              ),
-              file_name = paste0(
-                "comment_coded_appendices_",
-                split_blocks[[i]][['split_group']],
-                ".",
-                gsub(".*\\.", "", download_names()['coded_comments'], perl = TRUE)
-              ),
-              format = gsub(".*\\.", "", download_names()['coded_comments'], perl =
-                              TRUE)
-            ))
-=======
         if(input$comment_choices == "Yes"){
           fs <-
             c(fs,
@@ -962,7 +943,6 @@ shinyServer(function(input, output, session) {
                                 TRUE)
               ))
         }
->>>>>>> a9c7d848036dae6ac085f0e3edc2059940112ba7
 
       }
       zip(zipfile = fname,
@@ -974,15 +954,15 @@ shinyServer(function(input, output, session) {
 
 
 
-  ################################
-  ## Load FAQ
-  ##############################
+  ################################.
+  ## Load FAQ ----
+  ##############################.
   ## If you want to update the FAQ, go into the FAQ folder, edit the rmarkdown, and regenerate the HTML document
   output$faqmarkdown <- renderUI({
     shiny::includeHTML(here::here('testdata', 'FAQ', 'AppFAQ.html'))
   })
 
-  ########## Stop Button
+  ########## Stop Button ----
   observe({
     # If input$quit is unset (NULL) do nothing; if it's anything else, quit
     # and return input$n
