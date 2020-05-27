@@ -353,35 +353,6 @@ shinyServer(function(input, output, session) {
     }
   })
 
-
-  # observe({
-  #   print(Theroots())
-  #   shinyFiles::shinyDirChoose(input = input, 'sheets_dir',
-  #                              roots = Theroots(), session = session)
-  # })
-
-  # updateRoots <- function(Roots) {
-  #   shinyFiles::shinyDirChoose(input = input, "sheets_dir",
-  #                              roots = Roots)
-  # }
-  #
-  # observe({
-  #   if(input$root == ""){
-  #     volumes <- shinyFiles::getVolumes()() # this gets the directory at the base of your computer.
-  #     updateRoots(c(volumes))
-  #   } else{
-  #     str <- input$root
-  #     print(str)
-  #     print(paste("Here is str: ", str))
-  #     str <- gsub('\\\\', '/', str)
-  #     print(str)
-  #     print(paste("Here is str repathed: ", str))
-  #     updateRoots(c(project_root = str))
-  #   }
-  #
-  #
-  # })
-
   observeEvent(input$sheets_dir, {
     if (input$sheets_dir > 0) {
       # condition prevents handler execution on initial app launch
@@ -401,16 +372,6 @@ shinyServer(function(input, output, session) {
     if(input$comment_choices == "No"){
       paste("Shiny is not currently set to generate codded comments for this survey")
     } else if(input$comment_choices == "Yes"){
-
-
-
-      # shinyFiles::shinyDirChoose(input = input, 'sheets_dir',
-      #                            roots = Theroots(), session = session)
-      #
-      # print(paste("Root: ", Theroots()))
-      # print(paste("Sheets dir input: ", input$sheets_dir))
-      # sheets_dir <- shinyFiles::parseDirPath(roots = Theroots(), input$sheets_dir)
-      # print(paste("sheets dir: ", sheets_dir))
       sheets_dir <- shinyDirectoryInput::readDirectoryInput(session, 'sheets_dir')
 
       coded_sheets <- directory_get_coded_comment_sheets(sheets_dir, code_type = input$code_type)
@@ -446,20 +407,6 @@ shinyServer(function(input, output, session) {
             n_threshold = input$n_threshold
           )
         ))
-
-        # html_2_pandoc(
-        #   html = c(
-        #     blocks_header_to_html(blocks),
-        #     text_appendices_table(
-        #       blocks = blocks,
-        #       original_first_row = original_first_rows,
-        #       flow = flow,
-        #       n_threshold = n_threshold
-        #     )
-        #   ),
-        #   file_name = filename,
-        #   output_dir = output_dir
-        # )
         } else{
           blocks <- choose_split_block()
 
@@ -484,84 +431,6 @@ shinyServer(function(input, output, session) {
               n_threshold = input$n_threshold
             )
           ))
-          # questions <- processed_questions_and_blocks()[[1]]
-          # if (input[['insights_or_not']] == TRUE)
-          #   headerrows <- 3
-          # if (input[['insights_or_not']] == FALSE)
-          #   headerrows <- 2
-          #
-          # responses <- survey_and_responses()[[2]]
-          # split_cols <- input[['split_response_columns']]
-          # responses <- create_merged_response_column(
-          #   response_columns = split_cols,
-          #   col_name = paste0(c("split", split_cols), collapse = " "),
-          #   survey_responses = responses,
-          #   question_blocks = blocks
-          # )
-          #
-          # # # Merges the selected columns into one name
-          # # responses <-
-          # #   create_merged_response_column(split_by, split_string, blocks, responses)
-          #
-          # split_comment_tables <-
-          #   format_and_split_comment_sheets(coded_sheets, responses,
-          #                                   split_column = paste0(c("split", split_cols), collapse = " "), code_type = input$code_type)
-          #
-          # split_blocks <-
-          #   split_respondents(
-          #     response_column = paste0(c("split", split_cols), collapse = " "),
-          #     responses = responses,
-          #     survey = survey,
-          #     blocks = blocks,
-          #     questions = questions,
-          #     headerrows = headerrows,
-          #     already_loaded = FALSE,
-          #     original_first_rows
-          #   )
-          #
-          # split_blocks <-
-          #   insert_split_survey_comments(split_blocks,
-          #                                split_comment_tables,
-          #                                paste0(c("split", split_cols), collapse = " "),
-          #                                original_first_rows)
-          #
-          # #Used with html_2_pandoc below to keeps the flow of the survey consistent with the output
-          # flow = flow_from_survey(survey)
-          #
-          # return_list <- c()
-          # for(i in 1:length(split_blocks)){
-          #  results <- c(
-          #     blocks_header_to_html(split_blocks[[i]]),
-          #     text_appendices_table(
-          #       blocks = split_blocks[[i]],
-          #       original_first_row = original_first_rows,
-          #       flow = flow,
-          #       n_threshold = input$n_threshold
-          #     ))
-          #   return_list <- c(return_list, results)
-          # }
-          #
-          # return(
-          #   return_list
-          #   )
-          # #Appends .docx to the file names collected by splitting the data to output them as Word Documents
-          # filenames <- sapply(split_blocks, function(x)
-          #   x$split_group)
-          # filenames <- sapply(filenames, function(x)
-          #   paste0(x, '.docx'))
-          #
-          # #Outputs the data to word documents using html_2_pandoc
-          # return_list <- c()
-          # for (i in 1:length(filenames)) {
-          #   outpath <- html_2_pandoc(
-          #     html =
-          #     ),
-          #     file_name = filenames[[i]],
-          #     output_dir = output_dir
-          #   )
-          #   return_list <- c(return_list, outpath)
-          # }
-          # return(return_list)
 
 
         }
@@ -597,6 +466,50 @@ shinyServer(function(input, output, session) {
       )
     #Display table with checkbox buttons
     cbind(Include = addCheckboxButtons, qdict)
+  })
+
+
+  # Lean Response Data for the Tableau stuff
+  the_lean_responses <- reactive({
+    validate(need(
+      length(survey_and_responses()) >= 3,
+      "Please upload the survey and responses"
+    ))
+
+    if (length(survey_and_responses()) >= 3 && input$gen_tableau == "Yes") {
+      blocks <- processed_questions_and_blocks()[[2]]
+      responses <- survey_and_responses()[[2]]
+
+      # print(blocks)
+      # print(responses)
+
+      return(lean_responses(question_blocks = blocks, survey_responses = responses, include_text_entry = FALSE))
+    }
+  })
+
+  tableau_qdict <- reactive({
+    validate(need(length(survey_and_responses()) >= 3, ""))
+    if (length(survey_and_responses()) >= 3 && input$gen_tableau == "Yes") {
+      flow <- flow_from_survey(survey_and_responses()[[1]])
+      original_first_row <- survey_and_responses()[[3]][1,]
+      blocks <- processed_questions_and_blocks()[[2]]
+      return(create_response_column_dictionary(question_blocks = blocks,
+                                               original_first_row = original_first_row,
+                                               flow = flow))
+    }
+  })
+
+  # Panel Data
+  panel_df <- reactive({
+    validate(need(
+      length(survey_and_responses()) >= 3,
+      "Please upload the survey and responses"
+    ))
+
+    if (length(survey_and_responses()) >= 3 && input$gen_tableau == "Yes") {
+      responses <- survey_and_responses()[[2]]
+      create_panel_data(input[['panel_columns']], responses, lean_responses(), tableau_qdict())
+    }
   })
 
   # When a user clicks the submit button in the Include/Exclude Questions page,
@@ -662,6 +575,57 @@ shinyServer(function(input, output, session) {
       pageLength = 25
     ), escape = FALSE)
 
+  # Outputing UI for the tableau stuff
+  output[['col_input']] <- renderUI({
+    if(input$gen_tableau == "Yes"){
+      selectInput(
+        "panel_columns",
+        "Choose the Panel Columns: ",
+        colnames(survey_and_responses()[[2]]),
+        multiple = TRUE,
+        selectize = TRUE
+      )
+    }
+  })
+
+  output[['tableau_filename']] <- renderUI({
+    if(input$gen_tableau == "Yes"){
+      textInput("tableau_file_name", "Enter the file name:")
+    }
+  })
+
+  output[['download_tab_data']] <- renderUI({
+    if(input$gen_tableau == "Yes"){
+      downloadButton("download_tableau", "Download Zip of Tableau Data")
+    }
+  })
+
+  # Output the Lean Responses
+  output[['lean_responses']] <-
+    DT::renderDataTable(the_lean_responses(),
+                        options = list(
+                          scrollX = FALSE,
+                          pageLength = 25,
+                          autoWidth = TRUE
+                        ))
+
+  # Outpute the Response Column Dictionary
+  output[['qdict']] <-
+    DT::renderDataTable(tableau_qdict(),
+                        options = list(
+                          scrollX = FALSE,
+                          pageLength = 25,
+                          autoWidth = TRUE
+                        ))
+
+  # Outpute the Panel Data
+  output[['panel_df']] <-
+    DT::renderDataTable(panel_df(),
+                        options = list(
+                          scrollX = FALSE,
+                          pageLength = 25,
+                          autoWidth = TRUE
+                        ))
 
   # selectize response columns for splitting respondents
   output[['select_response_columns']] <- renderUI({
@@ -800,7 +764,7 @@ shinyServer(function(input, output, session) {
   # Download Zip Button
   output[['downloadZip']] <- downloadHandler(
     filename = function() {
-      paste(input$file_name, "_Survey_Output", ".zip")
+      paste(input$file_name, "_Survey_Output", ".zip", sep = "")
     },
     content = function(fname) {
       fs <- c()
@@ -811,7 +775,7 @@ shinyServer(function(input, output, session) {
         format = gsub(".*\\.", "", download_names()['results_tables'], perl =
                         TRUE)
       )
-      q_dictionary_name <- paste(input$file_name, "_question_dictionary.csv")
+      q_dictionary_name <- paste(input$file_name, "_question_dictionary.csv", sep = "")
       write.csv(
         question_dictionary(),
         row.names = FALSE,
@@ -850,6 +814,60 @@ shinyServer(function(input, output, session) {
       if(input$comment_choices == "Yes"){
         fs <- c(fs, file = cc_docx)
       }
+      if (file.exists(paste0(fname, ".zip")))
+        file.rename(paste0(fname, ".zip"), fname)
+      zip(zipfile = fname,
+          files = fs,
+          flags = "-j")
+    },
+    contentType = "application/zip"
+  )
+
+  # Download Tableau Zip
+  output[['download_tableau']] <- downloadHandler(
+    filename = function() {
+      paste(input$tableau_file_name, "_Tableau_Output", ".zip", sep = "")
+    },
+    content = function(fname) {
+      fs <- c()
+      tmpdir <- tempdir()
+
+      lean_response_name <- paste(input$tableau_file_name, '_lean_responses.csv', sep = "")
+      qdict_name <- paste(input$tableau_file_name, '_response_column_dictionary.csv', sep = "")
+      panel_data_name <- paste(input$tableau_file_name, '_panel_data.csv', sep = "")
+
+
+      readr::write_csv(
+        the_lean_responses(),
+        path = file.path(tmpdir, lean_response_name),
+        na = ""
+      )
+      lr_csv <- file.path(tmpdir, lean_response_name)
+
+      readr::write_csv(
+        tableau_qdict(),
+        path = file.path(tmpdir, qdict_name),
+        na = ""
+      )
+      qd_csv <- file.path(tmpdir, qdict_name)
+
+
+      readr::write_csv(
+        panel_df(),
+        path = file.path(tmpdir, panel_data_name),
+        na = ""
+      )
+      pdata_csv <- file.path(tmpdir, panel_data_name)
+
+      # repath the CSV in case it needs it for a Windows path
+      # https://www.r-bloggers.com/stop-fiddling-around-with-copied-paths-in-windows-r/
+      lr_csv <- gsub('\\\\', '/', lr_csv)
+      qd_csv <- gsub('\\\\', '/', qd_csv)
+      pdata_csv <- gsub('\\\\', '/', pdata_csv)
+
+      fs <- c(fs, file = lr_csv)
+      fs <- c(fs, file = qd_csv)
+      fs <- c(fs, file = pdata_csv)
       if (file.exists(paste0(fname, ".zip")))
         file.rename(paste0(fname, ".zip"), fname)
       zip(zipfile = fname,
@@ -907,6 +925,7 @@ shinyServer(function(input, output, session) {
                               TRUE)
             ))
 
+<<<<<<< HEAD
 
         fs <-
           c(fs,
@@ -924,6 +943,26 @@ shinyServer(function(input, output, session) {
               format = gsub(".*\\.", "", download_names()['coded_comments'], perl =
                               TRUE)
             ))
+=======
+        if(input$comment_choices == "Yes"){
+          fs <-
+            c(fs,
+              html_2_pandoc(
+                html = c(
+                  blocks_header_to_html(split_blocks[[i]]),
+                  text_appendices_table(split_blocks[[i]], original_first_row, flow, n_threshold = input$n_threshold)
+                ),
+                file_name = paste0(
+                  "comment_coded_appendices_",
+                  split_blocks[[i]][['split_group']],
+                  ".",
+                  gsub(".*\\.", "", download_names()['coded_comments'], perl = TRUE)
+                ),
+                format = gsub(".*\\.", "", download_names()['coded_comments'], perl =
+                                TRUE)
+              ))
+        }
+>>>>>>> a9c7d848036dae6ac085f0e3edc2059940112ba7
 
       }
       zip(zipfile = fname,

@@ -17,6 +17,7 @@ sidebar <- dashboardSidebar(
              ),
     menuItem("Processed Results", tabName="report", icon=icon("leanpub")),
     menuItem("Include/Exclude Responses", tabName="include_exclude", icon=icon("toggle-on")),
+    menuItem("Tableau Reshaping", tabName="reshape_tableau", icon=icon("chart-line")),
     menuItem("More Options", tabName="more_options", icon=icon("dashboard")),
     menuItem("FAQ", tabName="faq", icon=icon("question-circle")),
 
@@ -41,7 +42,7 @@ body <- dashboardBody(
       tabBox( width = NULL,
               tabPanel(h5("results tables"),
                        uiOutput("uncodeable_message"),
-                       verbatimTextOutput("test"),
+                       # verbatimTextOutput("test"),
                        uiOutput("results_tables")
                       ),
               tabPanel(h5("verbatim comment appendices"),
@@ -75,6 +76,35 @@ body <- dashboardBody(
               dataTableOutput("select_qdict")
               )
   )),
+  tabItem(tabName = "reshape_tableau",
+          fluidRow(
+            column(width = 12,
+                   tabBox( width = NULL,
+                           tabPanel(h5("Tableau Controls"),
+                                    radioButtons("gen_tableau", "Generate Tableau Data?",
+                                                 c("No",
+                                                   "Yes, Generate Tableau Data" = "Yes"),
+                                                 selected = "No"),
+                                    uiOutput("col_input"),
+                                    uiOutput("tableau_filename"),
+                                    uiOutput("download_tab_data")
+                           ),
+                           tabPanel(h5("Lean Responses"),
+                                    DT::dataTableOutput("lean_responses")
+                           ),
+
+                           tabPanel(h5("Response Column Dictionary"),
+                                    DT::dataTableOutput("qdict")
+                           ),
+
+                           tabPanel(h5("Panel Data"),
+                                    DT::dataTableOutput("panel_df")
+                           )
+
+                   )
+            )
+          )
+          ),
   tabItem(tabName = "more_options",
           fluidRow(
             column(width = 3,
