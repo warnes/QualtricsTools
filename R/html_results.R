@@ -320,11 +320,11 @@ text_appendices_table <-
                 if (n_responses >= n_threshold) {
                   tables <- c(
                     tables,
-                    table_html_coded_comments(question,
-                                              k,
-                                              e,
-                                              blocks,
-                                              original_first_rows)
+                    table_html_coded_comments(question = question,
+                                              cc_index = k,
+                                              appendix_e = e,
+                                              blocks = blocks,
+                                              original_first_rows = original_first_rows)
                   )
                 }
               }
@@ -641,16 +641,16 @@ appendix_lettering <- function(number, base = 26, suffix = "") {
 #' @param cc_index is the index of the coded comments to appendicize.
 #' @param appendix_e is the number of the appendix in the text appendices report.
 #' @param blocks is the list of survey blocks.
-#' @param original_first_row is the original header information from the CSV response data.
+#' @param original_first_rows is the original header information from the CSV response data.
 table_html_coded_comments <-
   function(question,
            cc_index,
            appendix_e,
            blocks,
-           original_first_row) {
+           original_first_rows) {
     response_column <- question[['CodedComments']][[cc_index]][[1]]
     choice_text <-
-      choice_text_from_response_column(response_column, original_first_row, blocks)
+      choice_text_from_response_column(response_column, original_first_rows, blocks)
     if (choice_text != "") {
       question_text <-
         paste0(question[['Payload']][['QuestionTextClean']],
@@ -669,15 +669,15 @@ table_html_coded_comments <-
     text_appendix_header <-
       do.call("cbind", replicate(2, text_appendix_header, simplify = FALSE))
     coded_comment_names <-
-      c(paste0('Export Tag: ', question[['Payload']][['DataExportTag']]),
-        paste0('Export Tag: ', question[['Payload']][['DataExportTag']], " "))
+      c(paste0('Export Tag: ', question[['CodedComments']][[cc_index]][['varname']]),
+        paste0('Export Tag: ', question[['CodedComments']][[cc_index]][['varname']], " "))
     colnames(text_appendix_header) <- coded_comment_names
     colnames(question[['CodedComments']][[cc_index]][[2]]) <-
       coded_comment_names
     response_n <- t(as.data.frame(c("Responses", "N")))
     colnames(response_n) <- coded_comment_names
     coded_comments_table <-
-      rbind(response_n, question[['CodedComments']][[cc_index]][[2]])
+      rbind(response_n, sapply(question[['CodedComments']][[cc_index]][[2]],as.character))
     text_appendix <- rbind(text_appendix_header, coded_comments_table)
     tables <- list()
     tables <-
