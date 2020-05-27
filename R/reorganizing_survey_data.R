@@ -1570,6 +1570,8 @@ create_response_column_dictionary <-
 create_question_dictionary_from_qsf <- function(qsf_path) {
   survey <- ask_for_qsf(qsf_path)
   valid_questions_blocks <- valid_questions_blocks_from_survey(survey)
+  questions<- valid_questions_blocks[['questions']]
+  blocks <- valid_questions_blocks[['blocks']]
   #Pull QualtricsTools notes from the list
   qtNotesList <- note_text_from_survey(survey)
   #Add clean question text and human readable question type
