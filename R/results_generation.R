@@ -472,7 +472,7 @@ mc_multiple_answer_results <-
 
     if (sort_na) {
       recode_values <- question[['Payload']][['RecodeValues']]
-      choiceorder <- question[['Payload']][['ChoiceOrder']]
+      choiceorder <- as.character(question[['Payload']][['ChoiceOrder']])
 
       # Sort by Choice Order this will match the choice order in the table
       recode_values <- recode_values[choiceorder]
@@ -484,7 +484,8 @@ mc_multiple_answer_results <-
 
       # construct and return the output data frame with recode values
       results_table <-
-        data.frame(N, Percent, choices, recode_values, row.names = NULL)
+        data.frame(N, Percent, choices, recode_values, row.names = NULL,
+                   stringsAsFactors = FALSE)
 
       reg_results_table <- dplyr::filter(results_table, recode_values < 900)
       na_results_table <- dplyr::filter(results_table, recode_values >= 900)
