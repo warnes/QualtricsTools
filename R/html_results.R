@@ -233,6 +233,8 @@ question_description <- function(question) {
 #' in the output report.
 #' @param n_threshold is the number of comments which must be present in order
 #' for a coded comments table to appear.
+#' @param include_coded is a boolean indicating whether coded comments should be included in the
+#' appendix report; this is only relevent if you have previously added coded comments to the blocks
 #' @return an html string containing a title,
 #' question text, and the text responses for each
 #' text appendix.
@@ -240,7 +242,8 @@ text_appendices_table <-
   function(blocks,
            original_first_rows,
            flow,
-           n_threshold = 15) {
+           n_threshold = 15,
+           include_coded = TRUE) {
     options(stringsAsFactors = FALSE)
 
     # Determine the ordering of the block indices that we will use to
@@ -312,7 +315,7 @@ text_appendices_table <-
             # If the question contains the 'CodedComments' element, then determine
             # how many comments were categorized by reading the entry in the
             # [[nrow_comments, 2]] position of the CodedComments dataframe.
-            if ('CodedComments' %in% names(question)) {
+            if (include_coded && 'CodedComments' %in% names(question)) {
               for (k in 1:length(question[['CodedComments']])) {
                 nrow_comments = nrow(question[['CodedComments']][[k]][[2]])
                 n_responses = question[['CodedComments']][[k]][[2]][[nrow_comments, 2]]

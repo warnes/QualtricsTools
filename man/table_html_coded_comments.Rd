@@ -9,7 +9,7 @@ table_html_coded_comments(
   cc_index,
   appendix_e,
   blocks,
-  original_first_row
+  original_first_rows
 )
 }
 \arguments{
@@ -21,7 +21,7 @@ table_html_coded_comments(
 
 \item{blocks}{is the list of survey blocks.}
 
-\item{original_first_row}{is the original header information from the CSV response data.}
+\item{original_first_rows}{is the original header information from the CSV response data.}
 }
 \description{
 This returns a list containing two tables: the question's description table and the categorical

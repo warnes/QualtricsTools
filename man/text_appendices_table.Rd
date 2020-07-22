@@ -4,7 +4,13 @@
 \alias{text_appendices_table}
 \title{Create HTML Tables for the Text Entry Questions}
 \usage{
-text_appendices_table(blocks, original_first_rows, flow, n_threshold = 15)
+text_appendices_table(
+  blocks,
+  original_first_rows,
+  flow,
+  n_threshold = 15,
+  include_coded = TRUE
+)
 }
 \arguments{
 \item{blocks}{A list of blocks with block elements replaced
@@ -19,6 +25,9 @@ in the output report.}
 
 \item{n_threshold}{is the number of comments which must be present in order
 for a coded comments table to appear.}
+
+\item{include_coded}{is a boolean indicating whether coded comments should be included in the
+appendix report; this is only relevent if you have previously added coded comments to the blocks}
 }
 \value{
 an html string containing a title,

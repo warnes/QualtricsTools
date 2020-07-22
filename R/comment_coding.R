@@ -302,7 +302,8 @@ format_coded_comments_fmp <- function(coded_comment_sheet) {
 format_coded_comments_NVivo <- function(coded_comment_sheet) {
   # Identify the variable name; this should be the name of the second column for regular reports,
   #and the third column for split reports; check for SPLIT in the second column
-  if (stringr::str_detect(names(coded_comment_sheet)[[2]],"-split$")) {
+  #within the shiny app this is prepended "split " instead of at the end
+  if (stringr::str_detect(names(coded_comment_sheet)[[2]],"-split$|^split ")) {
     varname <- names(coded_comment_sheet)[[3]]
   } else if (!stringr::str_detect(names(coded_comment_sheet)[[2]],"-split$")) {
     varname <-  names(coded_comment_sheet)[[2]]
@@ -313,8 +314,9 @@ format_coded_comments_NVivo <- function(coded_comment_sheet) {
   coded_table <- coded_comment_sheet
   #Gather values to make them long and lean so we can easily tabulate
   coded_table <- tidyr::gather(coded_table, key = "Category", value="codeValue",
-                               -ResponseID, -!!varname, -tidyselect::ends_with("-split"))
+                               -ResponseID, -!!varname, -tidyselect::matches("-split|^split "))
 
+  #browser()
   #Filter the long and lean data to keep only positive values showing a mapping to the category
   #This used to be values equal to 1, but we want to be flexible with multi-part questions coded as a single question
   #e.g. What are 3 strengths of the Fletcher School?
@@ -438,6 +440,7 @@ format_and_split_comment_sheets <-
            split_column,
            code_type) {
     # split_coded_comment_sheets will be a list of coded comment sheets for each respondent group
+   # browser()
     levels <- levels(factor(responses[, split_column]))
     split_coded_comment_sheets <- sapply(levels, function(x)
       NULL)
@@ -452,16 +455,23 @@ format_and_split_comment_sheets <-
 
       # sort each sheet into the appropriate level and insert into split_coded_comment_sheets
       for (j in 1:length(levels)) {
-        sheet_contains_level <-
-          sapply(coded_comment_sheets[[i]], function(x)
-            isTRUE(levels[[j]] %in% x[, split_column]))
-        if (length(sheet_contains_level) != 0) {
-          matching_split_sheet <- which(sheet_contains_level)
-          if (length(matching_split_sheet) != 0) {
+        for (k in 1:length(coded_comment_sheets[[i]])) {
+          if (length(coded_comment_sheets[[i]][[k]][[split_column]] > 0) &&
+              all(levels[[j]] %in% coded_comment_sheets[[i]][[k]][[split_column]])) {
             split_coded_comment_sheets[[j]][[length(split_coded_comment_sheets[[j]]) + 1]] <-
-              as.data.frame(coded_comment_sheets[[i]][[matching_split_sheet]])
+              as.data.frame(coded_comment_sheets[[i]][[k]])
           }
         }
+        # sheet_contains_level <-
+        #   sapply(coded_comment_sheets[[i]], function(x)
+        #     isTRUE(levels[[j]] %in% x[, split_column]))
+        # if (length(sheet_contains_level) != 0) {
+        #   matching_split_sheet <- which(sheet_contains_level)
+        #   if (length(matching_split_sheet) != 0) {
+        #     split_coded_comment_sheets[[j]][[length(split_coded_comment_sheets[[j]]) + 1]] <-
+        #       as.data.frame(coded_comment_sheets[[i]][[matching_split_sheet]])
+        #   }
+        # }
       }
     }
 

@@ -2,6 +2,9 @@ options(shiny.maxRequestSize = 30 * 1024 ^ 2)
 
 shinyServer(function(input, output, session) {
 
+  #Ceate a series of debugging pritn statements that can be used to isolate problem blocks
+  debugMessages <- F
+
   # reactiveValues are values which, similar to the input values,
   # cause any reactive block which depends on them to recalculate its output.
   # Here we are constructing the values[['unselected_questions']] list initially
@@ -9,9 +12,8 @@ shinyServer(function(input, output, session) {
   # users specify questions to be included and excluded.
   values <- reactiveValues(unselected_questions = c())
 
-
+  #QSF CSV Select ----
   # Here is the back end for the file selectors:
-
   Theroots <- reactive({
     if(input$root == ""){
       volumes <- shinyFiles::getVolumes()() # this gets the directory at the base of your computer.
@@ -21,7 +23,7 @@ shinyServer(function(input, output, session) {
     }
     return(Theroots)
   })
-
+  # Load survey and responses ----
   # The survey_and_responses reactive block reads the input files
   # and loads them as the survey and responses. It validates that there
   # are no duplicate data export tags in the survey, and it returns a
@@ -30,6 +32,7 @@ shinyServer(function(input, output, session) {
   # 2. the responses, and
   # 3. the original_first_rows.
   survey_and_responses <- reactive({
+    if (debugMessages) {print("Load survey and responses")}
     shinyFiles::shinyFileChoose(input, 'file1', roots = Theroots(), filetypes=c('qsf'), session = session)
     qsf_path <- shinyFiles::parseFilePaths(roots = Theroots(), input$file1)
 
@@ -95,24 +98,64 @@ shinyServer(function(input, output, session) {
     list_survey_and_responses[[1]] <- survey
     list_survey_and_responses[[2]] <- responses
     list_survey_and_responses[[3]] <- original_first_rows
+
+
+    if (debugMessages) {print("Return survey and responses")}
+
     return(list_survey_and_responses)
+
   })
 
+
+  # Process questions and blocks ----
   # This is a reactive block wrapped around the get_reorganized_questions_and_blocks
   # function. The get_reorganized_questions_and_blocks function cleans up the questions and
   # blocks from the QSF data, adds the response data into the questions, and the
   # questions into the blocks, as well as removing trash questions and adding a
   # human readable question type.
+  # In addition, if comment coding is set, this step will insert coded comment tables into the blocks
   processed_questions_and_blocks <- reactive({
+
+    if (debugMessages) {print("Process questions and blocks")}
+
     if (length(survey_and_responses()) >= 3) {
       survey <- survey_and_responses()[[1]]
       responses <- survey_and_responses()[[2]]
       original_first_rows <- survey_and_responses()[[3]]
       questions_and_blocks <-
         get_reorganized_questions_and_blocks(survey, responses, original_first_rows)
+
+      #Now if this is set to add coded comments, insert the coded comments into blocks.
+      if(input$comment_choices == "Yes"){
+        if (debugMessages) {print("input comment choice loop")}
+        sheets_dir <- shinyDirectoryInput::readDirectoryInput(session, 'sheets_dir')
+        coded_sheets <- directory_get_coded_comment_sheets(sheets_dir, code_type = input$code_type)
+        code_type <- input$code_type
+
+        if (is.null(coded_sheets)) {
+          paste("Could not load coded comment data; please fix errors before attempting again")
+        } else  {
+          if (debugMessages) {print("Format coded comment sheets")}
+          comment_tables <- format_coded_comment_sheets(coded_comment_sheets = coded_sheets, code_type = code_type)
+
+          blocks <- insert_coded_comments(blocks = questions_and_blocks[[2]],
+                                          original_first_rows = original_first_rows,
+                                          coded_comments = comment_tables)
+
+          questions_and_blocks[[2]] <- blocks
+          if (debugMessages) {print("Coded comment tables have been inserted into blocks")}
+
+        }
+      }
+
+      if (debugMessages) {print("Return questions and blocks")}
+
+      return(questions_and_blocks)
     }
+
   })
 
+  # Split responses ----
   # create the responses with a merged response column for splitting respondents
   # This block creates a column over which to split the respondents into distinct
   # factors of the column. The column is constructed from a list of column names,
@@ -120,6 +163,9 @@ shinyServer(function(input, output, session) {
   # merged by the create_merged_response_column into a new column with entries
   # of the format "Column 1 Data + Column 2 Data + ..." for each selected column.
   split_col_responses <- reactive({
+
+    if (debugMessages) {print("Split Responses")}
+
     validate(need(
       length(survey_and_responses()) >= 3,
       "Please upload the survey and responses"
@@ -136,11 +182,15 @@ shinyServer(function(input, output, session) {
           survey_responses = responses,
           question_blocks = blocks
         )
+        if (debugMessages) {print("Return responses with split response column")}
+        return(responses)
       } else
+        if (debugMessages) {print("Return responses from survey_and_responses")}
         return(survey_and_responses()[[2]])
     }
   })
 
+  # Split blocks ----
   # This block uses the split column constructed by the split_col_responses
   # reactive block in order to split the respondents into distinct
   # reports. Each distinct group of respondents for a given factor
@@ -152,6 +202,9 @@ shinyServer(function(input, output, session) {
   # of respondents to the survey. This process is done by the split_respondents
   # function.
   split_blocks <- reactive({
+
+    if (debugMessages) {print("Split blocks")}
+
     validate(need(
       length(survey_and_responses()) >= 3,
       "Please upload the survey and responses"
@@ -168,19 +221,52 @@ shinyServer(function(input, output, session) {
         headerrows <- 3
       if (input[['insights_or_not']] == FALSE)
         headerrows <- 2
-      split_respondents(
-        response_column = paste0(c("split", split_cols), collapse = " "),
-        survey = survey,
-        responses = responses,
-        blocks = blocks,
-        questions = questions,
-        headerrows = headerrows,
-        original_first_rows = original_first_rows
-      )
+      split_blocks_with_responses <-
+        split_respondents(response_column = paste0(c("split", split_cols), collapse = " "),
+                          survey = survey,
+                          responses = responses,
+                          blocks = blocks,
+                          questions = questions,
+                          headerrows = headerrows,
+                          original_first_rows = original_first_rows
+                          )
+
+      if (input$comment_choices == "Yes") {
+        sheets_dir <- shinyDirectoryInput::readDirectoryInput(session, 'sheets_dir')
+        coded_sheets <- directory_get_coded_comment_sheets(sheets_dir, code_type = input$code_type)
+        code_type <- input$code_type
+
+        if (is.null(coded_sheets)) {
+          paste("Could not load coded comment data; please fix errors before attempting again")
+        } else  {
+          if (debugMessages) {print("format split coded comment sheets")}
+          #print(names(responses)[1:30])
+
+         # browser()
+
+          split_comment_sheets <-
+            format_and_split_comment_sheets(coded_comment_sheets = coded_sheets,
+                                            responses = responses,
+                                            split_column = paste0(c("split", split_cols), collapse = " "),
+                                            code_type = code_type)
+
+          split_blocks_with_responses <-
+            insert_split_survey_comments(split_blocks = split_blocks_with_responses,
+                                         split_coded_comment_sheets = split_comment_sheets,
+                                         split_column = paste0(c("split", split_cols), collapse = " "),
+                                         original_first_rows = original_first_rows)
+        }
+      }
+
+      if (debugMessages) {print("Return split_blocks")}
+      return(split_blocks_with_responses)
+
     } else
+      if (debugMessages ({"Return blocks from Split blocks [not split]"}))
       return(NULL)
   })
 
+  # Choose split blocks ----
   # Once a user has specified that they would like to split the respondents
   # into subgroups based on the factors of a splitting column, they must
   # select one of the factors to view in the app. The information describing
@@ -192,6 +278,9 @@ shinyServer(function(input, output, session) {
   # value, and so we check the block headers against this value to find the
   # split_blocks to use to create the reports the user has chosen to view.
   choose_split_block <- reactive({
+
+    if (debugMessages) {print("Choose split block")}
+
     validate(need(
       length(survey_and_responses()) >= 3,
       "Please upload the survey and responses"
@@ -212,31 +301,49 @@ shinyServer(function(input, output, session) {
       matching_blocks <-
         which(block_respondent_groups == input[['split_respondents_group']])
       if (length(matching_blocks) == 1) {
+
+        if (debugMessages) {print("Returning matching split blocks")}
+
         return(split_blocks()[[matching_blocks[[1]]]])
       } else
+
+        if(debugMessages) {"Choose split blocks - no matching split blocks, returns null"}
+
         return(NULL)
     } else
+
+      if (debugMessages) {"Choose split blocks - no block selected, returning NULL"}
+
       return(NULL)
   })
 
 
+  # Uncodable question message ----
   # The uncodeable_message reactive block reacts to the survey_and_responses() block
   # with a message indicating which, if any, questions were not properly processed.
   uncodeable_message <- reactive({
+
+    if (debugMessages) {print("Render uncodeable message")}
+
     validate(need(
       length(survey_and_responses()) >= 3,
       "Please upload the survey and responses"
     ))
     if (length(survey_and_responses()) >= 3) {
       questions <- processed_questions_and_blocks()[[1]]
-      uncodeable_questions_message(questions)
+      if (debugMessages) {print("Finish uncodeable message")}
+     return(uncodeable_questions_message(questions))
     }
   })
 
+  # Render results tables ----
   # The results_tables reactive block reacts to the survey_and_responses output
   # by processing the survey and responses into blocks with results tables inserted,
   # and then converting the results tables to HTML tables.
   results_tables <- reactive({
+
+    if (debugMessages) {print("Render results table")}
+
     validate(need(length(survey_and_responses()) >= 3, ""))
     if (length(survey_and_responses()) >= 3) {
       survey <- survey_and_responses()[[1]]
@@ -245,51 +352,76 @@ shinyServer(function(input, output, session) {
       if (!is.null(choose_split_block()))
         blocks <- choose_split_block()
       if (input[['ignoreflow']] == FALSE) {
+
+        if (debugMessages) {print("Return results tables [with flow]")}
+
         return(c(
           blocks_header_to_html(blocks),
           create_html_results_tables(blocks, flow)
         ))
+
       } else {
+
+        if (debugMessages) {print("Return results tables [without flow]")}
+
         return(c(
           blocks_header_to_html(blocks),
           create_html_results_tables(blocks)
         ))
+
       }
     }
   })
 
+  # Render question dictionary ----
   # The question_dictionary block uses the survey from the survey_and_responses output
   # to create a data frame detailing each survey question. This depends on two following
   # reactive code-blocks, which are the complete_question_dictionary and uncodeable_question_dictionary.
   # If the user selects the checkbox which allows them to look at the questions which were
   # not automatically processed, then they get the uncodeable_question_dictionary.
   question_dictionary <- reactive({
+
+    if (debugMessages) {print("Render question dictionary")}
+
     if (input[['uncodeable-only']] == TRUE) {
+
+      if (debugMessages) {print("Return question dictionary [uncodeable]")}
+
       return(unprocessed_question_dictionary())
     } else {
+      if (debugMessages) {print("Return question dictionary [complete]")}
       return(complete_question_dictionary())
     }
   })
 
+  # Response Column dictionary ----
   # The complete_question_dictionary reactive block uses the create_response_column_dictionary
   # function to create a data frame which will be rendered in the UI using DataTables.js
   # This reactive block is also used to create the Include/Exclude page's datatable.
   complete_question_dictionary <- reactive({
+    if (debugMessages) {print("Render complete question dictionary")}
     validate(need(length(survey_and_responses()) >= 3, ""))
     if (length(survey_and_responses()) >= 3) {
       flow <- flow_from_survey(survey_and_responses()[[1]])
       original_first_row <- survey_and_responses()[[3]][1,]
       blocks <- processed_questions_and_blocks()[[2]]
+
+      if (debugMessages) {print("Return complete question dictionary")}
+
       return(create_response_column_dictionary(question_blocks = blocks,
                                                original_first_row = original_first_row,
                                                flow = flow))
     }
   })
 
+  # Unprocessed question dictionary ----
   # The unprocessed_question_dictionary either creates a message that all questions were
   # successfully processed, or creates a dataframe similar to the complete_question_dictionary
   # except with only information for questions which were not successfully processed.
   unprocessed_question_dictionary <- reactive({
+
+    if (debugMessages) {print("Unprocessed question dictionary")}
+
     validate(need(length(survey_and_responses()) >= 3, ""))
     if (length(survey_and_responses()) >= 3) {
       original_first_row <- survey_and_responses()[[3]][1,]
@@ -299,17 +431,25 @@ shinyServer(function(input, output, session) {
         success_message <-
           data.frame("All questions were successfully processed!")
         colnames(success_message)[1] <- " "
+
+        if (debugMessages) {print("Return message all questions processed")}
+
         return(success_message)
       } else {
+        if (debugMessages) {print("Returning uncodeable questions")}
         return(uncode_qdict)
       }
     }
   })
 
+  # Render Verbatim Appendices ----
   # This reactive block renders the HTML for the text appendices panel in the processed results
   # page. The bulk of the hard work is done in the text_appendices_table function, and the
   # blocks_header_to_html is what creates the header at the top of the document.
   text_appendices <- reactive({
+
+    if (debugMessages) {print("Render verbatim text appendices")}
+
     validate(need(
       length(survey_and_responses()) >= 3,
       "Please upload the survey and responses"
@@ -323,22 +463,30 @@ shinyServer(function(input, output, session) {
       if (!is.null(choose_split_block()))
         blocks <- choose_split_block()
       if (input[['ignoreflow']] == FALSE) {
+        if (debugMessages) {print("Returning verbatim appendices [with flow]")}
         return(c(
           blocks_header_to_html(blocks),
-          text_appendices_table(blocks, original_first_rows, flow)
+          text_appendices_table(blocks = blocks, original_first_rows = original_first_rows,
+                                flow = flow, include_coded = FALSE)
         ))
       } else {
+        if (debugMessages) {print("Returning verbatim appendices [without flow]")}
         return(c(
           blocks_header_to_html(blocks),
-          text_appendices_table(blocks, original_first_rows)
+          text_appendices_table(blocks = blocks, original_first_rows = original_first_rows,
+                                include_coded = FALSE)
         ))
       }
     }
   })
 
+  # Render display logic ----
   # This reactive block generates HTML tables detailing the display logic of each
   # question.
   display_logic <- reactive({
+
+    if (debugMessages) {print("Render display logic")}
+
     validate(need(length(survey_and_responses()) >= 1, "Please upload a survey"))
     if (length(survey_and_responses()) >= 1) {
       survey <- survey_and_responses()[[1]]
@@ -349,17 +497,22 @@ shinyServer(function(input, output, session) {
       questions <- add_question_detail(questions = questions, blocks = blocks,
                                        qtNotesList = note_text_from_survey(survey))
       blocks <- insert_questions_into_blocks(questions = questions, blocks = blocks)
-      tabelize_display_logic(blocks, flow)
+      display_logic_table <- tabelize_display_logic(blocks, flow)
+
+      if (debugMessages) {print("Returning display logic")}
+      return (display_logic_table)
+
     }
   })
 
+  # Set coded comment directory ----
   observeEvent(input$sheets_dir, {
     if (input$sheets_dir > 0) {
       # condition prevents handler execution on initial app launch
 
       # launch the directory selection dialog with initial path read from the widget
-      sheets_dir <- shinyDirectoryInput::choose.dir(default = shinyDirectoryInput::readDirectoryInput(session, 'sheets_dir'),
-                               caption = "Choose your comment coding folder...")
+      sheets_dir <- shinyDirectoryInput::choose.dir(default = shinyDirectoryInput::readDirectoryInput(session,  'sheets_dir'),
+                                                    caption = "Choose your comment coding folder...")
 
       # update the widget value
       shinyDirectoryInput::updateDirectoryInput(session, 'sheets_dir', value = sheets_dir)
@@ -367,77 +520,140 @@ shinyServer(function(input, output, session) {
     }
   })
 
+  # Generate coded comments ----
   # Generate the coded comments, if the user wants coded comments.
   coded_comments <- reactive({
+
+    if (debugMessages) {print("Entering coded_comments reactive")}
+
     if(input$comment_choices == "No"){
-      paste("Shiny is not currently set to generate codded comments for this survey")
+      paste("Shiny is not currently set to generate coded comments for this survey")
     } else if(input$comment_choices == "Yes"){
-      sheets_dir <- shinyDirectoryInput::readDirectoryInput(session, 'sheets_dir')
 
-      coded_sheets <- directory_get_coded_comment_sheets(sheets_dir, code_type = input$code_type)
+      if (debugMessages) {print("Render coded comment appendices")}
 
-      original_first_rows <- survey_and_responses()[[3]]
-
-      original_first_row <- original_first_rows[1, ]
-
-      survey <- survey_and_responses()[[1]]
-
-      if (is.null(coded_sheets)) {
-        paste("Please fix errors before attempting again")
-      } else if (is.null(choose_split_block())){
+      validate(need(
+        length(survey_and_responses()) >= 3,
+        "Please upload the survey and responses"
+      ))
+      if (length(survey_and_responses()) >= 3) {
+        original_first_rows <- survey_and_responses()[[3]]
         blocks <- processed_questions_and_blocks()[[2]]
-        comment_tables <-
-          format_coded_comment_sheets(coded_comment_sheets = coded_sheets, code_type = input$code_type)
-        blocks <-
-          insert_coded_comments(
-            blocks = blocks,
-            original_first_rows = original_first_rows,
-            coded_comments = comment_tables
-          )
-
-        # Used with html_2_pandoc below to keeps the flow of the survey consistent with the output
-        flow = flow_from_survey(survey)
-
-        return(c(
-          blocks_header_to_html(blocks),
-          text_appendices_table(
-            blocks = blocks,
-            original_first_row = original_first_rows,
-            flow = flow,
-            n_threshold = input$n_threshold
-          )
-        ))
-        } else{
+        original_first_row <- original_first_rows[1, ]
+        survey <- survey_and_responses()[[1]]
+        flow <- flow_from_survey(survey)
+        if (!is.null(choose_split_block()))
           blocks <- choose_split_block()
-
-          comment_tables <-
-            format_coded_comment_sheets(coded_comment_sheets = coded_sheets, code_type = input$code_type)
-          blocks <-
-            insert_coded_comments(
-              blocks = blocks,
-              original_first_rows = original_first_rows,
-              coded_comments = comment_tables
-            )
-
-          # Used with html_2_pandoc below to keeps the flow of the survey consistent with the output
-          flow = flow_from_survey(survey)
-
+        if (input[['ignoreflow']] == FALSE) {
+          if (debugMessages) {print("Returning coded appendices [with flow]")}
           return(c(
             blocks_header_to_html(blocks),
-            text_appendices_table(
-              blocks = blocks,
-              original_first_row = original_first_rows,
-              flow = flow,
-              n_threshold = input$n_threshold
-            )
+            text_appendices_table(blocks = blocks, original_first_rows = original_first_rows, flow = flow,
+                                  n_threshold = input$n_threshold,
+                                  include_coded = TRUE)
           ))
-
-
+        } else {
+          if (debugMessages) {print("Returning coded appendices [without flow]")}
+          return(c(
+            blocks_header_to_html(blocks),
+            text_appendices_table(blocks = blocks, original_first_rows = original_first_rows,
+                                  n_threshold = input$n_threshold,
+                                  include_coded = TRUE)
+          ))
         }
-
       }
+
+    }
+
+
+
+      # sheets_dir <- shinyDirectoryInput::readDirectoryInput(session, 'sheets_dir')
+      #
+      # coded_sheets <- directory_get_coded_comment_sheets(sheets_dir, code_type = input$code_type)
+      #
+      # original_first_rows <- survey_and_responses()[[3]]
+      #
+      # original_first_row <- original_first_rows[1, ]
+      #
+      # survey <- survey_and_responses()[[1]]
+      #
+      # if (is.null(coded_sheets)) {
+      #   paste("Please fix errors before attempting again")
+      # } else if ('split_response_columns' %in% names(input) &&
+      #            !is.null(input[['split_response_columns']])) {
+      #   blocks <- processed_questions_and_blocks()[[2]]
+      #   split_cols <- input[['split_response_columns']]
+      #   print(paste0("split_cols: ",split_cols))
+      #
+      #   split_col_name = paste0(c("split", split_cols), collapse = " ")
+      #   print(paste0("split_col_name: ",split_col_name))
+      #   print(names(split_col_responses()))
+      #
+      #   split_comment_tables <- format_and_split_comment_sheets(coded_comment_sheets = coded_sheets,
+      #                                                     responses = split_col_responses(),
+      #                                                     split_column = split_col_name,
+      #                                                     code_type = input$code_type)
+      #
+      #   split_blocks <- insert_split_survey_comments(split_blocks(),
+      #                                                split_comment_tables,
+      #                                                split_col_name,
+      #                                                original_first_rows)
+      # }
+      # else if (is.null(choose_split_block())){
+      #   blocks <- processed_questions_and_blocks()[[2]]
+      #   comment_tables <-
+      #     format_coded_comment_sheets(coded_comment_sheets = coded_sheets, code_type = input$code_type)
+      #   blocks <-
+      #     insert_coded_comments(
+      #       blocks = blocks,
+      #       original_first_rows = original_first_rows,
+      #       coded_comments = comment_tables
+      #     )
+      #
+      #   # Used with html_2_pandoc below to keeps the flow of the survey consistent with the output
+      #   flow = flow_from_survey(survey)
+      #
+      #   return(c(
+      #     blocks_header_to_html(blocks),
+      #     text_appendices_table(
+      #       blocks = blocks,
+      #       original_first_row = original_first_rows,
+      #       flow = flow,
+      #       n_threshold = input$n_threshold
+      #     )
+      #   ))
+      #   } else{
+      #     blocks <- choose_split_block()
+      #
+      #     comment_tables <-
+      #       format_coded_comment_sheets(coded_comment_sheets = coded_sheets, code_type = input$code_type)
+      #     blocks <-
+      #       insert_coded_comments(
+      #         blocks = blocks,
+      #         original_first_rows = original_first_rows,
+      #         coded_comments = comment_tables
+      #       )
+      #
+      #     # Used with html_2_pandoc below to keeps the flow of the survey consistent with the output
+      #     flow = flow_from_survey(survey)
+      #
+      #     return(c(
+      #       blocks_header_to_html(blocks),
+      #       text_appendices_table(
+      #         blocks = blocks,
+      #         original_first_row = original_first_rows,
+      #         flow = flow,
+      #         n_threshold = input$n_threshold
+      #       )
+      #     ))
+      #
+      #
+      #   }
+      #
+      # }
    })
 
+  # Include/Exclude Dictionary ----
   # The include_exclude_dict constructs a dataframe with some HTML in its leftmost column
   # to add checkboxes to each row. The complete_question_dictionary is filtered for the columns
   # which uniquely represent a question (whereas the complete_question_dictionary itself
@@ -445,6 +661,9 @@ shinyServer(function(input, output, session) {
   # values[['unselected_questions']] list then it is set to be already unselected, and
   # otherwise it is set to be checked for inclusion in the reports.
   include_exclude_dict <- reactive({
+
+    if (debugMessages) {print("Rendering include/exclude dictionary")}
+
     validate(need(
       length(survey_and_responses()) >= 3,
       "Please upload the survey and responses"
@@ -465,12 +684,18 @@ shinyServer(function(input, output, session) {
         ""
       )
     #Display table with checkbox buttons
-    cbind(Include = addCheckboxButtons, qdict)
+    include_exclude_dict <-  cbind(Include = addCheckboxButtons, qdict)
+    if (debugMessages) {print("Display include/exclude table")}
+    return(include_exclude_dict)
+
   })
 
 
+  #Tableau Lean Responses ----
   # Lean Response Data for the Tableau stuff
   the_lean_responses <- reactive({
+    if (debugMessages) {print("Creating Tableau lean_responses")}
+
     validate(need(
       length(survey_and_responses()) >= 3,
       "Please upload the survey and responses"
@@ -483,24 +708,31 @@ shinyServer(function(input, output, session) {
       # print(blocks)
       # print(responses)
 
+      if (debugMessages) {print("Returning Tableua lean_responses")}
       return(lean_responses(question_blocks = blocks, survey_responses = responses, include_text_entry = FALSE))
     }
   })
 
+  #Tableau Question Dictionary ----
   tableau_qdict <- reactive({
+    if (debugMessages) {print("Create Tableau Response Column Dictionary")}
     validate(need(length(survey_and_responses()) >= 3, ""))
     if (length(survey_and_responses()) >= 3 && input$gen_tableau == "Yes") {
       flow <- flow_from_survey(survey_and_responses()[[1]])
       original_first_row <- survey_and_responses()[[3]][1,]
       blocks <- processed_questions_and_blocks()[[2]]
+
+      if (debugMessages) {print("Return Tableau response column dictionary")}
+
       return(create_response_column_dictionary(question_blocks = blocks,
                                                original_first_row = original_first_row,
                                                flow = flow))
     }
   })
 
-  # Panel Data
+  # Tableau Panel Data ----
   panel_df <- reactive({
+    if (debugMessages) {print("Create Tableau Panel Data")}
     validate(need(
       length(survey_and_responses()) >= 3,
       "Please upload the survey and responses"
@@ -508,6 +740,9 @@ shinyServer(function(input, output, session) {
 
     if (length(survey_and_responses()) >= 3 && input$gen_tableau == "Yes") {
       responses <- survey_and_responses()[[2]]
+
+      if (debugMessages) {print("Returning Tableau panel data")}
+
       return(create_panel_data(input[['panel_columns']], responses, the_lean_responses(), tableau_qdict()))
     }
   })
@@ -762,7 +997,7 @@ shinyServer(function(input, output, session) {
     }
   )
 
-  # Download Zip Button
+  # Download Zip Button----
   output[['downloadZip']] <- downloadHandler(
     filename = function() {
       paste(input$file_name, "_Survey_Output", ".zip", sep = "")
@@ -824,7 +1059,7 @@ shinyServer(function(input, output, session) {
     contentType = "application/zip"
   )
 
-  # Download Tableau Zip
+  # Download Tableau Zip----
   output[['download_tableau']] <- downloadHandler(
     filename = function() {
       paste(input$tableau_file_name, "_Tableau_Output", ".zip", sep = "")
@@ -878,6 +1113,7 @@ shinyServer(function(input, output, session) {
     contentType = "application/zip"
   )
 
+  # Download split files ----
   # Download Split Reports and Text Appendices
   output[['downloadSplit']] <- downloadHandler(
     filename = function() {
@@ -914,7 +1150,8 @@ shinyServer(function(input, output, session) {
             html_2_pandoc(
               html = c(
                 blocks_header_to_html(split_blocks[[i]]),
-                text_appendices_table(split_blocks[[i]], original_first_rows, flow)
+                text_appendices_table(split_blocks[[i]], original_first_rows, flow,
+                                      include_coded = FALSE)
               ),
               file_name = paste0(
                 "text_appendices_",
@@ -932,7 +1169,9 @@ shinyServer(function(input, output, session) {
               html_2_pandoc(
                 html = c(
                   blocks_header_to_html(split_blocks[[i]]),
-                  text_appendices_table(split_blocks[[i]], original_first_row, flow, n_threshold = input$n_threshold)
+                  text_appendices_table(split_blocks[[i]], original_first_row, flow,
+                                        n_threshold = input$n_threshold,
+                                        include_coded = TRUE)
                 ),
                 file_name = paste0(
                   "comment_coded_appendices_",

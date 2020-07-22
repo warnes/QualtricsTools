@@ -4,12 +4,16 @@
 \alias{table_no_respondents}
 \title{Create a standard "No Respondents answered this question" text appendix}
 \usage{
-table_no_respondents(question, appendix_e)
+table_no_respondents(question, appendix_e, choice_tag, choice_text)
 }
 \arguments{
 \item{question}{is the question for which the text appendix is being created.}
 
 \item{appendix_e}{is the number of the appendix in the text appendices report.}
+
+\item{te_component}{is a boolean indicating whether the responses are from a text entry component
+of a non-text entry question. If yes, the Export Tag and question text need to reflect the component
+rather than the overall question.}
 }
 \description{
 This function returns a standardized html table intended to go into a
