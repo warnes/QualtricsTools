@@ -241,11 +241,11 @@ generate_summary_stats <-
     # Generating Tables with summary statistics
     # Calcuate the stats and convert the values to character so we won't lose any digits later on
     NumberOfEntries <- format(length(entries))
-    Mean <- format(mean(entries), digits=2)
-    Median <-  format(median(entries), digits=2)
-    StandardDev <- format(sd(entries), digits = 2, nsmall=2)
-    Minimum <- format(min(entries), digits=2)
-    Maximum <- format(max(entries), digits = 2)
+    Mean <- formatC(mean(entries), digits=2, format = "f")
+    Median <-  formatC(median(entries), digits=2, format = "f")
+    StandardDev <- formatC(sd(entries), digits = 2, format = "f")
+    Minimum <- formatC(min(entries), digits=2, format = "f")
+    Maximum <- formatC(max(entries), digits = 2, format = "f")
 
     results_table <- data.frame("Statistic" = c("N", "Mean", "Median",
                                                 "Standard Deviation", "Minimum", "Maximum"),
