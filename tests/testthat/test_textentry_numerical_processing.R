@@ -12,28 +12,27 @@ original_first_rows <- readRDS(
 
 # Dummy Enchancement Sample Survey: Q4
 test_that(
-  "Test that text_entry_numerical_results table correct for Q4 in the Dummy Enhancement Sample Survey",
+  "Test that text_entry_numerical_results table correct for te_numeric_good in the Dummy Enhancement Sample Survey",
   {
     # Load the question, without the results tables, for processing.
-    Q4 <- readRDS(
+    te_numeric_good <- readRDS(
       here::here('data/Sample Surveys/Dummy Enhancement Sample Survey/RDS',
-        'Q4.rds')
+        'te_numeric_good_notable.rds')
     )
 
     # Process the question and insert results tables into it.
-    Q4 <- process_question_results(Q4, original_first_rows)
+    te_numeric_good <- process_question_results(te_numeric_good, original_first_rows)
 
     # Load the previously computed results table.
-    Q4_results_table <-  readRDS(
+    te_numeric_good_table <-  readRDS(
       here::here('data/Sample Surveys/Dummy Enhancement Sample Survey/RDS',
-        'Q4_results_table.rds'
+        'te_numeric_good_table.rds'
       )
     )
-    Q4_results_table <- as.data.frame(Q4_results_table)
 
     # Check that the previously computed results and new results match.
-    expect_true(all(Q4[['Table']] == Q4_results_table) &&
-                  all(names(Q4[['Table']]) == names(Q4_results_table)))
+    expect_true(all(te_numeric_good[['Table']] == te_numeric_good_table) &&
+                  all(names(te_numeric_good[['Table']]) == names(te_numeric_good_table)))
   }
 )
 
@@ -42,21 +41,21 @@ test_that(
   "Test that results are not processed for numeric text entry question with text responses",
   {
     # Load the question, without the results tables, for processing.
-    Q11 <- readRDS(
+    te_numeric_fail <- readRDS(
       here::here('data/Sample Surveys/Dummy Enhancement Sample Survey/RDS',
-        'Q11.rds'
+        'te_numeric_fail.rds'
       )
     )
 
     # Process the question and insert results tables into it.
-    Q11 <- process_question_results(Q11, original_first_rows)
+    te_numeric_test <- process_question_results(te_numeric_fail, original_first_rows)
 
     #Check that there are data that cannot be converted to numeric
-    Q11_responses <- as.character(Q11[["Responses"]])
-    Q11_responses <- suppressWarnings(as.numeric(Q11_responses))
+    te_numeric_test_responses <- as.character(te_numeric_fail[["Responses"]][['te_numeric_fail']])
+    te_numeric_test_responses <- suppressWarnings(as.numeric(te_numeric_test_responses))
 
     # No tables should be generated and if this true, the test passes.
-    expect_true(!("Table" %in% names(Q11)) & any(is.na(Q11_responses)))
+    expect_true(!("Table" %in% names(te_numeric_test)) & any(is.na(te_numeric_test_responses)))
   }
 )
 
