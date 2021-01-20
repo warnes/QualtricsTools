@@ -90,8 +90,9 @@ ask_for_csv <- function(responsesfile, headerrows) {
 
     if (headerrows == 3) {
       original_first_rows[2,] <- lapply(original_first_rows[2, ], function(x) {
-        x <- gsub("^\\{'ImportId': '", "", x, perl=TRUE)
-        x <- gsub("'\\}$", "", x, perl=TRUE)
+        x <- gsub("^\\{\"ImportId\":\"", "", x, perl=TRUE)
+        x <- gsub("\",\"choiceId\":\"", "-", x, perl=TRUE)
+        x <- gsub("\".*", "", x, perl=TRUE)
       })
     }
 

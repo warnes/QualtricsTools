@@ -1,0 +1,167 @@
+---
+title: "Rmarkdown_File"
+author: "Matthew Hudes"
+date: "2/12/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Updating, librarying, and running get_setup
+# We are using a Multiple Answer Multiple Choice example
+
+```{r}
+
+# devtools::install_github("emma-morgan/QualtricsTools")
+# 
+# library(QualtricsTools)
+devtools::load_all(".")
+library(tidyverse)
+
+get_setup(
+      qsf_path = "Q:/Student Work/QualtricsTools/QualtricsTools R Project/QualtricsTools/data/Sample Surveys/Multiple Answer Multiple Choices Questions/Multiple_Answer_MC_Questions.qsf",
+      csv_path = "Q:/Student Work/QualtricsTools/QualtricsTools R Project/QualtricsTools/data/Sample Surveys/Multiple Answer Multiple Choices Questions/Multiple_Answer_MC_Questions.csv",
+      headerrows = 2)
+
+```
+
+# To work with multiple choice processing, I need to get my original first rows and a specific question. All of the questions in this sample survey are multiple choice multiple answer, so I'm going to use the first one as a test to start.
+
+```{r process_mc_ma_question}
+
+q <- questions[[1]]
+
+q_table <- mc_multiple_answer_results(q, original_first_rows)
+rt <- q_table$Table
+
+```
+
+
+## Lets make some results tables!
+
+
+```{r}
+
+make_results_tables(
+  output_dir = "Q:/Student Work/Emma's Student Work/QualtricsTools Enhancements (Spring 2020)/Matthew/Testing_What_I_Have_Done",
+  filename = "Results Tables extra Sorted.docx"
+)
+
+```
+
+
+
+## Lets try it with a bigger survey
+
+```{r}
+##devtools::load_all(".")
+devtools::install_github("emma-morgan/QualtricsTools")
+library(tidyverse)
+library(QualtricsTools)
+
+get_setup(
+  qsf_path = here::here("data", "Sample Surveys", "Long Exhaustive Sample Survey", "Long_Exhaustive_Sample_Survey.qsf"),
+  csv_path = here::here("data", "Sample Surveys", "Long Exhaustive Sample Survey", "Long_Exhaustive_Sample_Survey.csv"),
+  headerrows = 3
+
+)
+```
+
+
+## Lets make a results table with the new survey
+
+```{r}
+
+make_results_tables(
+  output_dir = "Q:/Student Work/Emma's Student Work/QualtricsTools Enhancements (Spring 2020)/Matthew/Testing_What_I_Have_Done",
+  filename = "New survey Results Tables old version.docx"
+)
+
+
+```
+
+
+
+
+
+# We now have multiple options for how it sorts! Lets test that out.
+
+
+```{r initial setup}
+
+devtools::load_all(".")
+library(tidyverse)
+
+get_setup(
+  qsf_path = here::here("data", "Sample Surveys", "Multiple Answer Multiple Choices Questions", "Multiple_Answer_MC_Questions.qsf"),
+  csv_path = here::here("data", "Sample Surveys", "Multiple Answer Multiple Choices Questions", "Multiple_Answer_MC_Questions.csv"),
+  headerrows = 2
+
+)
+
+```
+
+
+#### Lets Sort by N first
+
+```{r echo = FALSE}
+
+q <- questions[[1]]
+
+q_table <- mc_multiple_answer_results(q, original_first_rows)
+rt <- q_table$Table
+
+knitr::kable(rt)
+
+```
+
+
+#### Now lets Sort by Choices
+
+```{r Sort_Choices}
+
+q <- questions[[1]]
+
+q_table <- mc_multiple_answer_results(q, original_first_rows, sort_by = "Choices_Alpha")
+rt <- q_table$Table
+
+knitr::kable(rt)
+
+```
+
+
+
+#### Finally lets sort by survay flow/ lets just not sort
+
+```{r Sort_Flow}
+
+q <- questions[[1]]
+
+q_table <- mc_multiple_answer_results(q, original_first_rows, sort_by = "NA")
+rt <- q_table$Table
+
+knitr::kable(rt)
+
+```
+
+
+
+
+
+
+## Okay I just updated the documentation for mc_multiple_answer_results, lets test it out
+
+```{r}
+
+
+devtools::document()
+
+?mc_multiple_answer_results
+
+```
+
+

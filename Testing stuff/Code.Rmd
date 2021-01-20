@@ -1,0 +1,45 @@
+---
+title: "Code"
+author: "Matthew Hudes"
+date: "1/20/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+devtools::load_all(".")
+# devtools::install_github("emma-morgan/QualtricsTools")
+library(tidyverse)
+# library(QualtricsTools)
+
+get_setup(
+  qsf_path = here::here("Testing stuff", "Example data", "QualtricsTools_Sample_Survey_Winter2021.qsf"),
+  csv_path = here::here("Testing stuff", "Example data", "QualtricsTools+Sample+Survey+Winter2021_January+20,+2021_10.08_Data_Table.csv"),
+  headerrows = 3
+
+)
+```
+
+
+## Lets make a results table with the new survey
+
+```{r}
+
+make_results_tables(
+  output_dir =  here::here("Testing stuff"),
+  filename = "Test Results Tables Data Table.docx"
+)
+
+
+```
+
+
+
+
+
