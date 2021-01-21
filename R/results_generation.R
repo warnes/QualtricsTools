@@ -416,10 +416,10 @@ mc_multiple_answer_results <-
     # rename the columns to be the choice indices they represent
     colnames(relevant_responses) <-
       lapply(colnames(relevant_responses), function(x) {
-        if (should_use_ofr) {
-          choice_index <- original_first_rows[2, x]
-          choice_index <- gsub("QID[0-9]*-", "", choice_index)
-        } else {
+        # if (should_use_ofr) {
+        #   choice_index <- original_first_rows[2, x]
+        #   choice_index <- gsub("QID[0-9]*-", "", choice_index)
+        # } else {
           x <- gsub(data_export_tags, "", x)
           if ("RecodeValues" %in% names(question[['Payload']]) &&
               x %in% question[['Payload']][['RecodeValues']]) {
@@ -428,7 +428,7 @@ mc_multiple_answer_results <-
                 which(question[['Payload']][['RecodeValues']] == x)]
           }
           return(x)
-        }
+        # }
       })
 
     # get the number of respondents for each choice
@@ -810,7 +810,7 @@ matrix_single_answer_results <-
         original_first_rows[2, x])
     rownames(valid_responses) <-
       lapply(rownames(valid_responses), function(x)
-        gsub(paste0(question_id, "-"), "", x))
+        gsub(paste0(question_id, "_"), "", x))
 
 
     if(is_matrix_single_answer(question)){

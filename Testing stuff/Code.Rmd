@@ -20,7 +20,7 @@ library(tidyverse)
 
 get_setup(
   qsf_path = here::here("Testing stuff", "Example data", "QualtricsTools_Sample_Survey_Winter2021.qsf"),
-  csv_path = here::here("Testing stuff", "Example data", "QualtricsTools+Sample+Survey+Winter2021_January+20,+2021_10.08_Data_Table.csv"),
+  csv_path = here::here("Testing stuff", "Example data", "QualtricsTools+Sample+Survey+Winter2021_January+21,+2021_11.32_DataTable.csv"),
   headerrows = 3
 
 )
