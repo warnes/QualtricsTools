@@ -805,9 +805,19 @@ matrix_single_answer_results <-
 
     #Lines added from above to rename row values
     #EM insertion
-    rownames(valid_responses) <-
-      lapply(rownames(valid_responses), function(x)
-        original_first_rows[2, x])
+    df <- original_first_rows
+    df <- df[ , grepl(question_id, df[2,])]
+    df <- as.data.frame(df)
+    # If actually a matrix do this
+    if(NCOL(df) > 1){
+      rownames(valid_responses) <-
+        lapply(rownames(valid_responses), function(x)
+          df[2, x])
+    } else{
+      rownames(valid_responses) <-
+        lapply(rownames(valid_responses), function(x)
+          original_first_rows[2, x])
+    }
     rownames(valid_responses) <-
       lapply(rownames(valid_responses), function(x)
         gsub(paste0(question_id, "_"), "", x))
@@ -936,7 +946,8 @@ matrix_multiple_answer_results <-
       lapply(colnames(relevant_responses), function(x) {
         if (should_use_ofr) {
           choice_index <- original_first_rows[2, x]
-          choice_index <- gsub("^QID[# 0-9]*-", "", choice_index)
+          choice_index <- gsub("^QID[# 0-9]*", "", choice_index)
+          choice_index <- gsub("_", "", choice_index)
         } else {
           x <- gsub(data_export_tags, "", x)
         }
