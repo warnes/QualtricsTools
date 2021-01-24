@@ -945,13 +945,34 @@ matrix_multiple_answer_results <-
     colnames(relevant_responses) <-
       lapply(colnames(relevant_responses), function(x) {
         if (should_use_ofr) {
-          choice_index <- original_first_rows[2, x]
+          df <- original_first_rows
+          question_id <- question[['Payload']][['QuestionID']]
+          df <- df[ , grepl(question_id, df[2,])]
+          df <- as.data.frame(df)
+          choice_index <- df[2, x]
           choice_index <- gsub("^QID[# 0-9]*", "", choice_index)
           choice_index <- gsub("_", "", choice_index)
         } else {
           x <- gsub(data_export_tags, "", x)
         }
       })
+    
+    num <- length(colnames(relevant_responses))
+    qs = 1
+    part = 1
+    for(i in 1:num) {
+      old <- names(relevant_responses)[i]
+      # print(old)
+      old <- gsub("-[# 0-9]*", "", old)
+      if(old != qs){
+        qs = old
+        part = 1
+      }
+      new <- paste(old, part, sep = "-")
+      # print(new)
+      names(relevant_responses)[i] <- new
+      part = part + 1
+    }
 
     # if the question is reduced from a side-by-side question,
     # then we need to remove the AnswerDataExportTag from the

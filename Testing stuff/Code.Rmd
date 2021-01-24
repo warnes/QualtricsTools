@@ -22,7 +22,7 @@ library(tidyverse)
 # csv_path = here::here("Testing stuff", "Example data", "QualtricsTools+Sample+Survey+Winter2021_January+23,+2021_14.59_DataTable.csv")
 
 qsf_path = here::here("Testing stuff", "Example data", "Long_Exhaustive_Sample_Survey.qsf")
-csv_path = here::here("Testing stuff", "Example data", "Long_Exhaustive_Sample_Survey_January+23,+2021_16.10_DataTable.csv")
+csv_path = here::here("Testing stuff", "Example data", "Long_Exhaustive_Sample_Survey_January+24,+2021_17.13_DataTable.csv")
 headerrows = 3
 
 get_setup(
@@ -33,7 +33,7 @@ get_setup(
 ```
 
 
-## Lets make a results table with the new survey
+## Lets make a results table with the survey
 
 ```{r}
 
@@ -47,5 +47,15 @@ make_results_tables(
 
 
 
+## Lets make a text appendix with the survey
 
+```{r}
+
+make_text_appendices(
+  output_dir =  here::here("Testing stuff"),
+  filename = "Long Text Appendix Data Table.docx"
+)
+
+
+```
 
