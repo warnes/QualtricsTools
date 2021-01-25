@@ -389,6 +389,9 @@ text_appendices_table <-
                 }
 
               } else if (length(text_columns) > 0) {
+                if(question[['Payload']][['QuestionType']] == "MC"){
+                  text_columns <- text_columns[[1]]
+                }
                 for (k in 1:length(text_columns)) {
 
                   # Clean Responses. Remove any responses which are -99 or

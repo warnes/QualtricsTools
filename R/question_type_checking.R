@@ -77,6 +77,21 @@ is_text_entry_numeric <- function(question){
 is_text_entry_appendix <- function(question) {
   #This needs to be text entry and either have null validation content type
     #OR have content type that is not ValidNumber
+  # is_text_entry_appendix <- FALSE
+  # if(question[['Payload']][['QuestionType']] == "MC"){
+  #   for(g in 1:length(question[['Payload']][['Choices']])){
+  #     if(!is.null(question[['Payload']][['Choices']][[g]][['TextEntry']])){
+  #       if(question[['Payload']][['Choices']][[g]][['TextEntry']]){
+  #         is_text_entry_appendix <- TRUE
+  #       }
+  #     }
+  #   }
+  # }
+  # if(!is_text_entry_appendix){
+  #   is_text_entry_appendix <- question[['Payload']][['QuestionType']] == "TE" &&
+  #     (is.null(question[['Payload']][['Validation']][['Settings']][['ContentType']]) ||
+  #        question[['Payload']][['Validation']][['Settings']][['ContentType']] != "ValidNumber")
+  # }
   is_text_entry_appendix <- question[['Payload']][['QuestionType']] == "TE" &&
     (is.null(question[['Payload']][['Validation']][['Settings']][['ContentType']]) ||
        question[['Payload']][['Validation']][['Settings']][['ContentType']] != "ValidNumber")

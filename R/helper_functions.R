@@ -534,6 +534,9 @@ choice_text_from_response_column <-
     if (is_mc_multiple_answer(question) &&
         any(stringr::str_detect(original_first_row[[response_column]], "^QID"))) {
       choice_index <- stringr::str_extract(original_first_row[[response_column]][[2]], "\\d+(?=-TEXT$)")
+      if(is.na(choice_index)){
+        choice_index <- stringr::str_extract(original_first_row[[response_column]][[2]], "\\d+(?=_TEXT$)")
+      }
       choice_text <- question[['Payload']][['Choices']][[choice_index]][['Display']]
       choice_text <- clean_html_and_css(choice_text)
     }
