@@ -85,6 +85,14 @@ ask_for_csv <- function(responsesfile, headerrows) {
       headerrows <- 3
     }
     responses = read.csv(responsesfile, check.names = FALSE, stringsAsFactors = FALSE)
+    for(i in 1:ncol(responses)){
+      temp <- responses[2, i]
+      qid <- str_extract(temp, "QID[0-9]*")
+      if(!is.na(qid)){
+        colnames(responses)[i] <- paste0(qid, "_", colnames(responses)[i])
+      }
+    }
+    
     responses[which(colnames(responses) == "")] <- NULL
     original_first_rows <- responses[1:(headerrows-1),]
 

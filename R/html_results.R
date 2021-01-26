@@ -348,6 +348,15 @@ text_appendices_table <-
                 which(sapply(colnames(question[['Responses']]),
                              function(x)
                                grepl("TEXT", x)))
+              if(question[['Payload']][['Selector']] == "TE" && question[['Payload']][['QuestionType']] == "Matrix"){
+                if(length(text_columns > 0)){
+                  all_columns <- 1:length(question[['Responses']])
+                  temp <- setdiff(all_columns, text_columns)
+                  text_columns <- append(temp, text_columns)
+                } else{
+                  text_columns <- 1:length(question[['Responses']])
+                }
+              }
 
               # Text Entry Text Appendices (excluding the text entried with numerical validation,since we longer generate appendices for them)
               if (is_text_entry_appendix(question)){
@@ -389,7 +398,7 @@ text_appendices_table <-
                 }
 
               } else if (length(text_columns) > 0) {
-                if(question[['Payload']][['QuestionType']] == "MC"){
+                if(question[['Payload']][['QuestionType']] == "MC" && question[['Payload']][['Selector']] == "SAVR"){
                   text_columns <- text_columns[[1]]
                 }
                 for (k in 1:length(text_columns)) {
