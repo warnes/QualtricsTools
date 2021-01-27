@@ -337,6 +337,11 @@ mc_single_answer_results <-
     respondent_count <-
       length(which((question[['Responses']][[exporttag]] != -99) &
                      (question[['Responses']][[exporttag]] != "")))
+    if(respondent_count == 0){
+      respondent_count <-
+        length(which((question[['Responses']][[selected_column]] != -99) &
+                       (question[['Responses']][[selected_column]] != "")))
+    }
     Percent <- percent0(N / respondent_count)
 
     # if the choice variables have been recoded, first the factors are retrieved from the responses_tabled,
@@ -430,6 +435,11 @@ mc_multiple_answer_results <-
           return(x)
         # }
       })
+    
+    # Clean QIDs
+    for(k in 1:ncol(relevant_responses)){
+      colnames(relevant_responses)[k] <- gsub("QID[0-9]*_", "", colnames(relevant_responses)[k])
+    }
 
     # get the number of respondents for each choice
     N <-
@@ -447,6 +457,7 @@ mc_multiple_answer_results <-
     Percent <- lapply(1:length(N), function(x) {
         percent0(N[[x]] / total_denominator)
     })
+    
 
     # Since we've already translated converted the choices from recode values to choice
     # variables, in the following call we set use_recode_values = FALSE.
