@@ -762,9 +762,9 @@ table_no_respondents <- function(question, appendix_e, choice_tag, choice_text) 
   colnames(No_Respondents)[1] <-
     paste0('Export Tag: ', export_tag)
   # Clean the QIDs
-  for(k in 1:ncol(No_Respondents)){
-    colnames(No_Respondents)[k] <- gsub("QID[0-9]*_", "" , colnames(No_Respondents)[k])
-  }
+  # for(k in 1:ncol(No_Respondents)){
+  #   colnames(No_Respondents)[k] <- gsub("QID[0-9]*_", "" , colnames(No_Respondents)[k])
+  # }
   tables <- list()
   tables <-
     c(tables, capture.output(
@@ -834,10 +834,10 @@ table_text_entry <-
       sapply(colnames(text_responses), function (x)
         paste0('Export Tag: ', x))
     
-    # Clean the QIDs
-    for(k in 1:ncol(text_appendix)){
-      colnames(text_appendix)[k] <- gsub("QID[0-9]*_", "" , colnames(text_appendix)[k])
-    }
+    # # Clean the QIDs
+    # for(k in 1:ncol(text_appendix)){
+    #   colnames(text_appendix)[k] <- gsub("QID[0-9]*_", "" , colnames(text_appendix)[k])
+    # }
 
     tables <- list()
     # turn the text appendix into an html table, and add it to the tables list
@@ -907,9 +907,9 @@ table_non_text_entry <- function(question,
       paste0('Export Tag: ', x))
 
   # Clean the QIDs
-  for(k in 1:ncol(text_appendix)){
-    colnames(text_appendix)[k] <- gsub("QID[0-9]*_", "" , colnames(text_appendix)[k])
-  }
+  # for(k in 1:ncol(text_appendix)){
+  #   colnames(text_appendix)[k] <- gsub("QID[0-9]*_", "" , colnames(text_appendix)[k])
+  # }
   
   tables <- list()
   # turn the text appendix into an html table, and add it to the tables list
