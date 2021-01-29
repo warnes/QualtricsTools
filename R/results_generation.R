@@ -418,6 +418,11 @@ mc_multiple_answer_results <-
       unique(c(paste0(data_export_tags, "_"), data_export_tags))
     data_export_tags <- paste0(data_export_tags, collapse = "|")
 
+    # # Clean QIDs
+    # for(k in 1:ncol(relevant_responses)){
+    #   colnames(relevant_responses)[k] <- gsub("QID[0-9]*_", "", colnames(relevant_responses)[k])
+    # }
+    
     # rename the columns to be the choice indices they represent
     colnames(relevant_responses) <-
       lapply(colnames(relevant_responses), function(x) {
@@ -426,6 +431,7 @@ mc_multiple_answer_results <-
         #   choice_index <- gsub("QID[0-9]*-", "", choice_index)
         # } else {
           x <- gsub(data_export_tags, "", x)
+          x <- gsub("QID[0-9]*_", "", x)
           if ("RecodeValues" %in% names(question[['Payload']]) &&
               x %in% question[['Payload']][['RecodeValues']]) {
             x <-
@@ -436,10 +442,6 @@ mc_multiple_answer_results <-
         # }
       })
     
-    # Clean QIDs
-    for(k in 1:ncol(relevant_responses)){
-      colnames(relevant_responses)[k] <- gsub("QID[0-9]*_", "", colnames(relevant_responses)[k])
-    }
 
     # get the number of respondents for each choice
     N <-

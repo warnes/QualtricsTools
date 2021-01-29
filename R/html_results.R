@@ -142,7 +142,7 @@ question_description <- function(question) {
         )
       )
     } else if (!"Table" %in% names(question) &&
-               !all(grepl("TEXT", names(question[['Responses']])))) {
+               !all(grepl("TEXT", names(question[['Responses']]))) && question[['Payload']][['Selector']] != "TE") {
       description <- c(
         description,
         paste0(
@@ -162,10 +162,21 @@ question_description <- function(question) {
   # >1 - "This question has multiple text entry components. See Appendices."
   if ("Payload" %in% names(question)) {
     if (question[['Payload']][['QuestionType']] != "TE") {
-      if (length(grep("TEXT", names(question[['Responses']]))) == 1) {
+      s <- FALSE
+      m <- FALSE
+      MTE <- FALSE
+      if(question[['Payload']][['QuestionType']] == 'Matrix' && question[['Payload']][['Selector']] == 'TE'){
+        MTE <- TRUE
+        if(length(question[['Responses']]) == 1){
+          s <- TRUE
+        } else if(length(question[['Responses']]) > 1){
+          m <- TRUE
+        }
+      }
+      if (length(grep("TEXT", names(question[['Responses']]))) == 1 && !MTE || s) {
         description <- c(description,
                          paste0("This question has a text entry component. See Appendix."))
-      } else if (length(grep("TEXT", names(question[['Responses']]))) > 1) {
+      } else if (length(grep("TEXT", names(question[['Responses']]))) > 1 || m) {
         description <- c(
           description,
           paste0(
