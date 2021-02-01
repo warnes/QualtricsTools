@@ -53,9 +53,22 @@ make_results_tables(
 
 make_text_appendices(
   output_dir =  here::here("Testing stuff"),
-  filename = "Test Text Appendix Data Table.docx"
+  filename = "Long Text Appendix Data Table.docx"
 )
 
 
 ```
+
+
+
+
+
+## Lets open the app
+
+```{r}
+
+app()
+
+```
+
 

@@ -409,9 +409,9 @@ text_appendices_table <-
                 }
 
               } else if (length(text_columns) > 0) {
-                if(question[['Payload']][['QuestionType']] == "MC" && question[['Payload']][['Selector']] == "SAVR"){
-                  text_columns <- text_columns[[1]]
-                }
+                # if(question[['Payload']][['QuestionType']] == "MC" && question[['Payload']][['Selector']] == "SAVR"){
+                #   text_columns <- text_columns[[1]]
+                # }
                 for (k in 1:length(text_columns)) {
 
                   # Clean Responses. Remove any responses which are -99 or
@@ -458,26 +458,26 @@ text_appendices_table <-
 
                   # Check if the number of Text Entry components to a multiple choice question
                   # is greater than one.
-                  multiple_TE_components <- function(question) {
-                    # Calculate the number of text entry components to a multiple choice question.
-                    N_TE_components <- length(which(sapply(
-                      question[['Payload']][['Choices']],
-                      function(x) {
-                        # Multiple Choice questions define their text entry components by labeling their
-                        # choices as having the TextEntry property set to "true".
-                        'TextEntry' %in% names(x) && x[['TextEntry']] == "true"
-                      }
-                    )))
-                    return(N_TE_components > 1)
-                  }
-
-                  # Skip Single Answer questions with too many text entry components to table correctly
-                  if (is_mc_single_answer(question) && multiple_TE_components(question)) {
-                    tables <- c(tables, table_mcsa_multitext(question))
-                    # Skip the rest of the loop, and iterate j to move onto the
-                    # next question.
-                    next
-                  }
+                  # multiple_TE_components <- function(question) {
+                  #   # Calculate the number of text entry components to a multiple choice question.
+                  #   N_TE_components <- length(which(sapply(
+                  #     question[['Payload']][['Choices']],
+                  #     function(x) {
+                  #       # Multiple Choice questions define their text entry components by labeling their
+                  #       # choices as having the TextEntry property set to "true".
+                  #       'TextEntry' %in% names(x) && x[['TextEntry']] == "true"
+                  #     }
+                  #   )))
+                  #   return(N_TE_components > 1)
+                  # }
+                  # 
+                  # # Skip Single Answer questions with too many text entry components to table correctly
+                  # if (is_mc_single_answer(question) && multiple_TE_components(question)) {
+                  #   tables <- c(tables, table_mcsa_multitext(question))
+                  #   # Skip the rest of the loop, and iterate j to move onto the
+                  #   # next question.
+                  #   next
+                  # }
 
                   # Table Non-Text Entry Questions
                   # The logic before this ensures that the question is not of text entry type and contains

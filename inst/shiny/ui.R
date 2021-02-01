@@ -12,8 +12,7 @@ sidebar <- dashboardSidebar(
              shinyFiles::shinyFilesButton('file2', "Browse...", "Choose CSV Response Set File", multiple = FALSE),
 
              div(class="sidebar-text",
-                 HTML("QualtricsTools requires data be exported with the <a href='https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Appendix-of-Qualtrics-Terms#legacy-and-insights-data', target='_blank'>Legacy Exporter</a>.")),
-             checkboxInput("insights_or_not", "Unchecked Legacy View Results (3 header rows & QIDs)?", value = TRUE, width = NULL)
+                 HTML("QualtricsTools requires data be exported with the <a href='https://github.com/emmamorgan-tufts/QualtricsTools/wiki/Appendix-of-Qualtrics-Terms#legacy-and-insights-data', target='_blank'>Data Table Exporter</a>."))
              ),
     menuItem("Processed Results", tabName="report", icon=icon("leanpub")),
     menuItem("Include/Exclude Responses", tabName="include_exclude", icon=icon("toggle-on")),
