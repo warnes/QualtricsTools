@@ -33,7 +33,8 @@ Imports:
     shinyDirectoryInput,
     tidyr,
     xtable,
-    XML
+    XML,
+    stringr
 Suggests: 
     testthat,
     knitr,
