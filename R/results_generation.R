@@ -357,6 +357,10 @@ mc_single_answer_results <-
       data.frame(N, Percent, choices, row.names = NULL)
     colnames(results_table)[3] <- ""
 
+    # Clean the QIDs
+    results_table <- sapply(results_table, function(x)
+      gsub("QID[0-9]*_", "", x, perl = TRUE))
+    
     # append the results table to the question
     question[['Table']] <- results_table
 
@@ -534,6 +538,10 @@ mc_multiple_answer_results <-
 
     # Remove choices as the name of the third column
     colnames(results_table)[3] <- ""
+
+    # Clean the QIDs
+    results_table <- sapply(results_table, function(x)
+      gsub("QID[0-9]*_", "", x, perl = TRUE))
 
     # append the results table
     question[['Table']] <- results_table
@@ -877,6 +885,9 @@ matrix_single_answer_results <-
       choices <- clean_html_and_css(question[['Payload']][['QuestionText']])
     }
 
+    # Clean the QIDs
+    choices <- sapply(choices, function(x)
+      gsub("QID[0-9]*_", "", x, perl = TRUE))
 
     # construct the data frame
     if (has_na) {
@@ -904,7 +915,6 @@ matrix_single_answer_results <-
 
     colnames(results_table)[1] <- ""
     rownames(results_table) <- NULL
-
 
     # append the results table
     question[['Table']] <- results_table

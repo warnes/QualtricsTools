@@ -160,32 +160,32 @@ question_description <- function(question) {
   # question:
   #  1 - "This question has a text entry component. See Appendix."
   # >1 - "This question has multiple text entry components. See Appendices."
-  if ("Payload" %in% names(question)) {
-    if (question[['Payload']][['QuestionType']] != "TE") {
-      s <- FALSE
-      m <- FALSE
-      MTE <- FALSE
-      if(question[['Payload']][['QuestionType']] == 'Matrix' && question[['Payload']][['Selector']] == 'TE'){
-        MTE <- TRUE
-        if(length(question[['Responses']]) == 1){
-          s <- TRUE
-        } else if(length(question[['Responses']]) > 1){
-          m <- TRUE
-        }
-      }
-      if (length(grep("TEXT", names(question[['Responses']]))) == 1 && !MTE || s) {
-        description <- c(description,
-                         paste0("This question has a text entry component. See Appendix."))
-      } else if (length(grep("TEXT", names(question[['Responses']]))) > 1 || m) {
-        description <- c(
-          description,
-          paste0(
-            "This question has multiple text entry components. See Appendices."
-          )
-        )
-      }
-    }
-  }
+  # if ("Payload" %in% names(question)) {
+  #   if (question[['Payload']][['QuestionType']] != "TE") {
+  #     s <- FALSE
+  #     m <- FALSE
+  #     MTE <- FALSE
+  #     if(question[['Payload']][['QuestionType']] == 'Matrix' && question[['Payload']][['Selector']] == 'TE'){
+  #       MTE <- TRUE
+  #       if(length(question[['Responses']]) == 1){
+  #         s <- TRUE
+  #       } else if(length(question[['Responses']]) > 1){
+  #         m <- TRUE
+  #       }
+  #     }
+  #     if (length(grep("TEXT", names(question[['Responses']]))) == 1 && !MTE || s) {
+  #       description <- c(description,
+  #                        paste0("This question has a text entry component. See Appendix."))
+  #     } else if (length(grep("TEXT", names(question[['Responses']]))) > 1 || m) {
+  #       description <- c(
+  #         description,
+  #         paste0(
+  #           "This question has multiple text entry components. See Appendices."
+  #         )
+  #       )
+  #     }
+  #   }
+  # }
 
   # reshape the data into a data frame
   question_header <- do.call(rbind.data.frame,
@@ -208,7 +208,7 @@ question_description <- function(question) {
   if ("Table" %in% names(question)) {
     tables = c(tables, capture.output(
       print(
-        xtable::xtable(question[['Table']]),
+        xtable::xtable(as.data.frame(question[['Table']])),
         type = "html",
         html.table.attributes = 'class="data table table-bordered table-condensed"',
         include.rownames = FALSE
@@ -762,9 +762,9 @@ table_no_respondents <- function(question, appendix_e, choice_tag, choice_text) 
   colnames(No_Respondents)[1] <-
     paste0('Export Tag: ', export_tag)
   # Clean the QIDs
-  # for(k in 1:ncol(No_Respondents)){
-  #   colnames(No_Respondents)[k] <- gsub("QID[0-9]*_", "" , colnames(No_Respondents)[k])
-  # }
+  for(k in 1:ncol(No_Respondents)){
+    colnames(No_Respondents)[k] <- gsub("QID[0-9]*_", "" , colnames(No_Respondents)[k])
+  }
   tables <- list()
   tables <-
     c(tables, capture.output(
@@ -835,9 +835,9 @@ table_text_entry <-
         paste0('Export Tag: ', x))
     
     # # Clean the QIDs
-    # for(k in 1:ncol(text_appendix)){
-    #   colnames(text_appendix)[k] <- gsub("QID[0-9]*_", "" , colnames(text_appendix)[k])
-    # }
+    for(k in 1:ncol(text_appendix)){
+      colnames(text_appendix)[k] <- gsub("QID[0-9]*_", "" , colnames(text_appendix)[k])
+    }
 
     tables <- list()
     # turn the text appendix into an html table, and add it to the tables list
@@ -907,9 +907,9 @@ table_non_text_entry <- function(question,
       paste0('Export Tag: ', x))
 
   # Clean the QIDs
-  # for(k in 1:ncol(text_appendix)){
-  #   colnames(text_appendix)[k] <- gsub("QID[0-9]*_", "" , colnames(text_appendix)[k])
-  # }
+  for(k in 1:ncol(text_appendix)){
+    colnames(text_appendix)[k] <- gsub("QID[0-9]*_", "" , colnames(text_appendix)[k])
+  }
   
   tables <- list()
   # turn the text appendix into an html table, and add it to the tables list
