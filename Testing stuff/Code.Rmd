@@ -23,6 +23,10 @@ library(tidyverse)
 
 qsf_path = here::here("Testing stuff", "Example data", "Long_Exhaustive_Sample_Survey.qsf")
 csv_path = here::here("Testing stuff", "Example data", "Long_Exhaustive_Sample_Survey_January+29,+2021_10.20_DataTable.csv")
+
+# qsf_path = here::here("Testing stuff", "Example data", "Grad_Admin.qsf")
+# csv_path = here::here("Testing stuff", "Example data", "Grad_Admin.csv")
+
 headerrows = 3
 
 get_setup(
