@@ -72,9 +72,12 @@ question_from_response_column <- function(blocks, response_name) {
     previously_computed_lookup_table <- previously_computed_lookup_data[['table']]
     # If the desired response column name appears in the lookup table, return its
     # associated pair of block and blockelement indices.
+    ind <- grep(response_name, names(previously_computed_lookup_table))
     if (response_name %in% names(previously_computed_lookup_table)) {
       return(previously_computed_lookup_table[[response_name]])
       # Otherwise error.
+    } else if(length(ind) != 0){
+      return(previously_computed_lookup_table[[ind]])
     } else stop(paste0(response_name, " does not appear in any of the questions' associated response column names."))
   } else {
 
@@ -86,6 +89,7 @@ question_from_response_column <- function(blocks, response_name) {
       for (j in 1:length(blocks[[i]][['BlockElements']])) {
         if ("Responses" %in% names(blocks[[i]][['BlockElements']][[j]])) {
           for (k in names(blocks[[i]][['BlockElements']][[j]][['Responses']])) {
+            
             responses_to_indexes[[k]] <- c(i, j)
           }
         }

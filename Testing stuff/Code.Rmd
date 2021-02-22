@@ -76,3 +76,29 @@ app()
 ```
 
 
+# Coded Comments
+
+```{r}
+devtools::load_all(".")
+
+qsf_path = here::here("Testing stuff", "Comment Coding Test", "CSV, QSF", "GSASSOE_Graduate_Admissions_Survey_2020 (2).qsf")
+csv_path = here::here("Testing stuff", "Comment Coding Test", "CSV, QSF", "ResponseIDCol1_GSAS_SOE+Graduate+Admissions+Survey+2020_February+8,+2021.csv")
+
+# Load and process the survey
+get_setup(qsf_path = qsf_path,
+          csv_path = csv_path,
+          headerrows = 3)
+
+```
+
+
+```{r}
+# Insert coded comments and render text appendices
+make_coded_comments(
+    sheets_dir = here::here("Testing stuff", "Comment Coding Test", "Comment Coding Sheets"),
+    output_dir = here::here("Testing stuff", "Comment Coding Test"),
+    filename = "Testing Comment Coding.docx",
+    n_threshold = 15)
+```
+
+
