@@ -93,7 +93,6 @@ get_setup(qsf_path = qsf_path,
 
 
 ```{r}
-# Insert coded comments and render text appendices
 make_coded_comments(
     sheets_dir = here::here("Testing stuff", "Comment Coding Test", "Comment Coding Sheets"),
     output_dir = here::here("Testing stuff", "Comment Coding Test"),
