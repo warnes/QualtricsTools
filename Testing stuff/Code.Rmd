@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 devtools::load_all(".")
 # devtools::install_github("emma-morgan/QualtricsTools")
-library(tidyverse)
+# library(tidyverse)
 # library(QualtricsTools)
 
 # qsf_path = here::here("Testing stuff", "Example data", "QualtricsTools_Sample_Survey_Winter2021.qsf")
