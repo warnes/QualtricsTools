@@ -84,7 +84,7 @@ ask_for_csv <- function(responsesfile, headerrows) {
     if (missing(headerrows)) {
       headerrows <- 3
     }
-    responses = read_csv(responsesfile, col_types = cols())
+    responses = readr::read_csv(responsesfile, col_types = cols())
     # responses = read.csv(responsesfile, check.names = FALSE, stringsAsFactors = FALSE)
     for(i in 1:ncol(responses)){
       temp <- responses[2, i]
