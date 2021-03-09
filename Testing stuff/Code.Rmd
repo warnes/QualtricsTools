@@ -79,7 +79,7 @@ app()
 # Coded Comments
 
 ```{r}
-devtools::load_all(".")
+# devtools::load_all(".")
 
 qsf_path = here::here("Testing stuff", "Comment Coding Test", "CSV, QSF", "GSASSOE_Graduate_Admissions_Survey_2020 (2).qsf")
 csv_path = here::here("Testing stuff", "Comment Coding Test", "CSV, QSF", "ResponseIDCol1_GSAS_SOE+Graduate+Admissions+Survey+2020_February+8,+2021.csv")

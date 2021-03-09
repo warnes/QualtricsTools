@@ -680,6 +680,7 @@ table_html_coded_comments <-
            blocks,
            original_first_rows) {
     response_column <- question[['CodedComments']][[cc_index]][[1]]
+    response_column <- paste(question[['QuestionID']], response_column, sep = "_")
     choice_text <-
       choice_text_from_response_column(response_column, original_first_rows, blocks)
     if (choice_text != "") {
