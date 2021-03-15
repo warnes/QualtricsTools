@@ -397,9 +397,9 @@ merge_split_column_into_comment_sheet <-
   function(coded_comment_sheet,
            responses,
            split_column) {
-    # We require in this function that the first column be the ResponseID.
-    if (! grepl("ResponseID", colnames(responses)[[1]], ignore.case = TRUE)) {
-      stop("The first column of the responses is not the ResponseID.")
+    # We require in this function that the 9th column be the ResponseID.
+    if (! grepl("ResponseID", colnames(responses)[[9]], ignore.case = TRUE)) {
+      stop("The 9th column of the responses is not the ResponseID.")
     }
 
     # Which column is the split_column
@@ -409,8 +409,8 @@ merge_split_column_into_comment_sheet <-
       stop("No column in responses with name ", split_column)
     }
     # Get the response IDs and the split_column into a 2-column data frame
-    relevant_columns <- responses[, c(1, responses_split_index)]
-    colnames(relevant_columns)[[1]] <- colnames(responses)[[1]]
+    relevant_columns <- responses[, c(9, responses_split_index)]
+    colnames(relevant_columns)[[1]] <- colnames(responses)[[9]]
 
     coded_comment_sheet <-
       merge(x = coded_comment_sheet, y = relevant_columns, by = 1)

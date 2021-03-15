@@ -459,14 +459,14 @@ shinyServer(function(input, output, session) {
       if (input[['ignoreflow']] == FALSE) {
         if (debugMessages) {print("Returning verbatim appendices [with flow]")}
         return(c(
-          blocks_header_to_html(blocks),
+          # blocks_header_to_html(blocks),
           text_appendices_table(blocks = blocks, original_first_rows = original_first_rows,
                                 flow = flow, include_coded = FALSE)
         ))
       } else {
         if (debugMessages) {print("Returning verbatim appendices [without flow]")}
         return(c(
-          blocks_header_to_html(blocks),
+          # blocks_header_to_html(blocks),
           text_appendices_table(blocks = blocks, original_first_rows = original_first_rows,
                                 include_coded = FALSE)
         ))
