@@ -1143,7 +1143,7 @@ shinyServer(function(input, output, session) {
           c(fs,
             html_2_pandoc(
               html = c(
-                blocks_header_to_html(split_blocks[[i]]),
+                # blocks_header_to_html(split_blocks[[i]]),
                 text_appendices_table(split_blocks[[i]], original_first_rows, flow,
                                       include_coded = FALSE)
               ),
@@ -1162,7 +1162,7 @@ shinyServer(function(input, output, session) {
             c(fs,
               html_2_pandoc(
                 html = c(
-                  blocks_header_to_html(split_blocks[[i]]),
+                  # blocks_header_to_html(split_blocks[[i]]),
                   text_appendices_table(split_blocks[[i]], original_first_row, flow,
                                         n_threshold = input$n_threshold,
                                         include_coded = TRUE)

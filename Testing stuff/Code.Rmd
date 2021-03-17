@@ -101,3 +101,49 @@ make_coded_comments(
 ```
 
 
+
+
+
+
+
+
+
+
+
+
+```{r}
+
+
+
+# Load the package as it is and load tidyverse
+devtools::load_all(".")
+
+# Get stuff in from the files from the survey
+get_setup(
+  qsf_path = here::here("Testing stuff", "sample", "Better_Sample_Survey.qsf"),
+  csv_path = here::here("Testing stuff", "sample", "Better_Sample_Survey_March+17,+2021_04.02.csv"),
+  headerrows = 3
+)
+
+# Save its stuff as an RDS file
+sample_original_first_rows <- original_first_rows
+saveRDS(sample_original_first_rows, file = here::here("data", "sample_original_first_rows.rds"))
+
+sample_responses <- responses
+saveRDS(sample_responses, file = here::here("data", "sample_responses.rds"))
+
+
+sample_survey <- survey
+saveRDS(sample_survey, file = here::here("data", "sample_survey.rds"))
+
+```
+
+
+
+
+
+
+
+
+
+
