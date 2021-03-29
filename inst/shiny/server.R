@@ -541,7 +541,7 @@ shinyServer(function(input, output, session) {
         if (input[['ignoreflow']] == FALSE) {
           if (debugMessages) {print("Returning coded appendices [with flow]")}
           return(c(
-            blocks_header_to_html(blocks),
+            # blocks_header_to_html(blocks),
             text_appendices_table(blocks = blocks, original_first_rows = original_first_rows, flow = flow,
                                   n_threshold = input$n_threshold,
                                   include_coded = TRUE)
@@ -549,7 +549,7 @@ shinyServer(function(input, output, session) {
         } else {
           if (debugMessages) {print("Returning coded appendices [without flow]")}
           return(c(
-            blocks_header_to_html(blocks),
+            # blocks_header_to_html(blocks),
             text_appendices_table(blocks = blocks, original_first_rows = original_first_rows,
                                   n_threshold = input$n_threshold,
                                   include_coded = TRUE)
