@@ -127,14 +127,14 @@ get_setup(
 
 # Save its stuff as an RDS file
 sample_original_first_rows <- original_first_rows
-saveRDS(sample_original_first_rows, file = here::here("data", "sample_original_first_rows.rds"))
+save(sample_original_first_rows, file = here::here("data", "sample_original_first_rows.rda"))
 
 sample_responses <- responses
-saveRDS(sample_responses, file = here::here("data", "sample_responses.rds"))
+save(sample_responses, file = here::here("data", "sample_responses.rda"))
 
 
 sample_survey <- survey
-saveRDS(sample_survey, file = here::here("data", "sample_survey.rds"))
+save(sample_survey, file = here::here("data", "sample_survey.rda"))
 
 ```
 
