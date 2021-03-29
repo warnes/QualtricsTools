@@ -26,12 +26,10 @@ output: html_document
     Save yourself some time by entering the path to your project in the text entry box above "Choose QSF Survey File". 
     This will a starting point to browse for the survey .qsf and .csv.
     
-3. **What is "Unchecked Legacy View Results (3 header rows & QIDs)"?**
+3. **Data Export**
 
-    Qualtrics has many ways to export data. QualtricsTools is configured to work with specific
-    data export formats. For best results, use the Legacy Exporter in Qualtrics and uncheck the
-    box for "Legacy View Results". QualtricsTools is currently not configured to work with 
-    the Data Table export format. 
+    QualtricsTools is configured to work with specific data export formats. For best results, use the 
+    Data Table export format. 
     
 4. **Can I preview my downloaded reports in the app?**
 

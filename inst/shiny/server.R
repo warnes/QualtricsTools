@@ -80,11 +80,8 @@ shinyServer(function(input, output, session) {
       )
     ))
 
-    # Use the input checkbox to set the number of headerrows appropriately.
-    if (input[['insights_or_not']] == TRUE)
-      headerrows <- 3
-    if (input[['insights_or_not']] == FALSE)
-      headerrows <- 2
+    # Set the number of headerrows appropriately.
+    headerrows <- 3
 
     # load_csv_data returns a pair of two elements, the responses and
     # the original_first_rows.
@@ -217,10 +214,7 @@ shinyServer(function(input, output, session) {
       blocks <- processed_questions_and_blocks()[[2]]
       responses <- split_col_responses()
       split_cols <- input[['split_response_columns']]
-      if (input[['insights_or_not']] == TRUE)
-        headerrows <- 3
-      if (input[['insights_or_not']] == FALSE)
-        headerrows <- 2
+      headerrows <- 3
       split_blocks_with_responses <-
         split_respondents(response_column = paste0(c("split", split_cols), collapse = " "),
                           survey = survey,
@@ -465,14 +459,14 @@ shinyServer(function(input, output, session) {
       if (input[['ignoreflow']] == FALSE) {
         if (debugMessages) {print("Returning verbatim appendices [with flow]")}
         return(c(
-          blocks_header_to_html(blocks),
+          # blocks_header_to_html(blocks),
           text_appendices_table(blocks = blocks, original_first_rows = original_first_rows,
                                 flow = flow, include_coded = FALSE)
         ))
       } else {
         if (debugMessages) {print("Returning verbatim appendices [without flow]")}
         return(c(
-          blocks_header_to_html(blocks),
+          # blocks_header_to_html(blocks),
           text_appendices_table(blocks = blocks, original_first_rows = original_first_rows,
                                 include_coded = FALSE)
         ))
@@ -547,7 +541,7 @@ shinyServer(function(input, output, session) {
         if (input[['ignoreflow']] == FALSE) {
           if (debugMessages) {print("Returning coded appendices [with flow]")}
           return(c(
-            blocks_header_to_html(blocks),
+            # blocks_header_to_html(blocks),
             text_appendices_table(blocks = blocks, original_first_rows = original_first_rows, flow = flow,
                                   n_threshold = input$n_threshold,
                                   include_coded = TRUE)
@@ -555,7 +549,7 @@ shinyServer(function(input, output, session) {
         } else {
           if (debugMessages) {print("Returning coded appendices [without flow]")}
           return(c(
-            blocks_header_to_html(blocks),
+            # blocks_header_to_html(blocks),
             text_appendices_table(blocks = blocks, original_first_rows = original_first_rows,
                                   n_threshold = input$n_threshold,
                                   include_coded = TRUE)
@@ -817,7 +811,7 @@ shinyServer(function(input, output, session) {
         "panel_columns",
         "Choose the Panel Columns: ",
         #ResponseID is included in Tableau reshaping by default and should not be listed
-        colnames(dplyr::select(survey_and_responses()[[2]],-ResponseID)),
+        colnames(dplyr::select(survey_and_responses()[[2]],-ResponseId)),
         multiple = TRUE,
         selectize = TRUE
       )
@@ -1149,7 +1143,7 @@ shinyServer(function(input, output, session) {
           c(fs,
             html_2_pandoc(
               html = c(
-                blocks_header_to_html(split_blocks[[i]]),
+                # blocks_header_to_html(split_blocks[[i]]),
                 text_appendices_table(split_blocks[[i]], original_first_rows, flow,
                                       include_coded = FALSE)
               ),
@@ -1168,7 +1162,7 @@ shinyServer(function(input, output, session) {
             c(fs,
               html_2_pandoc(
                 html = c(
-                  blocks_header_to_html(split_blocks[[i]]),
+                  # blocks_header_to_html(split_blocks[[i]]),
                   text_appendices_table(split_blocks[[i]], original_first_row, flow,
                                         n_threshold = input$n_threshold,
                                         include_coded = TRUE)

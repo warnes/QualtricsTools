@@ -142,7 +142,7 @@ question_description <- function(question) {
         )
       )
     } else if (!"Table" %in% names(question) &&
-               !all(grepl("TEXT", names(question[['Responses']])))) {
+               !all(grepl("TEXT", names(question[['Responses']]))) && question[['Payload']][['Selector']] != "TE") {
       description <- c(
         description,
         paste0(
@@ -160,21 +160,32 @@ question_description <- function(question) {
   # question:
   #  1 - "This question has a text entry component. See Appendix."
   # >1 - "This question has multiple text entry components. See Appendices."
-  if ("Payload" %in% names(question)) {
-    if (question[['Payload']][['QuestionType']] != "TE") {
-      if (length(grep("TEXT", names(question[['Responses']]))) == 1) {
-        description <- c(description,
-                         paste0("This question has a text entry component. See Appendix."))
-      } else if (length(grep("TEXT", names(question[['Responses']]))) > 1) {
-        description <- c(
-          description,
-          paste0(
-            "This question has multiple text entry components. See Appendices."
-          )
-        )
-      }
-    }
-  }
+  # if ("Payload" %in% names(question)) {
+  #   if (question[['Payload']][['QuestionType']] != "TE") {
+  #     s <- FALSE
+  #     m <- FALSE
+  #     MTE <- FALSE
+  #     if(question[['Payload']][['QuestionType']] == 'Matrix' && question[['Payload']][['Selector']] == 'TE'){
+  #       MTE <- TRUE
+  #       if(length(question[['Responses']]) == 1){
+  #         s <- TRUE
+  #       } else if(length(question[['Responses']]) > 1){
+  #         m <- TRUE
+  #       }
+  #     }
+  #     if (length(grep("TEXT", names(question[['Responses']]))) == 1 && !MTE || s) {
+  #       description <- c(description,
+  #                        paste0("This question has a text entry component. See Appendix."))
+  #     } else if (length(grep("TEXT", names(question[['Responses']]))) > 1 || m) {
+  #       description <- c(
+  #         description,
+  #         paste0(
+  #           "This question has multiple text entry components. See Appendices."
+  #         )
+  #       )
+  #     }
+  #   }
+  # }
 
   # reshape the data into a data frame
   question_header <- do.call(rbind.data.frame,
@@ -197,7 +208,7 @@ question_description <- function(question) {
   if ("Table" %in% names(question)) {
     tables = c(tables, capture.output(
       print(
-        xtable::xtable(question[['Table']]),
+        xtable::xtable(as.data.frame(question[['Table']])),
         type = "html",
         html.table.attributes = 'class="data table table-bordered table-condensed"',
         include.rownames = FALSE
@@ -348,6 +359,15 @@ text_appendices_table <-
                 which(sapply(colnames(question[['Responses']]),
                              function(x)
                                grepl("TEXT", x)))
+              if(question[['Payload']][['Selector']] == "TE" && question[['Payload']][['QuestionType']] == "Matrix"){
+                if(length(text_columns > 0)){
+                  all_columns <- 1:length(question[['Responses']])
+                  temp <- setdiff(all_columns, text_columns)
+                  text_columns <- append(temp, text_columns)
+                } else{
+                  text_columns <- 1:length(question[['Responses']])
+                }
+              }
 
               # Text Entry Text Appendices (excluding the text entried with numerical validation,since we longer generate appendices for them)
               if (is_text_entry_appendix(question)){
@@ -389,6 +409,9 @@ text_appendices_table <-
                 }
 
               } else if (length(text_columns) > 0) {
+                # if(question[['Payload']][['QuestionType']] == "MC" && question[['Payload']][['Selector']] == "SAVR"){
+                #   text_columns <- text_columns[[1]]
+                # }
                 for (k in 1:length(text_columns)) {
 
                   # Clean Responses. Remove any responses which are -99 or
@@ -401,6 +424,11 @@ text_appendices_table <-
                   # Ensure the response columns are named correctly after cleaning.
                   colnames(text_responses) <-
                     colnames(question[['Responses']][text_columns[[k]]])
+                  
+                  # Clean the QIDs
+                  # for(k in 1:ncol(text_responses)){
+                  #   colnames(text_responses)[k] <- gsub("QID[0-9]*_", "" , colnames(text_responses)[k])
+                  # }
 
                   # If there are no responses, use the table_no_respondents
                   # function to create a standardized no respondents table.
@@ -430,26 +458,26 @@ text_appendices_table <-
 
                   # Check if the number of Text Entry components to a multiple choice question
                   # is greater than one.
-                  multiple_TE_components <- function(question) {
-                    # Calculate the number of text entry components to a multiple choice question.
-                    N_TE_components <- length(which(sapply(
-                      question[['Payload']][['Choices']],
-                      function(x) {
-                        # Multiple Choice questions define their text entry components by labeling their
-                        # choices as having the TextEntry property set to "true".
-                        'TextEntry' %in% names(x) && x[['TextEntry']] == "true"
-                      }
-                    )))
-                    return(N_TE_components > 1)
-                  }
-
-                  # Skip Single Answer questions with too many text entry components to table correctly
-                  if (is_mc_single_answer(question) && multiple_TE_components(question)) {
-                    tables <- c(tables, table_mcsa_multitext(question))
-                    # Skip the rest of the loop, and iterate j to move onto the
-                    # next question.
-                    next
-                  }
+                  # multiple_TE_components <- function(question) {
+                  #   # Calculate the number of text entry components to a multiple choice question.
+                  #   N_TE_components <- length(which(sapply(
+                  #     question[['Payload']][['Choices']],
+                  #     function(x) {
+                  #       # Multiple Choice questions define their text entry components by labeling their
+                  #       # choices as having the TextEntry property set to "true".
+                  #       'TextEntry' %in% names(x) && x[['TextEntry']] == "true"
+                  #     }
+                  #   )))
+                  #   return(N_TE_components > 1)
+                  # }
+                  # 
+                  # # Skip Single Answer questions with too many text entry components to table correctly
+                  # if (is_mc_single_answer(question) && multiple_TE_components(question)) {
+                  #   tables <- c(tables, table_mcsa_multitext(question))
+                  #   # Skip the rest of the loop, and iterate j to move onto the
+                  #   # next question.
+                  #   next
+                  # }
 
                   # Table Non-Text Entry Questions
                   # The logic before this ensures that the question is not of text entry type and contains
@@ -652,6 +680,7 @@ table_html_coded_comments <-
            blocks,
            original_first_rows) {
     response_column <- question[['CodedComments']][[cc_index]][[1]]
+    response_column <- paste(question[['QuestionID']], response_column, sep = "_")
     choice_text <-
       choice_text_from_response_column(response_column, original_first_rows, blocks)
     if (choice_text != "") {
@@ -733,6 +762,10 @@ table_no_respondents <- function(question, appendix_e, choice_tag, choice_text) 
 
   colnames(No_Respondents)[1] <-
     paste0('Export Tag: ', export_tag)
+  # Clean the QIDs
+  for(k in 1:ncol(No_Respondents)){
+    colnames(No_Respondents)[k] <- gsub("QID[0-9]*_", "" , colnames(No_Respondents)[k])
+  }
   tables <- list()
   tables <-
     c(tables, capture.output(
@@ -780,6 +813,7 @@ table_text_entry <-
       } else {
         question_text <- question[['Payload']][['QuestionTextClean']]
       }
+      
       text_appendix_header[[l]] <-
         c(
           paste0("Appendix ", appendix_lettering(appendix_e)),
@@ -800,6 +834,11 @@ table_text_entry <-
     colnames(text_appendix) <-
       sapply(colnames(text_responses), function (x)
         paste0('Export Tag: ', x))
+    
+    # # Clean the QIDs
+    for(k in 1:ncol(text_appendix)){
+      colnames(text_appendix)[k] <- gsub("QID[0-9]*_", "" , colnames(text_appendix)[k])
+    }
 
     tables <- list()
     # turn the text appendix into an html table, and add it to the tables list
@@ -868,6 +907,11 @@ table_non_text_entry <- function(question,
     sapply(colnames(text_responses), function(x)
       paste0('Export Tag: ', x))
 
+  # Clean the QIDs
+  for(k in 1:ncol(text_appendix)){
+    colnames(text_appendix)[k] <- gsub("QID[0-9]*_", "" , colnames(text_appendix)[k])
+  }
+  
   tables <- list()
   # turn the text appendix into an html table, and add it to the tables list
   tables <-

@@ -56,8 +56,7 @@ get_reorganized_questions_and_blocks <- function(survey,
   blocks <- insert_questions_into_blocks(questions = questions, blocks = blocks)
 
   # insert the header into the blocks
-  blocks[['header']] <- c(paste0("Survey Name: ",
-                                 survey[['SurveyEntry']][['SurveyName']]),
+  blocks[['header']] <- c(paste0(survey[['SurveyEntry']][['SurveyName']]),
                           paste0("Number of Respondents: ",
                                  nrow(responses)))
 
@@ -1355,8 +1354,7 @@ split_respondents <-
 
     # insert the header into the blocks
     blocks[['header']] <- c(
-      paste0("Survey Name: ",
-             survey[['SurveyEntry']][['SurveyName']]),
+      paste0(survey[['SurveyEntry']][['SurveyName']]),
       paste0("Total Number of Original Respondents: ",
              nrow(responses))
     )

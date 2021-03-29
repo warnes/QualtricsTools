@@ -84,14 +84,24 @@ ask_for_csv <- function(responsesfile, headerrows) {
     if (missing(headerrows)) {
       headerrows <- 3
     }
+    # responses = readr::read_csv(responsesfile, col_types = readr::cols())
     responses = read.csv(responsesfile, check.names = FALSE, stringsAsFactors = FALSE)
+    for(i in 1:ncol(responses)){
+      temp <- responses[2, i]
+      qid <- str_extract(temp, "QID[0-9]*")
+      if(!is.na(qid)){
+        colnames(responses)[i] <- paste0(qid, "_", colnames(responses)[i])
+      }
+    }
+    
     responses[which(colnames(responses) == "")] <- NULL
     original_first_rows <- responses[1:(headerrows-1),]
 
     if (headerrows == 3) {
       original_first_rows[2,] <- lapply(original_first_rows[2, ], function(x) {
-        x <- gsub("^\\{'ImportId': '", "", x, perl=TRUE)
-        x <- gsub("'\\}$", "", x, perl=TRUE)
+        x <- gsub("^\\{\"ImportId\":\"", "", x, perl=TRUE)
+        x <- gsub("\",\"choiceId\":\"", "-", x, perl=TRUE)
+        x <- gsub("\".*", "", x, perl=TRUE)
       })
     }
 
