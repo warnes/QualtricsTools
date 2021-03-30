@@ -279,7 +279,7 @@ format_coded_comments_fmp <- function(coded_comment_sheet) {
   # add "Total" and the total N to the list of coded comments and Ns
   n_responses <-
     length(unique(as.data.frame(coded_comment_sheet)[, 1]))
-  coded_table <- rbind(coded_table, c("Total", n_responses))
+  coded_table <- rbind(coded_table, c("Total Number of Responses", n_responses))
 
 
   # we return a pair, the varname and the coded table.
@@ -333,7 +333,7 @@ format_coded_comments_NVivo <- function(coded_comment_sheet) {
   #sort descending numeric with ascending alphabetical
   coded_table <- dplyr::arrange(coded_table, desc(N),Response)
   #add "Total with total number of comments to the bottom of the table
-  coded_table <- dplyr::bind_rows(coded_table, tibble::tibble("Response"="Total", "N" = total_comments))
+  coded_table <- dplyr::bind_rows(coded_table, tibble::tibble("Response"="Total Number of Responses", "N" = total_comments))
 
   # we return a pair, the varname and the coded table.
   return(list('varname'=varname, 'coded_table'=coded_table))
