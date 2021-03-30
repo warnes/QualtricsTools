@@ -1,8 +1,8 @@
 ---
 title: "QualtricsTools Shiny App"
 subtitle: "Frequently Asked Questions"
-author: "Emma Morgan"
-date: "5/18/2020"
+author: "Tufts OIR"
+date: "3/30/2021"
 output: html_document
 ---
 
@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 1. **How do I run the QualtricsTools reporting app?**  
 
-    Install the QualtricsTools package from GitHub: `devtools::install_packages("emma-morgan/QualtricsTools")`.
+    Install the QualtricsTools package from GitHub: `devtools::install_packages("tufts-oir/QualtricsTools")`.
     Once the package is installed, load the QualtricsTools functions by running `library(QualtricsTools)`. 
     Finally, launch the QualtricSTools app by running `app()` from the R command line.
 
@@ -28,14 +28,7 @@ knitr::opts_chunk$set(echo = TRUE)
     Save yourself some time by entering the path to your project in the text entry box above "Choose QSF Survey File". 
     This will a starting point to browse for the survey .qsf and .csv.
     
-3. **What is "Unchecked Legacy View Results (3 header rows & QIDs)"?**
-
-    Qualtrics has many ways to export data. QualtricsTools is configured to work with specific
-    data export formats. For best results, use the Legacy Exporter in Qualtrics and uncheck the
-    box for "Legacy View Results". QualtricsTools is currently not configured to work with 
-    the Data Table export format. 
-    
-4. **Can I preview my downloaded reports in the app?**
+3. **Can I preview my downloaded reports in the app?**
 
     Yes! Navigate to "Processed Results" in the left sidebar. 
     You should now see five tabs displayed across the top.
@@ -68,7 +61,7 @@ knitr::opts_chunk$set(echo = TRUE)
     
        Coded comment appendices require additional input to specify a file directory with formatted coded comment export tables. Additionally, analysts have the option to include both verbatim and coded comment tables or create an appendix with only coded comments. To specify options for coded comment appendices, choose "More options" in the left sidebar. Use the box in the third column titled "Comment Coding Options" to specify your coded comment appendices.
        
-5. **How do I create Coded Comment Appendices?**
+4. **How do I create Coded Comment Appendices?**
     
     Choose "More Options" from the left sidebar, then navigate to the box for "Comment Coding Optoins". Use the options as specified.
     
@@ -78,32 +71,32 @@ knitr::opts_chunk$set(echo = TRUE)
     
     - **Sheets Folder Selector** Use this to select the folder with your coded comment data export files. Click the "..." button. This will launch launch a file explorer window. Use this as usual to navigate to the coded comment sheets directory.
     
-6. **My survey has complicated flow and is not processing correctly. What can I do?"**
+5. **My survey has complicated flow and is not processing correctly. What can I do?"**
 
     QualtricsTools does not play nicely with complicated survey flow. Under "More options" check the box for **Ignore Survey Flow** to process the survey blockss in order. 
     
-7. **Can I create reports for subgroups of respondents.**
+6. **Can I create reports for subgroups of respondents.**
 
     Yes! Under "More options" navigate to the middle section for **Splitting Respondents**. From here, you can choose one or more columns to create split reports. This will create survey summary tables and verbatim text appendices for each subgroup specified by the split response columns. Click the button "Download All Split Reports and Appendices" to download tables and appendices for all subgroups. If you would like to download a report for one specific subgroup, choose the target group from the **Split Respondents Group** dropdown menu.
     
-8. **Can I specify a name for my download files?**
+7. **Can I specify a name for my download files?**
 
     Yes! Under "More Options" the first column for "Downloads" has an option for naming your files. This is recommended as a brief name for your survey. Files downloaded using the download buttons in this section will include the specified file name and appropriate file description. 
     
     Example: Specified name "Sample Survey" will yield downloaded files with "Sample Survey_results tables" and "Sample Survey_verbatim_comment_appendices."
         
-9. **I want to download the tables and verbatim comments and coded comments. How do I do this?**
+8. **I want to download the tables and verbatim comments and coded comments. How do I do this?**
 
     In the left sidebar, choose "download zip". This will download results tables, display logic, question dictionary, and verbatim comment appendices.
     
-10. **My survey has some weird questions that I do not want to include in my report. Is there a way to leave these out?**
+9. **My survey has some weird questions that I do not want to include in my report. Is there a way to leave these out?**
 
     The left sidebar has an option for "Include/Exclude Responses". This will show a list of questions with checkboxes on the left side of each. Uncheck a question's box and click "apply" to excluee this question from reporting. You should see this updated in the results table and appendix previews under "Processed Results." To add the question back into reports, just re-check the box and click apply.
     
-11. **I have other questions. Who can I ask?**
+10. **I have other questions. Who can I ask?**
 
     If you are interested in further customizing your reports, consider using the R command line. Additional information about QualtricsTools functions is available on the QualtricsTools wiki. 
     
-       Package maintenance is overseen by Emma Morgan in the Tufts University Office of Institutional Research (emma.morgan@tufts.edu).
+       Package maintenance is overseen by the Tufts University Office of Institutional Research (INSTResearch@tufts.edu).
    
    
