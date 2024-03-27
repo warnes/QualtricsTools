@@ -71,14 +71,23 @@ shinyServer(function(input, output, session) {
     duplicate_tags <-
       sapply(duplicates, function(x)
         x$Payload$DataExportTag)
-    validate(need(
-      validate_data_export_tags(questions),
-      paste0(
-        "Please submit a survey with no duplicate question IDs.
-        The following questions were duplicated: ",
-        paste(duplicate_tags, collapse = ", ")
+    if(length(duplicate_tags)>0) {
+      browser()
+      showModal(
+        modalDialog(
+          tagList(
+            p('This survey contains duplicate question IDs:'),
+            tags$blockquote(
+              paste(duplicate_tags, collapse = ", ")
+            ),
+            p('This may cause processing problems.')
+          ),
+          title = span('Duplicate Question IDs', style='color:red'),
+          size = 'm',
+          easyClose = TRUE
+        )
       )
-    ))
+    }
 
     # Use the input checkbox to set the number of headerrows appropriately.
     if (input[['insights_or_not']] == TRUE)
@@ -186,7 +195,7 @@ shinyServer(function(input, output, session) {
         return(responses)
       } else
         if (debugMessages) {print("Return responses from survey_and_responses")}
-        return(survey_and_responses()[[2]])
+      return(survey_and_responses()[[2]])
     }
   })
 
@@ -229,7 +238,7 @@ shinyServer(function(input, output, session) {
                           questions = questions,
                           headerrows = headerrows,
                           original_first_rows = original_first_rows
-                          )
+        )
 
       if (input$comment_choices == "Yes") {
         sheets_dir <- shinyDirectoryInput::readDirectoryInput(session, 'sheets_dir')
@@ -242,7 +251,7 @@ shinyServer(function(input, output, session) {
           if (debugMessages) {print("format split coded comment sheets")}
           #print(names(responses)[1:30])
 
-         # browser()
+          # browser()
 
           split_comment_sheets <-
             format_and_split_comment_sheets(coded_comment_sheets = coded_sheets,
@@ -263,7 +272,7 @@ shinyServer(function(input, output, session) {
 
     } else
       if (debugMessages ({"Return blocks from Split blocks [not split]"}))
-      return(NULL)
+        return(NULL)
   })
 
   # Choose split blocks ----
@@ -309,12 +318,12 @@ shinyServer(function(input, output, session) {
 
         if(debugMessages) {"Choose split blocks - no matching split blocks, returns null"}
 
-        return(NULL)
+      return(NULL)
     } else
 
       if (debugMessages) {"Choose split blocks - no block selected, returning NULL"}
 
-      return(NULL)
+    return(NULL)
   })
 
 
@@ -332,7 +341,7 @@ shinyServer(function(input, output, session) {
     if (length(survey_and_responses()) >= 3) {
       questions <- processed_questions_and_blocks()[[1]]
       if (debugMessages) {print("Finish uncodeable message")}
-     return(uncodeable_questions_message(questions))
+      return(uncodeable_questions_message(questions))
     }
   })
 
@@ -567,91 +576,91 @@ shinyServer(function(input, output, session) {
 
 
 
-      # sheets_dir <- shinyDirectoryInput::readDirectoryInput(session, 'sheets_dir')
-      #
-      # coded_sheets <- directory_get_coded_comment_sheets(sheets_dir, code_type = input$code_type)
-      #
-      # original_first_rows <- survey_and_responses()[[3]]
-      #
-      # original_first_row <- original_first_rows[1, ]
-      #
-      # survey <- survey_and_responses()[[1]]
-      #
-      # if (is.null(coded_sheets)) {
-      #   paste("Please fix errors before attempting again")
-      # } else if ('split_response_columns' %in% names(input) &&
-      #            !is.null(input[['split_response_columns']])) {
-      #   blocks <- processed_questions_and_blocks()[[2]]
-      #   split_cols <- input[['split_response_columns']]
-      #   print(paste0("split_cols: ",split_cols))
-      #
-      #   split_col_name = paste0(c("split", split_cols), collapse = " ")
-      #   print(paste0("split_col_name: ",split_col_name))
-      #   print(names(split_col_responses()))
-      #
-      #   split_comment_tables <- format_and_split_comment_sheets(coded_comment_sheets = coded_sheets,
-      #                                                     responses = split_col_responses(),
-      #                                                     split_column = split_col_name,
-      #                                                     code_type = input$code_type)
-      #
-      #   split_blocks <- insert_split_survey_comments(split_blocks(),
-      #                                                split_comment_tables,
-      #                                                split_col_name,
-      #                                                original_first_rows)
-      # }
-      # else if (is.null(choose_split_block())){
-      #   blocks <- processed_questions_and_blocks()[[2]]
-      #   comment_tables <-
-      #     format_coded_comment_sheets(coded_comment_sheets = coded_sheets, code_type = input$code_type)
-      #   blocks <-
-      #     insert_coded_comments(
-      #       blocks = blocks,
-      #       original_first_rows = original_first_rows,
-      #       coded_comments = comment_tables
-      #     )
-      #
-      #   # Used with html_2_pandoc below to keeps the flow of the survey consistent with the output
-      #   flow = flow_from_survey(survey)
-      #
-      #   return(c(
-      #     blocks_header_to_html(blocks),
-      #     text_appendices_table(
-      #       blocks = blocks,
-      #       original_first_row = original_first_rows,
-      #       flow = flow,
-      #       n_threshold = input$n_threshold
-      #     )
-      #   ))
-      #   } else{
-      #     blocks <- choose_split_block()
-      #
-      #     comment_tables <-
-      #       format_coded_comment_sheets(coded_comment_sheets = coded_sheets, code_type = input$code_type)
-      #     blocks <-
-      #       insert_coded_comments(
-      #         blocks = blocks,
-      #         original_first_rows = original_first_rows,
-      #         coded_comments = comment_tables
-      #       )
-      #
-      #     # Used with html_2_pandoc below to keeps the flow of the survey consistent with the output
-      #     flow = flow_from_survey(survey)
-      #
-      #     return(c(
-      #       blocks_header_to_html(blocks),
-      #       text_appendices_table(
-      #         blocks = blocks,
-      #         original_first_row = original_first_rows,
-      #         flow = flow,
-      #         n_threshold = input$n_threshold
-      #       )
-      #     ))
-      #
-      #
-      #   }
-      #
-      # }
-   })
+    # sheets_dir <- shinyDirectoryInput::readDirectoryInput(session, 'sheets_dir')
+    #
+    # coded_sheets <- directory_get_coded_comment_sheets(sheets_dir, code_type = input$code_type)
+    #
+    # original_first_rows <- survey_and_responses()[[3]]
+    #
+    # original_first_row <- original_first_rows[1, ]
+    #
+    # survey <- survey_and_responses()[[1]]
+    #
+    # if (is.null(coded_sheets)) {
+    #   paste("Please fix errors before attempting again")
+    # } else if ('split_response_columns' %in% names(input) &&
+    #            !is.null(input[['split_response_columns']])) {
+    #   blocks <- processed_questions_and_blocks()[[2]]
+    #   split_cols <- input[['split_response_columns']]
+    #   print(paste0("split_cols: ",split_cols))
+    #
+    #   split_col_name = paste0(c("split", split_cols), collapse = " ")
+    #   print(paste0("split_col_name: ",split_col_name))
+    #   print(names(split_col_responses()))
+    #
+    #   split_comment_tables <- format_and_split_comment_sheets(coded_comment_sheets = coded_sheets,
+    #                                                     responses = split_col_responses(),
+    #                                                     split_column = split_col_name,
+    #                                                     code_type = input$code_type)
+    #
+    #   split_blocks <- insert_split_survey_comments(split_blocks(),
+    #                                                split_comment_tables,
+    #                                                split_col_name,
+    #                                                original_first_rows)
+    # }
+    # else if (is.null(choose_split_block())){
+    #   blocks <- processed_questions_and_blocks()[[2]]
+    #   comment_tables <-
+    #     format_coded_comment_sheets(coded_comment_sheets = coded_sheets, code_type = input$code_type)
+    #   blocks <-
+    #     insert_coded_comments(
+    #       blocks = blocks,
+    #       original_first_rows = original_first_rows,
+    #       coded_comments = comment_tables
+    #     )
+    #
+    #   # Used with html_2_pandoc below to keeps the flow of the survey consistent with the output
+    #   flow = flow_from_survey(survey)
+    #
+    #   return(c(
+    #     blocks_header_to_html(blocks),
+    #     text_appendices_table(
+    #       blocks = blocks,
+    #       original_first_row = original_first_rows,
+    #       flow = flow,
+    #       n_threshold = input$n_threshold
+    #     )
+    #   ))
+    #   } else{
+    #     blocks <- choose_split_block()
+    #
+    #     comment_tables <-
+    #       format_coded_comment_sheets(coded_comment_sheets = coded_sheets, code_type = input$code_type)
+    #     blocks <-
+    #       insert_coded_comments(
+    #         blocks = blocks,
+    #         original_first_rows = original_first_rows,
+    #         coded_comments = comment_tables
+    #       )
+    #
+    #     # Used with html_2_pandoc below to keeps the flow of the survey consistent with the output
+    #     flow = flow_from_survey(survey)
+    #
+    #     return(c(
+    #       blocks_header_to_html(blocks),
+    #       text_appendices_table(
+    #         blocks = blocks,
+    #         original_first_row = original_first_rows,
+    #         flow = flow,
+    #         n_threshold = input$n_threshold
+    #       )
+    #     ))
+    #
+    #
+    #   }
+    #
+    # }
+  })
 
   # Include/Exclude Dictionary ----
   # The include_exclude_dict constructs a dataframe with some HTML in its leftmost column
@@ -786,11 +795,11 @@ shinyServer(function(input, output, session) {
 
   output[['question_dictionary']] <-
     DT::renderDataTable(question_dictionary(),
-                    options = list(
-                      scrollX = TRUE,
-                      pageLength = 10,
-                      autoWidth = TRUE
-                    ))
+                        options = list(
+                          scrollX = TRUE,
+                          pageLength = 10,
+                          autoWidth = TRUE
+                        ))
 
   output[['text_appendices']] <-
     renderUI(div(HTML(text_appendices()), class = "shiny-html-output"))

@@ -124,9 +124,9 @@ valid_questions_blocks_from_survey <- function(survey) {
   #Check that there are no duplicate question names
   if (any(duplicated(question_names))) {
     duplicate_exporttags <- unique(question_names[which(duplicated(question_names))])
-    stop("The following Data Export Tags are duplicated in the survey.\n",
+    warning("The following Data Export Tags are duplicated in the survey.\n",
                 stringr::str_c(duplicate_exporttags, collapse = "; "),
-                "\nThese must be unique for the survey to process correctly.")
+                "\nThis may cause problems processing the survey.")
   }
   #Rename quesions with their Data Export Tags (question variable name) instead of QID
   questions <- purrr::set_names(questions, question_names)
