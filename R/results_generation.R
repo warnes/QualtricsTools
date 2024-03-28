@@ -337,6 +337,11 @@ mc_single_answer_results <-
     respondent_count <-
       length(which((question[['Responses']][[exporttag]] != -99) &
                      (question[['Responses']][[exporttag]] != "")))
+    if(respondent_count == 0){
+      respondent_count <-
+        length(which((question[['Responses']][[selected_column]] != -99) &
+                       (question[['Responses']][[selected_column]] != "")))
+    }
     Percent <- percent0(N / respondent_count)
 
     # if the choice variables have been recoded, first the factors are retrieved from the responses_tabled,
@@ -346,12 +351,17 @@ mc_single_answer_results <-
     # if the choice variables are not recoded, then they can be retrieved directly from the responses_table
     choices <- sapply(responses_tabled[, 1], function(choice) question_variable_to_choice_text(question, choice))
 
+    # Clean the QIDs
+    choices <- sapply(choices, function(x)
+      gsub("QID[0-9]*_", "", x, perl = TRUE))
+    
     # construct the results table with a column for N, Percent, and choices,
     # but make sure that the choices column doesn't have a header when it prints.
     results_table <-
       data.frame(N, Percent, choices, row.names = NULL)
+    
     colnames(results_table)[3] <- ""
-
+    
     # append the results table to the question
     question[['Table']] <- results_table
 
@@ -413,14 +423,20 @@ mc_multiple_answer_results <-
       unique(c(paste0(data_export_tags, "_"), data_export_tags))
     data_export_tags <- paste0(data_export_tags, collapse = "|")
 
+    # # Clean QIDs
+    # for(k in 1:ncol(relevant_responses)){
+    #   colnames(relevant_responses)[k] <- gsub("QID[0-9]*_", "", colnames(relevant_responses)[k])
+    # }
+    
     # rename the columns to be the choice indices they represent
     colnames(relevant_responses) <-
       lapply(colnames(relevant_responses), function(x) {
-        if (should_use_ofr) {
-          choice_index <- original_first_rows[2, x]
-          choice_index <- gsub("QID[0-9]*-", "", choice_index)
-        } else {
+        # if (should_use_ofr) {
+        #   choice_index <- original_first_rows[2, x]
+        #   choice_index <- gsub("QID[0-9]*-", "", choice_index)
+        # } else {
           x <- gsub(data_export_tags, "", x)
+          x <- gsub("QID[0-9]*_", "", x)
           if ("RecodeValues" %in% names(question[['Payload']]) &&
               x %in% question[['Payload']][['RecodeValues']]) {
             x <-
@@ -428,8 +444,9 @@ mc_multiple_answer_results <-
                 which(question[['Payload']][['RecodeValues']] == x)]
           }
           return(x)
-        }
+        # }
       })
+    
 
     # get the number of respondents for each choice
     N <-
@@ -447,6 +464,7 @@ mc_multiple_answer_results <-
     Percent <- lapply(1:length(N), function(x) {
         percent0(N[[x]] / total_denominator)
     })
+    
 
     # Since we've already translated converted the choices from recode values to choice
     # variables, in the following call we set use_recode_values = FALSE.
@@ -456,6 +474,11 @@ mc_multiple_answer_results <-
 
     # make sure that these are flat lists
     choices <- unlist(choices, use.names = FALSE)
+    
+    # Clean the QIDs
+    choices <- sapply(choices, function(x)
+      gsub("QID[0-9]*_", "", x, perl = TRUE))
+    
     N <- unlist(N, use.names = FALSE)
     Percent <- unlist(Percent, use.names = FALSE)
 
@@ -521,6 +544,10 @@ mc_multiple_answer_results <-
 
     # Remove choices as the name of the third column
     colnames(results_table)[3] <- ""
+
+    # # Clean the QIDs
+    # results_table <- sapply(results_table, function(x)
+    #   gsub("QID[0-9]*_", "", x, perl = TRUE))
 
     # append the results table
     question[['Table']] <- results_table
@@ -805,12 +832,22 @@ matrix_single_answer_results <-
 
     #Lines added from above to rename row values
     #EM insertion
+    df <- original_first_rows
+    df <- df[ , grepl(question_id, df[2,])]
+    df <- as.data.frame(df)
+    # If actually a matrix do this
+    if(NCOL(df) > 1){
+      rownames(valid_responses) <-
+        lapply(rownames(valid_responses), function(x)
+          df[2, x])
+    } else{
+      rownames(valid_responses) <-
+        lapply(rownames(valid_responses), function(x)
+          original_first_rows[2, x])
+    }
     rownames(valid_responses) <-
       lapply(rownames(valid_responses), function(x)
-        original_first_rows[2, x])
-    rownames(valid_responses) <-
-      lapply(rownames(valid_responses), function(x)
-        gsub(paste0(question_id, "-"), "", x))
+        gsub(paste0(question_id, "_"), "", x))
 
 
     if(is_matrix_single_answer(question)){
@@ -854,6 +891,9 @@ matrix_single_answer_results <-
       choices <- clean_html_and_css(question[['Payload']][['QuestionText']])
     }
 
+    # Clean the QIDs
+    choices <- sapply(choices, function(x)
+      gsub("QID[0-9]*_", "", x, perl = TRUE))
 
     # construct the data frame
     if (has_na) {
@@ -881,7 +921,6 @@ matrix_single_answer_results <-
 
     colnames(results_table)[1] <- ""
     rownames(results_table) <- NULL
-
 
     # append the results table
     question[['Table']] <- results_table
@@ -935,12 +974,34 @@ matrix_multiple_answer_results <-
     colnames(relevant_responses) <-
       lapply(colnames(relevant_responses), function(x) {
         if (should_use_ofr) {
-          choice_index <- original_first_rows[2, x]
-          choice_index <- gsub("^QID[# 0-9]*-", "", choice_index)
+          df <- original_first_rows
+          question_id <- question[['Payload']][['QuestionID']]
+          df <- df[ , grepl(question_id, df[2,])]
+          df <- as.data.frame(df)
+          choice_index <- df[2, x]
+          choice_index <- gsub("^QID[# 0-9]*", "", choice_index)
+          choice_index <- gsub("_", "", choice_index)
         } else {
           x <- gsub(data_export_tags, "", x)
         }
       })
+    
+    # num <- length(colnames(relevant_responses))
+    # qs = 1
+    # part = 1
+    # for(i in 1:num) {
+    #   old <- names(relevant_responses)[i]
+    #   # print(old)
+    #   old <- gsub("-[# 0-9]*", "", old)
+    #   if(old != qs){
+    #     qs = old
+    #     part = 1
+    #   }
+    #   new <- paste(old, part, sep = "-")
+    #   # print(new)
+    #   names(relevant_responses)[i] <- new
+    #   part = part + 1
+    # }
 
     # if the question is reduced from a side-by-side question,
     # then we need to remove the AnswerDataExportTag from the

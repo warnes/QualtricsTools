@@ -279,7 +279,7 @@ format_coded_comments_fmp <- function(coded_comment_sheet) {
   # add "Total" and the total N to the list of coded comments and Ns
   n_responses <-
     length(unique(as.data.frame(coded_comment_sheet)[, 1]))
-  coded_table <- rbind(coded_table, c("Total", n_responses))
+  coded_table <- rbind(coded_table, c("Total Number of Responses", n_responses))
 
 
   # we return a pair, the varname and the coded table.
@@ -333,7 +333,7 @@ format_coded_comments_NVivo <- function(coded_comment_sheet) {
   #sort descending numeric with ascending alphabetical
   coded_table <- dplyr::arrange(coded_table, desc(N),Response)
   #add "Total with total number of comments to the bottom of the table
-  coded_table <- dplyr::bind_rows(coded_table, tibble::tibble("Response"="Total", "N" = total_comments))
+  coded_table <- dplyr::bind_rows(coded_table, tibble::tibble("Response"="Total Number of Responses", "N" = total_comments))
 
   # we return a pair, the varname and the coded table.
   return(list('varname'=varname, 'coded_table'=coded_table))
@@ -397,9 +397,9 @@ merge_split_column_into_comment_sheet <-
   function(coded_comment_sheet,
            responses,
            split_column) {
-    # We require in this function that the first column be the ResponseID.
-    if (! grepl("ResponseID", colnames(responses)[[1]], ignore.case = TRUE)) {
-      stop("The first column of the responses is not the ResponseID.")
+    # We require in this function that the 9th column be the ResponseID.
+    if (! grepl("ResponseID", colnames(responses)[[9]], ignore.case = TRUE)) {
+      stop("The 9th column of the responses is not the ResponseID.")
     }
 
     # Which column is the split_column
@@ -409,8 +409,8 @@ merge_split_column_into_comment_sheet <-
       stop("No column in responses with name ", split_column)
     }
     # Get the response IDs and the split_column into a 2-column data frame
-    relevant_columns <- responses[, c(1, responses_split_index)]
-    colnames(relevant_columns)[[1]] <- colnames(responses)[[1]]
+    relevant_columns <- responses[, c(9, responses_split_index)]
+    colnames(relevant_columns)[[1]] <- colnames(responses)[[9]]
 
     coded_comment_sheet <-
       merge(x = coded_comment_sheet, y = relevant_columns, by = 1)
@@ -523,7 +523,7 @@ insert_coded_comments <-
         varname <- coded_comments[[i]][[1]]
         # Find the row of the r_col_dictionary with the matching response
         # column name.
-        matched_based_on_r_col <- which(r_col_dictionary[, 2] == varname)
+        matched_based_on_r_col <- which(r_col_dictionary[, 1] == varname)
 
         # If the match is unique, use this to find the Question's Data Export
         # Tag in the first column of the r_col_dictionary. If there are
@@ -536,8 +536,8 @@ insert_coded_comments <-
           # Use fuzzy matching with a low tolerance to find similarly named
           # columns and list them in the warning.
           fuzzy_matches <-
-            agrep('q3_volunteer', r_col_dictionary[, 2], max.distance = 0.1)
-          fuzzy_paste <- paste(r_col_dictionary[fuzzy_matches, 2], collapse = ", ")
+            agrep('q3_volunteer', r_col_dictionary[, 1], max.distance = 0.1)
+          fuzzy_paste <- paste(r_col_dictionary[fuzzy_matches, 1], collapse = ", ")
           # Construct the warning message
           warning_msg <- c("The appendices with varname ",
                            varname,

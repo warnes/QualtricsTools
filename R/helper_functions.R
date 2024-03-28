@@ -72,9 +72,22 @@ question_from_response_column <- function(blocks, response_name) {
     previously_computed_lookup_table <- previously_computed_lookup_data[['table']]
     # If the desired response column name appears in the lookup table, return its
     # associated pair of block and blockelement indices.
+    # ind <- grep(response_name, names(previously_computed_lookup_table))
+    # vec <- names(previously_computed_lookup_table)
+    # if(length(vec) != 0){
+    #   # Clean the QIDs
+    #   for(k in 1:length(vec)){
+    #     vec[k] <- gsub("QID[0-9]*_", "" , vec[k])
+    #   }
+    # }
+    
     if (response_name %in% names(previously_computed_lookup_table)) {
       return(previously_computed_lookup_table[[response_name]])
       # Otherwise error.
+    # } else if(length(ind) != 0){
+      # return(previously_computed_lookup_table[[ind]])
+    # } else if(response_name %in% vec){
+      # return(previously_computed_lookup_table[[ind]])
     } else stop(paste0(response_name, " does not appear in any of the questions' associated response column names."))
   } else {
 
@@ -86,6 +99,7 @@ question_from_response_column <- function(blocks, response_name) {
       for (j in 1:length(blocks[[i]][['BlockElements']])) {
         if ("Responses" %in% names(blocks[[i]][['BlockElements']][[j]])) {
           for (k in names(blocks[[i]][['BlockElements']][[j]][['Responses']])) {
+            
             responses_to_indexes[[k]] <- c(i, j)
           }
         }
@@ -534,6 +548,9 @@ choice_text_from_response_column <-
     if (is_mc_multiple_answer(question) &&
         any(stringr::str_detect(original_first_row[[response_column]], "^QID"))) {
       choice_index <- stringr::str_extract(original_first_row[[response_column]][[2]], "\\d+(?=-TEXT$)")
+      if(is.na(choice_index)){
+        choice_index <- stringr::str_extract(original_first_row[[response_column]][[2]], "\\d+(?=_TEXT$)")
+      }
       choice_text <- question[['Payload']][['Choices']][[choice_index]][['Display']]
       choice_text <- clean_html_and_css(choice_text)
     }
@@ -838,7 +855,7 @@ make_text_appendices <-
     # Now we render the HTML into a report.
     html_2_pandoc(
       html = c(
-        blocks_header_to_html(blocks),
+        # blocks_header_to_html(blocks),
         text_appendices_table(blocks, original_first_rows, flow)
       ),
       file_name = filename,
